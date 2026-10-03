@@ -1,8 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { 
-  Car, Zap, Wind, Eye, Flame, Radio, Navigation, Activity 
+  Car, Zap, Wind, Eye, Flame, Radio, Navigation, Activity, Siren, CheckCircle2 
 } from 'lucide-react';
+import { findOptimalEmergencyRoute } from '../utils/roadGraphRouting';
+import confetti from 'canvas-confetti';
 
 export default function CityMap({
   activeLayer, // 'all', 'traffic', 'energy', 'eco'
@@ -13,7 +15,8 @@ export default function CityMap({
   onSelectNode,
   onOpenVisionModal,
   activeCrisis,
-  onResolveCrisis
+  onResolveCrisis,
+  onEmergencyWaveTriggered
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -22,7 +25,13 @@ export default function CityMap({
     energy: null,
     eco: null,
     lines: null,
+    corridor: null,
+    ambulance: null
   });
+
+  const [emergencyActive, setEmergencyActive] = useState(false);
+  const [activeRouteInfo, setActiveRouteInfo] = useState(null);
+  const ambulanceIntervalRef = useRef(null);
 
   // Initialize Leaflet Map once
   useEffect(() => {
@@ -51,14 +60,110 @@ export default function CityMap({
     layerGroupsRef.current.traffic = L.layerGroup().addTo(map);
     layerGroupsRef.current.energy = L.layerGroup().addTo(map);
     layerGroupsRef.current.eco = L.layerGroup().addTo(map);
+    layerGroupsRef.current.corridor = L.layerGroup().addTo(map);
+    layerGroupsRef.current.ambulance = L.layerGroup().addTo(map);
 
     mapInstanceRef.current = map;
 
     return () => {
+      if (ambulanceIntervalRef.current) clearInterval(ambulanceIntervalRef.current);
       map.remove();
       mapInstanceRef.current = null;
     };
   }, []);
+
+  // Handle Emergency Green Wave Transit
+  const handleTriggerAmbulance = () => {
+    const route = findOptimalEmergencyRoute("N-CIRCLE", "N-37MIL");
+    if (!route.success) return;
+
+    setActiveRouteInfo(route);
+    setEmergencyActive(true);
+
+    const { corridor, ambulance } = layerGroupsRef.current;
+    corridor.clearLayers();
+    ambulance.clearLayers();
+
+    // 1. Draw Green Wave Corridor Polyline with glow
+    L.polyline(route.gpsPath, {
+      color: '#10b981',
+      weight: 6,
+      opacity: 0.9,
+      lineCap: 'round',
+      lineJoin: 'round',
+      dashArray: '10, 10'
+    }).addTo(corridor);
+
+    // 2. Animate Ambulance Moving along the GPS Path
+    let step = 0;
+    const totalSteps = 40;
+    const startCoord = route.gpsPath[0];
+    const midCoord = route.gpsPath[1] || route.gpsPath[0];
+    const endCoord = route.gpsPath[route.gpsPath.length - 1];
+
+    const ambIcon = L.divIcon({
+      className: 'custom-ambulance-icon',
+      html: `
+        <div style="
+          width: 34px;
+          height: 34px;
+          background: #10b981;
+          border-radius: 50%;
+          border: 2px solid #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 0 20px #10b981, 0 0 10px #fff;
+          animation: pulse-ring 0.8s infinite;
+        ">
+          <span style="font-size: 16px;">🚑</span>
+        </div>
+      `,
+      iconSize: [34, 34],
+      iconAnchor: [17, 17]
+    });
+
+    const ambMarker = L.marker(startCoord, { icon: ambIcon }).addTo(ambulance);
+
+    if (ambulanceIntervalRef.current) clearInterval(ambulanceIntervalRef.current);
+
+    ambulanceIntervalRef.current = setInterval(() => {
+      step++;
+      const t = step / totalSteps;
+      
+      // Interpolate along the route
+      let currentLat, currentLng;
+      if (t < 0.5) {
+        const subT = t * 2;
+        currentLat = startCoord[0] + (midCoord[0] - startCoord[0]) * subT;
+        currentLng = startCoord[1] + (midCoord[1] - startCoord[1]) * subT;
+      } else {
+        const subT = (t - 0.5) * 2;
+        currentLat = midCoord[0] + (endCoord[0] - midCoord[0]) * subT;
+        currentLng = midCoord[1] + (endCoord[1] - midCoord[1]) * subT;
+      }
+
+      ambMarker.setLatLng([currentLat, currentLng]);
+
+      if (step >= totalSteps) {
+        clearInterval(ambulanceIntervalRef.current);
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.6 }
+        });
+        setTimeout(() => {
+          setEmergencyActive(false);
+          corridor.clearLayers();
+          ambulance.clearLayers();
+        }, 5000);
+      }
+    }, 150);
+
+    if (onEmergencyWaveTriggered) {
+      onEmergencyWaveTriggered(route);
+    }
+  };
 
   // Update Layers & Polylines whenever state changes
   useEffect(() => {
@@ -273,9 +378,23 @@ export default function CityMap({
             <Radio size={14} className="pulse-indicator" style={{ color: 'var(--accent-cyan)' }} />
             REAL LEAFLET GIS // GREATER ACCRA GRID
           </div>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px' }}>
-            GPS: 5.6037° N, -0.1870° W • ZOOM 12
-          </span>
+
+          {/* Quick A* Ambulance Trigger Button */}
+          <button
+            onClick={handleTriggerAmbulance}
+            disabled={emergencyActive}
+            className="btn-primary"
+            style={{
+              padding: '6px 14px',
+              fontSize: '0.76rem',
+              background: emergencyActive ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+              color: '#fff',
+              boxShadow: emergencyActive ? '0 0 15px rgba(16, 185, 129, 0.5)' : '0 0 15px rgba(239, 68, 68, 0.4)'
+            }}
+          >
+            <Siren size={14} className={emergencyActive ? 'animate-spin' : ''} />
+            {emergencyActive ? 'AMB-04 Wave Active (7.4 mins)' : 'Dispatch A* Ambulance Corridor'}
+          </button>
         </div>
 
         {/* Crisis Alert Banner if Active */}
@@ -322,6 +441,27 @@ export default function CityMap({
         ref={mapContainerRef} 
         style={{ width: '100%', height: '100%', background: '#0a0f18' }} 
       />
+
+      {/* Active Route Telemetry Toast if Ambulance en route */}
+      {emergencyActive && activeRouteInfo && (
+        <div style={{
+          position: 'absolute',
+          top: '68px',
+          left: '20px',
+          background: 'rgba(16, 185, 129, 0.9)',
+          backdropFilter: 'blur(12px)',
+          color: '#022c22',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          fontSize: '0.78rem',
+          fontFamily: 'var(--font-mono)',
+          fontWeight: 'bold',
+          zIndex: 1000,
+          boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)'
+        }}>
+          CODE GREEN WAVE: {activeRouteInfo.pathNodeNames?.join(' ➔ ')} • ETA: {activeRouteInfo.estimatedTimeGreenWaveMin}m (was {activeRouteInfo.estimatedTimeNormalMin}m)
+        </div>
+      )}
 
       {/* Map Legend Overlay (Bottom Left) */}
       <div style={{
@@ -445,7 +585,7 @@ export default function CityMap({
               </div>
 
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                Capacity: {nodePercentage(selectedNode)}% • Solar: +{selectedNode.solarInputMw} MW
+                Capacity: {Math.round((selectedNode.currentLoadMw / selectedNode.capacityMw) * 100)}% • Solar: +{selectedNode.solarInputMw} MW
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 Feeds: {selectedNode.connectedDistricts?.join(', ')}
@@ -479,8 +619,4 @@ export default function CityMap({
       )}
     </div>
   );
-}
-
-function nodePercentage(node) {
-  return Math.round((node.currentLoadMw / node.capacityMw) * 100);
 }
