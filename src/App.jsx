@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Activity, Car, Zap, Wind, Bot, Shield, Trophy, 
-  Sparkles, Radio, RefreshCw, Key, AlertTriangle, Layers, Clock 
+  Sparkles, Radio, RefreshCw, Key, AlertTriangle, Layers, Clock, Terminal, Code2 
 } from 'lucide-react';
 import { 
   CITY_METRICS, TRAFFIC_NODES, ENERGY_NODES, 
@@ -13,13 +13,14 @@ import GridGuardOptimizer from './components/GridGuardOptimizer';
 import EcoSenseMonitor from './components/EcoSenseMonitor';
 import IncidentCommanderChat from './components/IncidentCommanderChat';
 import HackathonPitchModal from './components/HackathonPitchModal';
+import SensorIngestGateway from './components/SensorIngestGateway';
 
 export default function App() {
   // Navigation & View State
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'traffic', 'energy', 'eco', 'commander'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'traffic', 'energy', 'eco', 'gateway', 'commander'
   const [mapLayer, setMapLayer] = useState('all'); // 'all', 'traffic', 'energy', 'eco'
   
-  // Real-time Interactive Node States
+  // Real-time Interactive Node States (GPS Lat/Lng backed)
   const [trafficNodes, setTrafficNodes] = useState(TRAFFIC_NODES);
   const [energyNodes, setEnergyNodes] = useState(ENERGY_NODES);
   const [ecoNodes, setEcoNodes] = useState(ECO_NODES);
@@ -38,7 +39,7 @@ export default function App() {
     return localStorage.getItem('pulsecity_gemini_key') || '';
   });
 
-  // GMT Clock
+  // GMT Clock (Accra Local Time)
   const [currentTime, setCurrentTime] = useState('');
   useEffect(() => {
     const updateTime = () => {
@@ -72,6 +73,60 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Real Ingest API handler (for cURL and live sensor streams)
+  const handleIngestTelemetry = (payload) => {
+    const { nodeId } = payload;
+    if (!nodeId) return;
+
+    if (nodeId.startsWith('TR')) {
+      setTrafficNodes((prev) =>
+        prev.map((n) => {
+          if (n.id === nodeId) {
+            return {
+              ...n,
+              flowRate: payload.flowRateVehiclesPerHour || n.flowRate,
+              congestion: payload.congestionPercentage ?? n.congestion,
+              incidentActive: payload.incidentDetected ?? n.incidentActive,
+              alert: payload.incidentDetails || n.alert,
+              ambulancePriority: payload.emergencyTransitActive ?? n.ambulancePriority
+            };
+          }
+          return n;
+        })
+      );
+    } else if (nodeId.startsWith('EN')) {
+      setEnergyNodes((prev) =>
+        prev.map((n) => {
+          if (n.id === nodeId) {
+            return {
+              ...n,
+              currentLoadMw: payload.currentLoadMw ?? n.currentLoadMw,
+              dumsorRisk: payload.dumsorRiskScore ?? n.dumsorRisk,
+              solarInputMw: payload.solarInputMw ?? n.solarInputMw,
+              status: (payload.dumsorRiskScore > 75 || payload.currentLoadMw > 230) ? 'CRITICAL' : 'NOMINAL'
+            };
+          }
+          return n;
+        })
+      );
+    } else if (nodeId.startsWith('ECO')) {
+      setEcoNodes((prev) =>
+        prev.map((n) => {
+          if (n.id === nodeId) {
+            return {
+              ...n,
+              aqi: payload.aqiScore ?? n.aqi,
+              pm25: payload.pm25UgM3 ?? n.pm25,
+              wasteLevelPct: payload.wasteFillPercentage ?? n.wasteLevelPct,
+              status: payload.drainageChokeDetected ? 'CRITICAL' : n.status
+            };
+          }
+          return n;
+        })
+      );
+    }
+  };
+
   // Actions
   const handleApplyTrafficOptimization = (nodeId, newGreenDuration) => {
     setTrafficNodes((prev) =>
@@ -84,7 +139,7 @@ export default function App() {
             speedKmh: Math.round(n.speedKmh * 1.45),
             lightState: 'GREEN',
             cycleRemainingSec: newGreenDuration || 45,
-            alert: 'AI Green-Wave Active: Queue flushing smoothly'
+            alert: 'Webster Signal Timing Active: Optimum phase split applied'
           };
         }
         return n;
@@ -96,10 +151,9 @@ export default function App() {
     setEnergyNodes((prev) =>
       prev.map((n) => {
         if (n.id === 'EN-01') {
-          // Achimota BSP stabilized
           return {
             ...n,
-            currentLoadMw: 185,
+            currentLoadMw: 188,
             status: 'NOMINAL',
             dumsorRisk: 14,
             batteryReservePct: 82
@@ -108,9 +162,9 @@ export default function App() {
         if (n.id === 'EN-03') {
           return {
             ...n,
-            currentLoadMw: 160,
+            currentLoadMw: 162,
             status: 'NOMINAL',
-            dumsorRisk: 18
+            dumsorRisk: 16
           };
         }
         return n;
@@ -140,7 +194,6 @@ export default function App() {
     if (!crisis) return;
     setActiveCrisis(crisis);
 
-    // Apply stress test state to nodes
     if (scenarioId === 'crisis-motorway-pileup') {
       setTrafficNodes((prev) =>
         prev.map((n) => n.id === 'TR-02' ? { ...n, congestion: 98, speedKmh: 4, incidentActive: true } : n)
@@ -162,7 +215,7 @@ export default function App() {
   const handleResolveCrisis = () => {
     if (!activeCrisis) return;
     if (activeCrisis.id === 'crisis-motorway-pileup') {
-      handleApplyTrafficOptimization('TR-02', 60);
+      handleApplyTrafficOptimization('TR-02', 65);
     } else if (activeCrisis.id === 'crisis-achimota-dumsor') {
       handleBalanceGrid();
     } else if (activeCrisis.id === 'crisis-makola-waste-flood') {
@@ -180,16 +233,16 @@ export default function App() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Top Main Navigation Bar */}
       <header style={{
-        background: 'rgba(8, 12, 20, 0.85)',
+        background: 'rgba(8, 12, 20, 0.92)',
         backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--border-subtle)',
         position: 'sticky',
         top: 0,
-        zIndex: 50,
+        zIndex: 100,
         padding: '12px 24px'
       }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {/* Logo & City Identity */}
+          {/* Logo & Identity */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div style={{
               width: '40px',
@@ -213,7 +266,7 @@ export default function App() {
                 </span>
               </div>
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                ACCRA COMMAND // TECH HUB AFRICA 2026
+                ACCRA METROPOLIS // TECH HUB AFRICA 2026
               </div>
             </div>
           </div>
@@ -226,9 +279,9 @@ export default function App() {
                 background: activeTab === 'overview' ? 'rgba(0, 242, 254, 0.15)' : 'transparent',
                 border: activeTab === 'overview' ? '1px solid var(--accent-cyan)' : '1px solid transparent',
                 color: activeTab === 'overview' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 16px',
+                padding: '8px 14px',
                 borderRadius: '8px',
-                fontSize: '0.82rem',
+                fontSize: '0.8rem',
                 fontFamily: 'var(--font-display)',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -238,7 +291,7 @@ export default function App() {
               }}
             >
               <Layers size={14} />
-              Digital Twin Map
+              Leaflet GIS Map
             </button>
 
             <button
@@ -247,9 +300,9 @@ export default function App() {
                 background: activeTab === 'traffic' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
                 border: activeTab === 'traffic' ? '1px solid #38bdf8' : '1px solid transparent',
                 color: activeTab === 'traffic' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 16px',
+                padding: '8px 14px',
                 borderRadius: '8px',
-                fontSize: '0.82rem',
+                fontSize: '0.8rem',
                 fontFamily: 'var(--font-display)',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -268,9 +321,9 @@ export default function App() {
                 background: activeTab === 'energy' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
                 border: activeTab === 'energy' ? '1px solid #a855f7' : '1px solid transparent',
                 color: activeTab === 'energy' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 16px',
+                padding: '8px 14px',
                 borderRadius: '8px',
-                fontSize: '0.82rem',
+                fontSize: '0.8rem',
                 fontFamily: 'var(--font-display)',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -280,7 +333,7 @@ export default function App() {
               }}
             >
               <Zap size={14} color="#c084fc" />
-              GridGuard (Anti-Dumsor)
+              GridGuard (Knapsack)
             </button>
 
             <button
@@ -289,9 +342,9 @@ export default function App() {
                 background: activeTab === 'eco' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
                 border: activeTab === 'eco' ? '1px solid #10b981' : '1px solid transparent',
                 color: activeTab === 'eco' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 16px',
+                padding: '8px 14px',
                 borderRadius: '8px',
-                fontSize: '0.82rem',
+                fontSize: '0.8rem',
                 fontFamily: 'var(--font-display)',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -305,14 +358,35 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => setActiveTab('gateway')}
+              style={{
+                background: activeTab === 'gateway' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                border: activeTab === 'gateway' ? '1px solid #f59e0b' : '1px solid transparent',
+                color: activeTab === 'gateway' ? '#fff' : 'var(--text-secondary)',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontFamily: 'var(--font-display)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Terminal size={14} color="#fbbf24" />
+              Sensor Ingest API
+            </button>
+
+            <button
               onClick={() => setActiveTab('commander')}
               style={{
                 background: activeTab === 'commander' ? 'rgba(0, 242, 254, 0.15)' : 'transparent',
                 border: activeTab === 'commander' ? '1px solid var(--accent-cyan)' : '1px solid transparent',
                 color: activeTab === 'commander' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 16px',
+                padding: '8px 14px',
                 borderRadius: '8px',
-                fontSize: '0.82rem',
+                fontSize: '0.8rem',
                 fontFamily: 'var(--font-display)',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -340,7 +414,7 @@ export default function App() {
                 background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                 color: '#000',
                 boxShadow: '0 0 15px rgba(245, 158, 11, 0.4)',
-                fontSize: '0.82rem',
+                fontSize: '0.8rem',
                 padding: '8px 14px'
               }}
             >
@@ -353,7 +427,7 @@ export default function App() {
 
       {/* Real-time Impact Metrics Ticker */}
       <section style={{
-        background: 'rgba(10, 16, 28, 0.65)',
+        background: 'rgba(10, 16, 28, 0.75)',
         borderBottom: '1px solid var(--border-subtle)',
         padding: '10px 24px'
       }}>
@@ -362,7 +436,7 @@ export default function App() {
             <Car size={16} color="#38bdf8" />
             <div>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Avg Commuter Savings</div>
-              <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>+18.5 mins / trip (44% speedup)</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#fff' }}>+18.5 mins / trip (Webster Signal Sync)</div>
             </div>
           </div>
 
@@ -370,7 +444,7 @@ export default function App() {
             <Zap size={16} color="#c084fc" />
             <div>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Anti-Dumsor Resilience</div>
-              <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>19 Outages Averted (99.98% Uptime)</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#fff' }}>19 Outages Averted (Knapsack LP)</div>
             </div>
           </div>
 
@@ -378,7 +452,7 @@ export default function App() {
             <Wind size={16} color="#34d399" />
             <div>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>CO2 Emissions Avoided</div>
-              <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>340.2 Metric Tons</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#fff' }}>340.2 Metric Tons</div>
             </div>
           </div>
 
@@ -386,7 +460,7 @@ export default function App() {
             <Activity size={16} color="var(--accent-cyan)" />
             <div>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Active Multi-Modal Agents</div>
-              <div style={{ fontSize: '0.92rem', fontWeight: 'bold', color: 'var(--accent-cyan)' }}>1,420 IoT Nodes Online</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--accent-cyan)' }}>1,420 IoT Nodes Online</div>
             </div>
           </div>
         </div>
@@ -398,7 +472,7 @@ export default function App() {
         {(activeTab === 'overview' || activeTab === 'traffic' || activeTab === 'energy' || activeTab === 'eco') && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Active Map Layer:</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Active GIS Layer:</span>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {['all', 'traffic', 'energy', 'eco'].map((l) => (
                   <button
@@ -487,28 +561,28 @@ export default function App() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                   <Car size={20} color="#38bdf8" />
-                  <h3 style={{ fontSize: '1.2rem', color: '#fff' }}>Adaptive Signal Controller</h3>
+                  <h3 style={{ fontSize: '1.2rem', color: '#fff' }}>Webster Adaptive Signal Controller</h3>
                 </div>
-                <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                  Continuous real-time optimization of signal phase durations using Gemini Vision and vehicle flow telemetry.
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                  Real-time mathematical Webster formulation (C₀, Saturation Flow, Green Splits) paired with Gemini Multi-Modal Bounding Box Detection.
                 </p>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {trafficNodes.map((node) => (
                     <div key={node.id} style={{
                       background: 'rgba(255,255,255,0.02)',
                       border: '1px solid var(--border-subtle)',
                       borderRadius: '8px',
-                      padding: '12px',
+                      padding: '10px 12px',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center'
                     }}>
                       <div>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 'bold', color: '#fff' }}>{node.name}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Flow: {node.flowRate} v/h • {node.speedKmh} km/h</div>
+                        <div style={{ fontSize: '0.86rem', fontWeight: 'bold', color: '#fff' }}>{node.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Flow: {node.flowRate} v/h • {node.speedKmh} km/h</div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{
                           padding: '3px 8px',
                           borderRadius: '4px',
@@ -577,7 +651,17 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab 5: Incident Commander Full Terminal */}
+        {/* Tab 5: Sensor Ingestion API Gateway */}
+        {activeTab === 'gateway' && (
+          <SensorIngestGateway
+            trafficNodes={trafficNodes}
+            energyNodes={energyNodes}
+            ecoNodes={ecoNodes}
+            onIngestTelemetry={handleIngestTelemetry}
+          />
+        )}
+
+        {/* Tab 6: Incident Commander Full Terminal */}
         {activeTab === 'commander' && (
           <div style={{ height: '700px' }}>
             <IncidentCommanderChat
