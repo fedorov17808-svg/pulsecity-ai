@@ -1,5 +1,7 @@
 # 🏆 PulseCity AI — Autonomous Urban Nervous System
 > **Official Submission for Tech Hub Africa Hackathon 2026 (Hackathon 2026 Challenge — $1,000 USD)**  
+> **Production Live URL:** 🌐 [https://pulsecity-ai.vercel.app](https://pulsecity-ai.vercel.app)  
+> **Backend Health API:** 📡 [https://pulsecity-ai.vercel.app/api/health](https://pulsecity-ai.vercel.app/api/health)  
 > **Target Region:** Greater Accra Metropolitan Area (Ghana) & Pan-African Megacities (Lagos, Nairobi, Kigali)  
 > **Tracks Addressed:** 🚦 **Traffic Mitigation** | ⚡ **Electricity Efficiency (Anti-Dumsor)** | 🍃 **Pollution Control**
 
