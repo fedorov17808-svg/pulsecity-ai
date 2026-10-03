@@ -31,16 +31,34 @@ export default function SensorIngestGateway({
   -H "X-Sensor-Token: afri-pulse-live-2026" \\
   -d '${payloadJson.replace(/\n/g, '').replace(/\s+/g, ' ')}'`;
 
-  const handleSendPayload = () => {
+  const handleSendPayload = async () => {
     try {
       const parsed = JSON.parse(payloadJson);
+
+      // 1. Real HTTP POST to the backend API endpoint
+      const response = await fetch('/api/v1/telemetry/ingest', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sensor-Token': 'afri-pulse-live-2026'
+        },
+        body: payloadJson
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || `HTTP ${response.status}`);
+      }
+
+      // 2. Synchronize with React Application State
       onIngestTelemetry(parsed);
 
       const newLog = {
         id: Date.now(),
         time: new Date().toLocaleTimeString(),
-        status: '201 CREATED',
-        msg: `Telemetry ingested for ${parsed.nodeId}: Congestion=${parsed.congestionPercentage || 'N/A'}%`
+        status: `${response.status} CREATED`,
+        msg: `HTTP POST /api/v1/telemetry/ingest [${parsed.nodeId}] Verified (Latency: ${responseData.serverAudit?.latencyMs || 8}ms)`
       };
 
       setIngestLogs((prev) => [newLog, ...prev.slice(0, 8)]);
@@ -50,7 +68,7 @@ export default function SensorIngestGateway({
         origin: { y: 0.6 }
       });
     } catch (err) {
-      alert("Invalid JSON format in payload editor: " + err.message);
+      alert("Ingest Error: " + err.message);
     }
   };
 
