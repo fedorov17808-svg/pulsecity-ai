@@ -26,7 +26,8 @@ export default function SensorIngestGateway({
   ]);
   const [copiedCurl, setCopiedCurl] = useState(false);
 
-  const curlSnippet = `curl -X POST http://localhost:5174/api/v1/telemetry/ingest \\
+  const hostUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pulsecity-ai.vercel.app';
+  const curlSnippet = `curl -X POST ${hostUrl}/api/v1/telemetry/ingest \\
   -H "Content-Type: application/json" \\
   -H "X-Sensor-Token: afri-pulse-live-2026" \\
   -d '${payloadJson.replace(/\n/g, '').replace(/\s+/g, ' ')}'`;

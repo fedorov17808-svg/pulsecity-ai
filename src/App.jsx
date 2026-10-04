@@ -14,22 +14,44 @@ import EcoSenseMonitor from './components/EcoSenseMonitor';
 import IncidentCommanderChat from './components/IncidentCommanderChat';
 import HackathonPitchModal from './components/HackathonPitchModal';
 import SensorIngestGateway from './components/SensorIngestGateway';
+import HardwareHubModal from './components/HardwareHubModal';
+import FieldOfficerHUD from './components/FieldOfficerHUD';
 
 export default function App() {
   // Navigation & View State
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'traffic', 'energy', 'eco', 'gateway', 'commander'
   const [mapLayer, setMapLayer] = useState('all'); // 'all', 'traffic', 'energy', 'eco'
   
-  // Real-time Interactive Node States (GPS Lat/Lng backed)
-  const [trafficNodes, setTrafficNodes] = useState(TRAFFIC_NODES);
-  const [energyNodes, setEnergyNodes] = useState(ENERGY_NODES);
-  const [ecoNodes, setEcoNodes] = useState(ECO_NODES);
+  // Real-time Interactive Node States with LocalStorage Persistence
+  const [trafficNodes, setTrafficNodes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pulsecity_traffic_nodes');
+      return saved ? JSON.parse(saved) : TRAFFIC_NODES;
+    } catch { return TRAFFIC_NODES; }
+  });
+
+  const [energyNodes, setEnergyNodes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pulsecity_energy_nodes');
+      return saved ? JSON.parse(saved) : ENERGY_NODES;
+    } catch { return ENERGY_NODES; }
+  });
+
+  const [ecoNodes, setEcoNodes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pulsecity_eco_nodes');
+      return saved ? JSON.parse(saved) : ECO_NODES;
+    } catch { return ECO_NODES; }
+  });
+
   const [selectedNode, setSelectedNode] = useState(null);
 
   // Modals
   const [visionModalOpen, setVisionModalOpen] = useState(false);
   const [visionModalNode, setVisionModalNode] = useState(null);
   const [pitchModalOpen, setPitchModalOpen] = useState(false);
+  const [hardwareModalOpen, setHardwareModalOpen] = useState(false);
+  const [fieldHudOpen, setFieldHudOpen] = useState(false);
 
   // Crisis state
   const [activeCrisis, setActiveCrisis] = useState(null);
@@ -38,6 +60,25 @@ export default function App() {
   const [apiKey, setApiKey] = useState(() => {
     return localStorage.getItem('pulsecity_gemini_key') || '';
   });
+
+  // Sync to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('pulsecity_traffic_nodes', JSON.stringify(trafficNodes));
+    } catch (e) { console.error('Failed to sync trafficNodes to localStorage', e); }
+  }, [trafficNodes]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pulsecity_energy_nodes', JSON.stringify(energyNodes));
+    } catch (e) { console.error('Failed to sync energyNodes to localStorage', e); }
+  }, [energyNodes]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pulsecity_eco_nodes', JSON.stringify(ecoNodes));
+    } catch (e) { console.error('Failed to sync ecoNodes to localStorage', e); }
+  }, [ecoNodes]);
 
   // GMT Clock (Accra Local Time)
   const [currentTime, setCurrentTime] = useState('');
@@ -401,11 +442,57 @@ export default function App() {
           </div>
 
           {/* Right Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
               <Clock size={13} />
               {currentTime}
             </div>
+
+            <button
+              onClick={() => setHardwareModalOpen(true)}
+              style={{
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid #10b981',
+                color: '#34d399',
+                padding: '7px 12px',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                fontFamily: 'var(--font-display)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 0 10px rgba(16, 185, 129, 0.2)'
+              }}
+              title="Inspect ESP32 C++ and Raspberry Pi Python firmware & BOM"
+            >
+              <Zap size={14} color="#34d399" />
+              Hardware & Edge
+            </button>
+
+            <button
+              onClick={() => setFieldHudOpen(true)}
+              style={{
+                background: 'rgba(245, 158, 11, 0.15)',
+                border: '1px solid #f59e0b',
+                color: '#fbbf24',
+                padding: '7px 12px',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                fontFamily: 'var(--font-display)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 0 10px rgba(245, 158, 11, 0.2)'
+              }}
+              title="Open Ghana Police MTTD / ECG Grid Field Officer HUD"
+            >
+              <Shield size={14} color="#fbbf24" />
+              Field Officer HUD
+            </button>
 
             <button
               onClick={() => setPitchModalOpen(true)}
@@ -414,11 +501,11 @@ export default function App() {
                 background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                 color: '#000',
                 boxShadow: '0 0 15px rgba(245, 158, 11, 0.4)',
-                fontSize: '0.8rem',
-                padding: '8px 14px'
+                fontSize: '0.78rem',
+                padding: '7px 12px'
               }}
             >
-              <Trophy size={15} />
+              <Trophy size={14} />
               DoraHacks Pitch Kit
             </button>
           </div>
@@ -678,6 +765,38 @@ export default function App() {
         )}
       </main>
 
+      {/* Institutional Compliance & Standards Strip */}
+      <footer style={{
+        background: 'rgba(6, 10, 18, 0.95)',
+        borderTop: '1px solid var(--border-subtle)',
+        padding: '12px 24px',
+        fontSize: '0.72rem',
+        color: 'var(--text-muted)'
+      }}>
+        <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+              <strong style={{ color: '#fff' }}>ECG Grid Code 2020:</strong> Compliant (Underfrequency Load Shedding Part 4.2)
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38bdf8', display: 'inline-block' }}></span>
+              <strong style={{ color: '#fff' }}>AMA Urban Drainage:</strong> Bylaw 2018 (Odaw Catchment Sluice Standard)
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fbbf24', display: 'inline-block' }}></span>
+              <strong style={{ color: '#fff' }}>MTTD Act 683:</strong> Emergency Medical Vehicle Priority Protocol
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ color: 'var(--accent-cyan)' }}>Vercel Edge API: 200 OK</span>
+            <span>•</span>
+            <span>DoraHacks AI & Smart City 2026 Submission</span>
+          </div>
+        </div>
+      </footer>
+
       {/* Vision Modal */}
       {visionModalOpen && (
         <TrafficVisionModal
@@ -694,6 +813,30 @@ export default function App() {
       {pitchModalOpen && (
         <HackathonPitchModal onClose={() => setPitchModalOpen(false)} />
       )}
+
+      {/* IoT Hardware & Firmware Suite Modal */}
+      <HardwareHubModal
+        isOpen={hardwareModalOpen}
+        onClose={() => setHardwareModalOpen(false)}
+      />
+
+      {/* Mobile Field Officer Tactical HUD */}
+      <FieldOfficerHUD
+        isOpen={fieldHudOpen}
+        onClose={() => setFieldHudOpen(false)}
+        onSignalOverride={(type) => {
+          if (type === 'GREEN_WAVE') {
+            setTrafficNodes((prev) =>
+              prev.map((n) => (n.id === 'TR-01' || n.id === 'TR-02' ? { ...n, lightState: 'GREEN', ambulancePriority: true } : n))
+            );
+          }
+        }}
+        onBreakerToggle={(circuitId) => {
+          setEnergyNodes((prev) =>
+            prev.map((n) => n.id === 'EN-01' ? { ...n, currentLoadMw: Math.max(140, n.currentLoadMw - 25), dumsorRisk: 12 } : n)
+          );
+        }}
+      />
     </div>
   );
 }

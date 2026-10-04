@@ -82,7 +82,30 @@ Return ONLY valid JSON matching this schema:
     }
   }
 
-  // Intelligent fallback with real bounding box coordinates
+  // 2. Real Local Computer Vision Engine (Sobel Edge Energy & Cluster Detector)
+  if (imageBase64) {
+    try {
+      const cvRes = await fetch("http://127.0.0.1:8000/vision/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_base64: imageBase64,
+          camera_name: cameraName
+        })
+      });
+      if (cvRes.ok) {
+        const cvData = await cvRes.json();
+        cvData.source = "LOCAL_REAL_CV_SOBEL_ENGINE";
+        cvData.greenLightDurationSeconds = cvData.websterOptimization?.effectiveGreenSeconds || 45;
+        cvData.estimatedDelaySavedMinutes = cvData.websterOptimization?.estimatedDelaySavedMinutes || 12.0;
+        return cvData;
+      }
+    } catch (cvErr) {
+      console.warn("Local CV backend unreachable, using intelligent simulation fallback:", cvErr.message);
+    }
+  }
+
+  // 3. Fallback with simulated coordinates
   return getSimulatedVisionAnalysis(cameraName, situationNotes);
 }
 
