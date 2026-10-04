@@ -279,235 +279,131 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Main Navigation Bar */}
+      {/* World-Class Command Center Header */}
       <header style={{
-        background: 'rgba(8, 12, 20, 0.92)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--border-subtle)',
+        background: 'rgba(6, 10, 18, 0.92)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         position: 'sticky',
         top: 0,
-        zIndex: 100,
+        zIndex: 1000,
         padding: '12px 24px'
       }}>
-        <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {/* Logo & Identity */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{
+          maxWidth: '1600px',
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '16px',
+          flexWrap: 'wrap'
+        }}>
+          {/* Brand Identity */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '40px',
               height: '40px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #00f2fe 0%, #0284c7 100%)',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(14, 165, 233, 0.08) 100%)',
+              border: '1px solid rgba(0, 242, 254, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 0 20px rgba(0, 242, 254, 0.4)'
+              boxShadow: '0 0 20px rgba(0, 242, 254, 0.25)'
             }}>
-              <Zap size={22} color="#04131f" strokeWidth={2.5} />
+              <Activity size={22} color="var(--accent-cyan)" />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="font-display" style={{ fontSize: '1.25rem', fontWeight: '800', color: '#fff', letterSpacing: '-0.03em' }}>
+                <span style={{ fontSize: '1.15rem', fontWeight: '800', letterSpacing: '-0.02em', color: '#fff', fontFamily: 'var(--font-display)' }}>
                   PulseCity <span style={{ color: 'var(--accent-cyan)' }}>AI</span>
                 </span>
-                <span className="badge badge-cyan" style={{ fontSize: '0.65rem' }}>
-                  Urban Nervous System
+                <span className="badge badge-cyan" style={{ fontSize: '0.62rem', padding: '2px 8px', letterSpacing: '0.05em' }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00f2fe', boxShadow: '0 0 8px #00f2fe' }}></span>
+                  GAMA MUNICIPAL OS
                 </span>
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                ACCRA METROPOLIS // TECH HUB AFRICA 2026
+              <div style={{ fontSize: '0.68rem', color: '#64748b', letterSpacing: '0.04em', fontFamily: 'var(--font-mono)' }}>
+                GREATER ACCRA METROPOLIS // 1,420 EDGE NODES ACTIVE
               </div>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div style={{ display: 'flex', gap: '6px', background: 'rgba(255, 255, 255, 0.04)', padding: '4px', borderRadius: 'var(--radius-md)' }}>
+          {/* Subsystem Navigation Pills */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: 'rgba(15, 23, 42, 0.7)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            padding: '4px',
+            borderRadius: '12px',
+            gap: '4px'
+          }}>
             <button
               onClick={() => setActiveTab('overview')}
-              style={{
-                background: activeTab === 'overview' ? 'rgba(0, 242, 254, 0.15)' : 'transparent',
-                border: activeTab === 'overview' ? '1px solid var(--accent-cyan)' : '1px solid transparent',
-                color: activeTab === 'overview' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontFamily: 'var(--font-display)',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className={`pill-tab ${activeTab === 'overview' ? 'active' : ''}`}
             >
               <Layers size={14} />
-              Leaflet GIS Map
+              GIS Digital Twin
             </button>
 
             <button
               onClick={() => { setActiveTab('traffic'); setMapLayer('traffic'); }}
-              style={{
-                background: activeTab === 'traffic' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-                border: activeTab === 'traffic' ? '1px solid #38bdf8' : '1px solid transparent',
-                color: activeTab === 'traffic' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontFamily: 'var(--font-display)',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className={`pill-tab ${activeTab === 'traffic' ? 'active' : ''}`}
             >
-              <Car size={14} color="#38bdf8" />
+              <Car size={14} />
               Traffic Sentinel
             </button>
 
             <button
               onClick={() => { setActiveTab('energy'); setMapLayer('energy'); }}
-              style={{
-                background: activeTab === 'energy' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
-                border: activeTab === 'energy' ? '1px solid #a855f7' : '1px solid transparent',
-                color: activeTab === 'energy' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontFamily: 'var(--font-display)',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className={`pill-tab ${activeTab === 'energy' ? 'active' : ''}`}
             >
-              <Zap size={14} color="#c084fc" />
-              GridGuard (Knapsack)
+              <Zap size={14} />
+              GridGuard (Dumsor)
             </button>
 
             <button
               onClick={() => { setActiveTab('eco'); setMapLayer('eco'); }}
-              style={{
-                background: activeTab === 'eco' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                border: activeTab === 'eco' ? '1px solid #10b981' : '1px solid transparent',
-                color: activeTab === 'eco' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontFamily: 'var(--font-display)',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className={`pill-tab ${activeTab === 'eco' ? 'active' : ''}`}
             >
-              <Wind size={14} color="#34d399" />
-              EcoSense
+              <Wind size={14} />
+              EcoSense Basin
             </button>
 
             <button
               onClick={() => setActiveTab('gateway')}
-              style={{
-                background: activeTab === 'gateway' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                border: activeTab === 'gateway' ? '1px solid #f59e0b' : '1px solid transparent',
-                color: activeTab === 'gateway' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontFamily: 'var(--font-display)',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className={`pill-tab ${activeTab === 'gateway' ? 'active' : ''}`}
             >
-              <Terminal size={14} color="#fbbf24" />
-              Sensor Ingest API
+              <Terminal size={14} />
+              IoT Gateway
             </button>
 
             <button
               onClick={() => setActiveTab('commander')}
-              style={{
-                background: activeTab === 'commander' ? 'rgba(0, 242, 254, 0.15)' : 'transparent',
-                border: activeTab === 'commander' ? '1px solid var(--accent-cyan)' : '1px solid transparent',
-                color: activeTab === 'commander' ? '#fff' : 'var(--text-secondary)',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontFamily: 'var(--font-display)',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className={`pill-tab ${activeTab === 'commander' ? 'active' : ''}`}
             >
-              <Bot size={14} color="var(--accent-cyan)" />
+              <Bot size={14} />
               Commander Kofi
             </button>
           </div>
 
-          {/* Right Action Buttons */}
+          {/* Tactical Action Bar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#64748b', fontFamily: 'var(--font-mono)', marginRight: '4px' }}>
               <Clock size={13} />
               {currentTime}
             </div>
 
-            <button
-              onClick={() => setHardwareModalOpen(true)}
-              style={{
-                background: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid #10b981',
-                color: '#34d399',
-                padding: '7px 12px',
-                borderRadius: '8px',
-                fontSize: '0.78rem',
-                fontFamily: 'var(--font-display)',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                boxShadow: '0 0 10px rgba(16, 185, 129, 0.2)'
-              }}
-              title="Inspect ESP32 C++ and Raspberry Pi Python firmware & BOM"
-            >
-              <Zap size={14} color="#34d399" />
-              Hardware & Edge
-            </button>
-
-            <button
-              onClick={() => setFieldHudOpen(true)}
-              style={{
-                background: 'rgba(245, 158, 11, 0.15)',
-                border: '1px solid #f59e0b',
-                color: '#fbbf24',
-                padding: '7px 12px',
-                borderRadius: '8px',
-                fontSize: '0.78rem',
-                fontFamily: 'var(--font-display)',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                boxShadow: '0 0 10px rgba(245, 158, 11, 0.2)'
-              }}
-              title="Open Ghana Police MTTD / ECG Grid Field Officer HUD"
-            >
-              <Shield size={14} color="#fbbf24" />
-              Field Officer HUD
-            </button>
-
+            {/* Public USSD Dialer Button */}
             <button
               onClick={() => setUssdModalOpen(true)}
               style={{
-                background: 'rgba(59, 130, 246, 0.15)',
-                border: '1px solid #3b82f6',
-                color: '#60a5fa',
-                padding: '7px 12px',
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                color: '#34d399',
+                padding: '6px 12px',
                 borderRadius: '8px',
                 fontSize: '0.78rem',
                 fontFamily: 'var(--font-display)',
@@ -515,61 +411,61 @@ export default function App() {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
-                boxShadow: '0 0 10px rgba(59, 130, 246, 0.2)'
+                gap: '6px',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 0 12px rgba(16, 185, 129, 0.15)'
               }}
-              title="Citizen USSD Service (*920*26#) for feature phones & offline SMS"
+              title="Citizen GSM USSD (*920*26#) for feature phones & offline SMS"
             >
-              <Phone size={14} color="#60a5fa" />
+              <Phone size={13} />
               USSD (*920*26#)
             </button>
 
+            {/* Edge Hardware & C++ / Python Hub */}
+            <button
+              onClick={() => setHardwareModalOpen(true)}
+              className="btn-secondary"
+              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+              title="Inspect ESP32 C++ and Raspberry Pi Python firmware & BOM"
+            >
+              <Zap size={13} color="#34d399" />
+              Hardware Suite
+            </button>
+
+            {/* Field Police / MTTD Tactical HUD */}
+            <button
+              onClick={() => setFieldHudOpen(true)}
+              className="btn-secondary"
+              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+              title="Open Ghana Police MTTD / ECG Grid Field Officer HUD"
+            >
+              <Shield size={13} color="#fbbf24" />
+              Field HUD
+            </button>
+
+            {/* TCO vs Legacy SCATS */}
             <button
               onClick={() => setBenchmarkModalOpen(true)}
-              style={{
-                background: 'rgba(6, 182, 212, 0.15)',
-                border: '1px solid #06b6d4',
-                color: '#22d3ee',
-                padding: '7px 12px',
-                borderRadius: '8px',
-                fontSize: '0.78rem',
-                fontFamily: 'var(--font-display)',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                boxShadow: '0 0 10px rgba(6, 182, 212, 0.2)'
-              }}
+              className="btn-secondary"
+              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
               title="Compare PulseCity vs Siemens Sitraffic / SCATS & LoRaWAN TCO"
             >
-              <BarChart3 size={14} color="#22d3ee" />
-              TCO vs SCATS
+              <BarChart3 size={13} color="#38bdf8" />
+              TCO Audit
             </button>
 
+            {/* Executive Municipal Dossier */}
             <button
               onClick={() => setDossierModalOpen(true)}
-              style={{
-                background: 'rgba(168, 85, 247, 0.15)',
-                border: '1px solid #a855f7',
-                color: '#c084fc',
-                padding: '7px 12px',
-                borderRadius: '8px',
-                fontSize: '0.78rem',
-                fontFamily: 'var(--font-display)',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                boxShadow: '0 0 10px rgba(168, 85, 247, 0.2)'
-              }}
+              className="btn-secondary"
+              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
               title="Formal Executive Brief & Printable PDF for Accra Municipal Assembly"
             >
-              <FileText size={14} color="#c084fc" />
-              Executive Dossier
+              <FileText size={13} color="#c084fc" />
+              Dossier
             </button>
 
+            {/* DoraHacks Pitch Kit (Hero CTA) */}
             <button
               onClick={() => setPitchModalOpen(true)}
               className="btn-primary"
@@ -578,11 +474,12 @@ export default function App() {
                 color: '#000',
                 boxShadow: '0 0 15px rgba(245, 158, 11, 0.4)',
                 fontSize: '0.78rem',
-                padding: '7px 12px'
+                padding: '6px 14px',
+                fontWeight: '700'
               }}
             >
               <Trophy size={14} />
-              DoraHacks Pitch Kit
+              Pitch Kit
             </button>
           </div>
         </div>

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { Shield, Zap, AlertTriangle, Radio, Navigation, CheckCircle2, Siren } from 'lucide-react';
 
 export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onBreakerToggle }) {
   const [role, setRole] = useState('mttd'); // 'mttd' | 'ecg'
   const [activeOverride, setActiveOverride] = useState(null);
   const [radioLog, setRadioLog] = useState([
-    { id: 1, time: '12:18:02', text: 'MTTD Unit 4: Circling Kwame Nkrumah roundabout. Heavy trotro accumulation.' },
+    { id: 1, time: '12:18:02', text: 'MTTD Unit 4: Kwame Nkrumah Circle congestion surge. Heavy trotro accumulation.' },
     { id: 2, time: '12:19:45', text: 'ECG Control: Achimota Bulk Supply Point reported 14 MW reserve deficit.' }
   ]);
   const [actionNotice, setActionNotice] = useState(null);
@@ -22,45 +23,48 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-zinc-950 border-2 border-amber-500 rounded-3xl shadow-2xl shadow-amber-950/60 flex flex-col overflow-hidden text-zinc-100 font-sans max-h-[95vh]">
-        
+    <div className="modal-backdrop" onClick={onClose}>
+      <div 
+        className="modal-card" 
+        style={{ maxWidth: '520px', border: '2px solid rgba(245, 158, 11, 0.6)', boxShadow: '0 25px 70px rgba(0,0,0,0.9), 0 0 35px rgba(245, 158, 11, 0.25)' }}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Tactical Header */}
-        <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-5 py-3.5 text-zinc-950 flex items-center justify-between shadow-md">
-          <div className="flex items-center gap-2.5">
-            <span className="w-3 h-3 rounded-full bg-white animate-pulse"></span>
+        <div style={{
+          background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+          padding: '14px 20px',
+          color: '#050811',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fff', boxShadow: '0 0 10px #fff' }}></span>
             <div>
-              <h2 className="text-sm font-black tracking-wider uppercase">Field Tactical Terminal v2.6</h2>
-              <p className="text-[10px] font-bold text-zinc-900 tracking-tight">DIRECTORATE OF URBAN CRISIS MANAGEMENT</p>
+              <h2 style={{ fontSize: '0.88rem', fontWeight: '900', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Field Tactical Terminal v2.6
+              </h2>
+              <p style={{ fontSize: '0.68rem', fontWeight: '700', color: '#1c1917' }}>
+                DIRECTORATE OF URBAN CRISIS MANAGEMENT // GAMA
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-zinc-950/20 hover:bg-zinc-950/40 text-zinc-950 font-black flex items-center justify-center text-sm transition"
-          >
-            ✕
-          </button>
+          <button className="modal-close-btn" style={{ background: 'rgba(0,0,0,0.2)', color: '#000', border: 'none' }} onClick={onClose}>✕</button>
         </div>
 
         {/* Agency Switcher */}
-        <div className="p-3 bg-zinc-900 border-b border-zinc-800 flex gap-2">
+        <div style={{ padding: '12px 18px', background: 'rgba(15, 23, 42, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '8px' }}>
           <button
             onClick={() => setRole('mttd')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-              role === 'mttd'
-                ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/30'
-                : 'bg-zinc-800 text-zinc-400 hover:text-white'
-            }`}
+            className={`pill-tab ${role === 'mttd' ? 'active' : ''}`}
+            style={{ flex: 1, justifyContent: 'center' }}
           >
             🚓 MTTD Traffic Police
           </button>
           <button
             onClick={() => setRole('ecg')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-              role === 'ecg'
-                ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/30'
-                : 'bg-zinc-800 text-zinc-400 hover:text-white'
-            }`}
+            className={`pill-tab ${role === 'ecg' ? 'active' : ''}`}
+            style={{ flex: 1, justifyContent: 'center' }}
           >
             ⚡ ECG Grid Engineering
           </button>
@@ -68,43 +72,62 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
 
         {/* Dynamic Action Notification */}
         {actionNotice && (
-          <div className="bg-emerald-500 text-zinc-950 text-xs font-bold px-4 py-2 flex items-center gap-2 animate-bounce">
+          <div style={{
+            background: '#10b981',
+            color: '#022c22',
+            fontSize: '0.75rem',
+            fontWeight: '700',
+            padding: '8px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
             <span>🚨</span>
             <span>{actionNotice}</span>
           </div>
         )}
 
         {/* Main Body */}
-        <div className="p-4 overflow-y-auto space-y-4 flex-1">
+        <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
           {role === 'mttd' ? (
-            /* MTTD Traffic Tactical Panel */
-            <div className="space-y-4">
-              <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-3.5 space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400">Assigned Junction:</span>
-                  <span className="font-mono font-bold text-amber-400">Kwame Nkrumah Circle (TR-01)</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.78rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#94a3b8' }}>Assigned Junction:</span>
+                  <span style={{ color: '#fbbf24', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>Kwame Nkrumah Circle (TR-01)</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400">Current Phase State:</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold">
-                    NORTH-SOUTH DUAL GREEN (42s)
-                  </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#94a3b8' }}>Current Phase State:</span>
+                  <span style={{ color: '#34d399', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>NORTH-SOUTH DUAL GREEN (42s)</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400">Optical Queue Estimate:</span>
-                  <span className="font-mono text-rose-400 font-bold">34 Vehicles (94% Saturation)</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#94a3b8' }}>Optical Queue Estimate:</span>
+                  <span style={{ color: '#fb7185', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>34 Vehicles (94% Saturation)</span>
                 </div>
               </div>
 
               {/* Instant Tactical Action Buttons */}
-              <div className="grid grid-cols-2 gap-2.5">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <button
                   onClick={() => triggerAction('ALL-RED LOCKDOWN', 'All intersection signals switched to solid RED for VIP escort / accident clearance.')}
-                  className="p-3.5 rounded-2xl bg-rose-950/80 border-2 border-rose-500 hover:bg-rose-900 text-rose-200 font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition active:scale-95"
+                  style={{
+                    padding: '12px',
+                    borderRadius: '12px',
+                    background: 'rgba(244, 63, 94, 0.15)',
+                    border: '1px solid rgba(244, 63, 94, 0.4)',
+                    color: '#fecdd3',
+                    fontWeight: '700',
+                    fontSize: '0.75rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <span className="text-xl">🛑</span>
+                  <span style={{ fontSize: '1.2rem' }}>🛑</span>
                   <span>FORCE ALL-RED</span>
-                  <span className="text-[10px] text-rose-400 font-normal">Accident Clearance</span>
+                  <span style={{ fontSize: '0.65rem', color: '#f43f5e', fontWeight: 'normal' }}>Accident Clearance</span>
                 </button>
 
                 <button
@@ -112,129 +135,144 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
                     triggerAction('AMBULANCE GREEN WAVE', 'A* Emergency route preempted from Ridge Hospital.');
                     if (onSignalOverride) onSignalOverride('GREEN_WAVE');
                   }}
-                  className="p-3.5 rounded-2xl bg-emerald-950/80 border-2 border-emerald-500 hover:bg-emerald-900 text-emerald-200 font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition active:scale-95"
+                  style={{
+                    padding: '12px',
+                    borderRadius: '12px',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    color: '#a7f3d0',
+                    fontWeight: '700',
+                    fontSize: '0.75rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <span className="text-xl">🚑</span>
+                  <span style={{ fontSize: '1.2rem' }}>🚑</span>
                   <span>TRIGGER GREEN WAVE</span>
-                  <span className="text-[10px] text-emerald-400 font-normal">Ridge Hosp. Corridor</span>
+                  <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 'normal' }}>Ridge Hosp. Corridor</span>
                 </button>
 
                 <button
                   onClick={() => triggerAction('EXTEND GREEN +25s', 'Webster split extended for heavy northbound trotro surge.')}
-                  className="p-3.5 rounded-2xl bg-zinc-900 border border-zinc-700 hover:border-amber-400 text-zinc-200 font-bold text-xs flex flex-col items-center justify-center gap-1 transition active:scale-95"
+                  style={{
+                    padding: '12px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: '#f8fafc',
+                    fontWeight: '700',
+                    fontSize: '0.75rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <span className="text-lg">⏱️</span>
+                  <span style={{ fontSize: '1.1rem' }}>⏱️</span>
                   <span>EXTEND GREEN (+25s)</span>
-                  <span className="text-[10px] text-zinc-400 font-normal">Northbound Flush</span>
+                  <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'normal' }}>Northbound Flush</span>
                 </button>
 
                 <button
                   onClick={() => triggerAction('FLASHING AMBER', 'Signals degraded to caution flash due to grid instability.')}
-                  className="p-3.5 rounded-2xl bg-zinc-900 border border-zinc-700 hover:border-amber-400 text-zinc-200 font-bold text-xs flex flex-col items-center justify-center gap-1 transition active:scale-95"
+                  style={{
+                    padding: '12px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: '#f8fafc',
+                    fontWeight: '700',
+                    fontSize: '0.75rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <span className="text-lg">⚠️</span>
+                  <span style={{ fontSize: '1.1rem' }}>⚠️</span>
                   <span>FLASHING AMBER</span>
-                  <span className="text-[10px] text-zinc-400 font-normal">Caution Mode</span>
+                  <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'normal' }}>Caution Mode</span>
                 </button>
               </div>
             </div>
           ) : (
-            /* ECG Grid Engineering Tactical Panel */
-            <div className="space-y-4">
-              <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-3.5 space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400">Substation:</span>
-                  <span className="font-mono font-bold text-amber-400">Achimota Bulk Supply Point (BSP-03)</span>
+            /* ECG Grid Engineering */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.78rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#94a3b8' }}>Substation Monitored:</span>
+                  <span style={{ color: '#fbbf24', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>Achimota BSP (EN-01)</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400">Grid Frequency:</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold">
-                    49.92 Hz (Within IEC 60034)
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400">Load Deficit:</span>
-                  <span className="font-mono text-amber-400 font-bold">14.0 MW (Moderate Deficit)</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#94a3b8' }}>Underfrequency Threshold:</span>
+                  <span style={{ color: '#f87171', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>49.80 Hz Trigger</span>
                 </div>
               </div>
 
-              {/* Physical Circuit Trip Switches */}
-              <div className="space-y-2">
-                <div className="text-[11px] font-bold uppercase text-zinc-400 tracking-wider">Field SCADA Actuators</div>
-
-                <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-between">
-                  <div>
-                    <div className="text-xs font-bold text-white">Feeder 4: Industrial Kaneshie</div>
-                    <div className="text-[10px] text-zinc-400">Load: 8.5 MW | Tier 2 Priority</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                <button
+                  onClick={() => {
+                    triggerAction('SHED NON-CRITICAL (TEMA FEEDER 4)', 'Shedding 25 MW of industrial non-essential arc furnaces to protect Accra hospitals.');
+                    if (onBreakerToggle) onBreakerToggle('FEEDER_4');
+                  }}
+                  style={{
+                    padding: '14px',
+                    borderRadius: '12px',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                    color: '#fef08a',
+                    fontWeight: '700',
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ textAlign: 'left' }}>
+                    <div>⚡ TRIP NON-CRITICAL BREAKER</div>
+                    <div style={{ fontSize: '0.68rem', color: '#fbbf24', fontWeight: 'normal' }}>Saves 25 MW • Preserves Korle Bu Hospital</div>
                   </div>
-                  <button
-                    onClick={() => {
-                      triggerAction('TRIP FEEDER 4', 'Kaneshie Industrial feeder tripped to prevent frequency collapse.');
-                      if (onBreakerToggle) onBreakerToggle('c3');
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition active:scale-95"
-                  >
-                    TRIP BREAKER
-                  </button>
-                </div>
-
-                <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-between">
-                  <div>
-                    <div className="text-xs font-bold text-white">Feeder 2: East Legon Residential</div>
-                    <div className="text-[10px] text-zinc-400">Load: 12.0 MW | Tier 3 Priority</div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      triggerAction('TRIP FEEDER 2', 'East Legon residential circuit shedded via SCADA remote command.');
-                      if (onBreakerToggle) onBreakerToggle('c2');
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition active:scale-95"
-                  >
-                    TRIP BREAKER
-                  </button>
-                </div>
-
-                <div className="p-3 bg-zinc-900/60 border border-emerald-900/60 rounded-xl flex items-center justify-between">
-                  <div>
-                    <div className="text-xs font-bold text-emerald-400">Feeder 1: Ridge Hospital Life Support</div>
-                    <div className="text-[10px] text-emerald-500">Tier 1 Sovereign Priority — PROTECTED</div>
-                  </div>
-                  <span className="px-2.5 py-1 text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">
-                    LOCKED ON
-                  </span>
-                </div>
+                  <span style={{ fontSize: '1.2rem' }}>&rarr;</span>
+                </button>
               </div>
             </div>
           )}
 
-          {/* Secure Officer Dispatch Log */}
-          <div className="bg-zinc-900/50 border border-zinc-800/80 rounded-2xl p-3 space-y-2">
-            <div className="flex items-center justify-between text-[11px] text-zinc-400 font-bold uppercase">
-              <span>Encrypted Field Dispatch Log</span>
-              <span className="text-emerald-400 font-mono text-[10px]">APCO-25 VHF Sync</span>
+          {/* Radio Log */}
+          <div style={{
+            background: '#040810',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '12px',
+            padding: '12px',
+            fontSize: '0.72rem',
+            fontFamily: 'var(--font-mono)',
+            color: '#94a3b8',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}>
+            <div style={{ color: '#fbbf24', fontWeight: '700', fontSize: '0.7rem' }}>
+              📻 ENCRYPTED TETRA POLICE RADIO LOG
             </div>
-            <div className="space-y-1.5 max-h-32 overflow-y-auto text-xs font-mono">
-              {radioLog.map((log) => (
-                <div key={log.id} className="text-zinc-400 leading-tight">
-                  <span className="text-zinc-600">[{log.time}]</span>{' '}
-                  <span className="text-zinc-200">{log.text}</span>
-                </div>
-              ))}
-            </div>
+            {radioLog.map(item => (
+              <div key={item.id} style={{ display: 'flex', gap: '8px' }}>
+                <span style={{ color: '#64748b' }}>[{item.time}]</span>
+                <span style={{ color: '#cbd5e1' }}>{item.text}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Tactical Footer */}
-        <div className="bg-zinc-900 px-5 py-3 border-t border-zinc-800 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span className="text-zinc-400 text-[11px]">Officer 4082 (Active Session)</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-semibold transition"
-          >
-            Dismiss HUD
+        {/* Footer */}
+        <div style={{ padding: '12px 18px', background: 'rgba(15, 23, 42, 0.8)', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn-secondary" onClick={onClose}>
+            Close HUD
           </button>
         </div>
       </div>
