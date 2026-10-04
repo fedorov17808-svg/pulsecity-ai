@@ -1,9 +1,34 @@
 // Vercel Serverless Function: POST /api/gemini-proxy
 
+const ALLOWED_MODELS = new Set([
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite'
+]);
+
+// Sliding-window IP rate limiter
+const PROXY_RATE_LIMIT = new Map();
+const RATE_WINDOW_MS = 60 * 1000;
+const MAX_REQUESTS_PER_WINDOW = 30; // 30 req/min for AI endpoints
+
+function isRateLimited(clientIp) {
+  const now = Date.now();
+  const record = PROXY_RATE_LIMIT.get(clientIp);
+
+  if (!record || (now - record.startTime > RATE_WINDOW_MS)) {
+    PROXY_RATE_LIMIT.set(clientIp, { count: 1, startTime: now });
+    return false;
+  }
+
+  record.count += 1;
+  return record.count > MAX_REQUESTS_PER_WINDOW;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Gemini-Key');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -11,6 +36,16 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
+  }
+
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+
+  if (isRateLimited(clientIp)) {
+    return res.status(429).json({
+      error: "Too Many Requests",
+      message: "AI Proxy rate limit exceeded. Max 30 queries per minute per client.",
+      code: "AI_RATE_LIMIT_EXCEEDED"
+    });
   }
 
   // Determine API Key from environment or client header
@@ -24,14 +59,25 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing required 'prompt' string." });
   }
 
+  if (prompt.length > 10000) {
+    return res.status(400).json({ error: "Prompt exceeds maximum allowed length of 10,000 characters." });
+  }
+
+  if (imageBase64 && typeof imageBase64 === 'string' && imageBase64.length > 3500000) {
+    return res.status(400).json({ error: "Image base64 payload exceeds 2.5MB size ceiling." });
+  }
+
+  // Validate model whitelist to prevent SSRF or path manipulation
+  const targetModel = ALLOWED_MODELS.has(model) ? model : "gemini-1.5-flash";
+
   // If we have an API key, call Google AI Studio securely from the server
   if (apiKey && apiKey.length > 10) {
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
 
       const parts = [{ text: prompt }];
 
-      if (imageBase64) {
+      if (imageBase64 && typeof imageBase64 === 'string') {
         const cleanBase64 = imageBase64.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
         parts.push({
           inlineData: {
@@ -61,7 +107,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         source: "GOOGLE_GEMINI_LIVE_API",
-        model,
+        model: targetModel,
         result: cleanJson
       });
     } catch (err) {

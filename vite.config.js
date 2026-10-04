@@ -8,7 +8,6 @@ function devApiPlugin() {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         if (req.url && req.url.startsWith('/api/')) {
-          // Parse URL
           const urlPath = req.url.split('?')[0];
 
           // Handle Health check
@@ -45,7 +44,7 @@ function devApiPlugin() {
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({
                 error: "Unauthorized",
-                message: "Missing or invalid X-Sensor-Token header. Use 'X-Sensor-Token: afri-pulse-live-2026'",
+                message: "Missing or invalid sensor authentication token in 'X-Sensor-Token' header.",
                 code: "AUTH_TOKEN_INVALID"
               }));
               return;
@@ -67,7 +66,7 @@ function devApiPlugin() {
                   data: {
                     ...body,
                     receivedAt: new Date().toISOString(),
-                    gateway: "Vite Local Dev Bridge v2.1"
+                    gateway: "Vite Local Dev Bridge v2.2 (Hardened)"
                   },
                   serverAudit: {
                     latencyMs: 8,
@@ -82,6 +81,26 @@ function devApiPlugin() {
             });
             return;
           }
+
+          // Handle Gemini Proxy locally
+          if (urlPath === '/api/gemini-proxy') {
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.statusCode = 200;
+            res.end(JSON.stringify({
+              success: true,
+              source: "PULSECITY_LOCAL_DEV_PROXY",
+              result: JSON.stringify({
+                congestionScore: 78,
+                vehicleCount: 54,
+                hazardDetected: false,
+                hazardDescription: "Local Vite Dev Mode Simulated Telemetry",
+                ambulanceDetected: false,
+                confidenceScore: 0.94
+              })
+            }));
+            return;
+          }
         }
         next();
       });
@@ -92,4 +111,22 @@ function devApiPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), devApiPlugin()],
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'vendor';
+          }
+          if (id.includes('node_modules/leaflet/')) {
+            return 'leaflet';
+          }
+          if (id.includes('node_modules/lucide-react/')) {
+            return 'icons';
+          }
+        }
+      }
+    }
+  }
 });

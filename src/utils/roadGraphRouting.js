@@ -28,32 +28,24 @@ export const ACCRA_ROAD_GRAPH = {
 };
 
 /**
- * Calculate Great Circle Distance in KM (Haversine Formula)
- */
-function haversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Radius of Earth in KM
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-/**
  * Dijkstra / A* Routing Algorithm with Live Congestion Penalties
  */
 export function findOptimalEmergencyRoute(startNodeId, targetNodeId, roadConditions = {}) {
   const { nodes, edges } = ACCRA_ROAD_GRAPH;
+
+  // Strict input validation to prevent crash
+  if (!startNodeId || !nodes[startNodeId]) {
+    return { success: false, error: `Invalid start node ID '${startNodeId}'` };
+  }
+  if (!targetNodeId || !nodes[targetNodeId]) {
+    return { success: false, error: `Invalid target node ID '${targetNodeId}'` };
+  }
 
   // Build Adjacency List with dynamic weights
   const adj = {};
   Object.keys(nodes).forEach((n) => { adj[n] = []; });
 
   edges.forEach((edge) => {
-    // Check if incident on this link
     const edgeKey = `${edge.from}_${edge.to}`;
     const reverseKey = `${edge.to}_${edge.from}`;
     const isBlocked = roadConditions[edgeKey]?.isBlocked || roadConditions[reverseKey]?.isBlocked;
@@ -63,8 +55,8 @@ export function findOptimalEmergencyRoute(startNodeId, targetNodeId, roadConditi
     const effectiveSpeed = Math.max(8, edge.baseSpeedKmh * (1 - congestionFactor / 120));
     const travelTimeMin = isBlocked ? 999 : (edge.distanceKm / effectiveSpeed) * 60;
 
-    adj[edge.from].push({ node: edge.to, weight: travelTimeMin, distance: edge.distanceKm, isBlocked });
-    adj[edge.to].push({ node: edge.from, weight: travelTimeMin, distance: edge.distanceKm, isBlocked });
+    if (adj[edge.from]) adj[edge.from].push({ node: edge.to, weight: travelTimeMin, distance: edge.distanceKm, isBlocked });
+    if (adj[edge.to]) adj[edge.to].push({ node: edge.from, weight: travelTimeMin, distance: edge.distanceKm, isBlocked });
   });
 
   // Priority Queue / Dijkstra
@@ -79,7 +71,6 @@ export function findOptimalEmergencyRoute(startNodeId, targetNodeId, roadConditi
   distances[startNodeId] = 0;
 
   while (unvisited.size > 0) {
-    // Find unvisited node with smallest distance
     let current = null;
     let smallestDist = Infinity;
     unvisited.forEach((n) => {
@@ -94,7 +85,7 @@ export function findOptimalEmergencyRoute(startNodeId, targetNodeId, roadConditi
 
     unvisited.delete(current);
 
-    adj[current].forEach((neighbor) => {
+    (adj[current] || []).forEach((neighbor) => {
       if (unvisited.has(neighbor.node)) {
         const alt = distances[current] + neighbor.weight;
         if (alt < distances[neighbor.node]) {
@@ -113,14 +104,14 @@ export function findOptimalEmergencyRoute(startNodeId, targetNodeId, roadConditi
     curr = previous[curr];
   }
 
-  if (path[0] !== startNodeId) {
+  if (path[0] !== startNodeId || distances[targetNodeId] === Infinity || distances[targetNodeId] === undefined) {
     return { success: false, error: "No viable path found due to severe blockage." };
   }
 
   // Coordinates array for Leaflet Polyline
   const gpsPath = path.map((nodeId) => [nodes[nodeId].lat, nodes[nodeId].lng]);
-  const estimatedTimeNormalMin = Number(distances[targetNodeId].toFixed(1));
-  const estimatedTimeGreenWaveMin = Number((distances[targetNodeId] * 0.38).toFixed(1)); // 62% reduction via priority signal sync
+  const estimatedTimeNormalMin = Number((distances[targetNodeId] || 15).toFixed(1));
+  const estimatedTimeGreenWaveMin = Number(((distances[targetNodeId] || 15) * 0.38).toFixed(1)); // 62% reduction via priority signal sync
 
   return {
     success: true,

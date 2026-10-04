@@ -19,22 +19,35 @@ export function calculateWebsterSignalTiming(options = {}) {
     minCycleLength = 40
   } = options;
 
-  const numPhases = phases.length;
-  const totalLostTime_L = numPhases * lostTimePerPhase;
+  const validPhases = Array.isArray(phases) && phases.length > 0 ? phases : [
+    { name: "Phase 1", flowRate: 800, saturationFlow: 1800, minGreen: 15 },
+    { name: "Phase 2", flowRate: 400, saturationFlow: 1800, minGreen: 15 }
+  ];
 
-  // 1. Calculate flow ratios y_i = q_i / s_i
-  const phaseRatios = phases.map((p) => ({
-    ...p,
-    flowRatio_y: p.flowRate / p.saturationFlow
-  }));
+  const numPhases = validPhases.length;
+  const safeLostTimePerPhase = Math.max(1, lostTimePerPhase);
+  const totalLostTime_L = numPhases * safeLostTimePerPhase;
 
-  const totalFlowRatio_Y = phaseRatios.reduce((acc, p) => acc + p.flowRatio_y, 0);
+  // 1. Calculate flow ratios y_i = q_i / s_i with zero-division protection
+  const phaseRatios = validPhases.map((p) => {
+    const safeFlow = Math.max(0, p.flowRate || 0);
+    const safeSat = Math.max(100, p.saturationFlow || 1800);
+    return {
+      ...p,
+      flowRate: safeFlow,
+      saturationFlow: safeSat,
+      flowRatio_y: safeFlow / safeSat
+    };
+  });
 
-  // If oversaturated (Y >= 1.0), network is severely choked: cap cycle to maximum
+  const rawY = phaseRatios.reduce((acc, p) => acc + p.flowRatio_y, 0);
+  const totalFlowRatio_Y = Math.min(0.98, Math.max(0.01, rawY));
+
+  // If oversaturated (Y >= 0.92), network is severely choked: cap cycle to maximum
   let optimumCycleLength_C0;
   let isOverSaturated = false;
 
-  if (totalFlowRatio_Y >= 0.95) {
+  if (rawY >= 0.92) {
     optimumCycleLength_C0 = maxCycleLength;
     isOverSaturated = true;
   } else {
@@ -43,7 +56,7 @@ export function calculateWebsterSignalTiming(options = {}) {
   }
 
   // 2. Available total effective green time in the cycle: G_total = C_0 - L
-  const totalAvailableGreen = optimumCycleLength_C0 - totalLostTime_L;
+  const totalAvailableGreen = Math.max(10, optimumCycleLength_C0 - totalLostTime_L);
 
   // 3. Allocate green time proportionally to flow ratios: g_i = (y_i / Y) * G_total
   const allocatedPhases = phaseRatios.map((p) => {
@@ -51,17 +64,19 @@ export function calculateWebsterSignalTiming(options = {}) {
       ? Math.round((p.flowRatio_y / totalFlowRatio_Y) * totalAvailableGreen)
       : Math.round(totalAvailableGreen / numPhases);
 
-    const effectiveGreen = Math.max(p.minGreen || 10, proportionalGreen);
+    const minG = p.minGreen || 10;
+    const effectiveGreen = Math.min(totalAvailableGreen - 5, Math.max(minG, proportionalGreen));
 
     // Webster's Delay Formula per vehicle:
     // d = [C * (1 - lambda)^2] / [2 * (1 - lambda * x)] + [x^2] / [2 * q * (1 - x)]
-    const lambda = effectiveGreen / optimumCycleLength_C0;
+    const lambda = Math.min(0.95, Math.max(0.05, effectiveGreen / optimumCycleLength_C0));
     const capacity = lambda * p.saturationFlow;
-    const degreeOfSaturation_x = Math.min(0.99, p.flowRate / Math.max(1, capacity));
+    const degreeOfSaturation_x = Math.min(0.95, Math.max(0.05, p.flowRate / Math.max(1, capacity)));
     
-    // Simplified Webster delay estimation (seconds/vehicle)
-    const term1 = (optimumCycleLength_C0 * Math.pow(1 - lambda, 2)) / (2 * (1 - lambda * degreeOfSaturation_x));
-    const term2 = Math.pow(degreeOfSaturation_x, 2) / (2 * (p.flowRate / 3600) * (1 - degreeOfSaturation_x));
+    // Robust delay estimation (guarded against division by zero if flowRate is 0)
+    const term1 = (optimumCycleLength_C0 * Math.pow(1 - lambda, 2)) / Math.max(0.01, 2 * (1 - lambda * degreeOfSaturation_x));
+    const safeQPerSec = Math.max(0.01, p.flowRate / 3600);
+    const term2 = Math.pow(degreeOfSaturation_x, 2) / (2 * safeQPerSec * Math.max(0.05, 1 - degreeOfSaturation_x));
     const avgDelaySec = Math.round(term1 + Math.min(60, term2));
 
     return {
@@ -70,7 +85,7 @@ export function calculateWebsterSignalTiming(options = {}) {
       flowRatio: Number(p.flowRatio_y.toFixed(3)),
       effectiveGreenSeconds: effectiveGreen,
       degreeOfSaturation: Number(degreeOfSaturation_x.toFixed(2)),
-      estimatedDelaySecPerVehicle: avgDelaySec
+      estimatedDelaySecPerVehicle: isNaN(avgDelaySec) ? 15 : avgDelaySec
     };
   });
 

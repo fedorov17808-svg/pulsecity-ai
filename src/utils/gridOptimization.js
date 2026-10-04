@@ -18,17 +18,19 @@ export const LOAD_TIERS = {
   TIER_4_NON_ESSENTIAL: { name: "Class D: Billboards & Decorative", weight: 10, canShed: true }
 };
 
-export function optimizeGridLoadBalance(substation, availableBatteryStorageMw = 40) {
+export function optimizeGridLoadBalance(substation = {}, availableBatteryStorageMw = 40) {
   const {
-    id,
-    name,
-    capacityMw,
-    currentLoadMw,
+    id = "EN-DEFAULT",
+    name = "Substation",
+    capacityMw = 250,
+    currentLoadMw = 180,
     safeThresholdPct = 85 // Safe continuous rating threshold
-  } = substation;
+  } = (substation || {});
 
-  const safeCapacityMw = capacityMw * (safeThresholdPct / 100);
-  const powerDeficitMw = Math.max(0, currentLoadMw - safeCapacityMw);
+  const safeCap = Math.max(10, capacityMw || 250);
+  const safeCurrent = Math.max(0, currentLoadMw || 0);
+  const safeCapacityMw = safeCap * (safeThresholdPct / 100);
+  const powerDeficitMw = Math.max(0, safeCurrent - safeCapacityMw);
 
   // If load is within safe limits, no action required
   if (powerDeficitMw <= 0) {
@@ -38,14 +40,15 @@ export function optimizeGridLoadBalance(substation, availableBatteryStorageMw = 
       deficitMw: 0,
       batteryDispatchedMw: 0,
       circuitsShedded: [],
-      finalLoadMw: currentLoadMw,
-      finalLoadPct: Math.round((currentLoadMw / capacityMw) * 100),
+      finalLoadMw: safeCurrent,
+      finalLoadPct: Math.round((safeCurrent / safeCap) * 100),
       summary: "Grid operates within nominal thermal and frequency limits."
     };
   }
 
   // 1. Step 1: Dispatch renewable battery storage first (Zero Disruption)
-  const batteryDispatchMw = Math.min(availableBatteryStorageMw, powerDeficitMw);
+  const safeBattery = Math.max(0, availableBatteryStorageMw || 0);
+  const batteryDispatchMw = Math.min(safeBattery, powerDeficitMw);
   let remainingDeficitMw = powerDeficitMw - batteryDispatchMw;
 
   // Circuit feeders with their respective demand & priority tiers
@@ -62,8 +65,8 @@ export function optimizeGridLoadBalance(substation, availableBatteryStorageMw = 
 
   // 2. Step 2: Sort shed candidates in ascending order of societal weight (shed Tier 4 first)
   const sheddableFeeders = feeders
-    .filter((f) => LOAD_TIERS[f.tier].canShed)
-    .sort((a, b) => LOAD_TIERS[a.tier].weight - LOAD_TIERS[b.tier].weight);
+    .filter((f) => LOAD_TIERS[f.tier]?.canShed)
+    .sort((a, b) => (LOAD_TIERS[a.tier]?.weight || 0) - (LOAD_TIERS[b.tier]?.weight || 0));
 
   const circuitsShedded = [];
   let totalSheddedMw = 0;
@@ -71,37 +74,36 @@ export function optimizeGridLoadBalance(substation, availableBatteryStorageMw = 
   for (const circuit of sheddableFeeders) {
     if (remainingDeficitMw <= 0) break;
 
-    // Fractional or full shed
     const shedAmount = Math.min(circuit.loadMw, remainingDeficitMw);
     circuitsShedded.push({
       feederId: circuit.id,
       name: circuit.name,
-      tier: LOAD_TIERS[circuit.tier].name,
+      tier: LOAD_TIERS[circuit.tier]?.name || "Non-Essential",
       sheddedMw: Number(shedAmount.toFixed(1)),
-      percentShed: Math.round((shedAmount / circuit.loadMw) * 100)
+      percentShed: Math.round((shedAmount / Math.max(1, circuit.loadMw)) * 100)
     });
 
     totalSheddedMw += shedAmount;
     remainingDeficitMw -= shedAmount;
   }
 
-  const finalLoadMw = Math.round(currentLoadMw - batteryDispatchMw - totalSheddedMw);
-  const finalLoadPct = Math.round((finalLoadMw / capacityMw) * 100);
+  const finalLoadMw = Math.round(safeCurrent - batteryDispatchMw - totalSheddedMw);
+  const finalLoadPct = Math.round((finalLoadMw / safeCap) * 100);
 
   return {
     substationName: name,
-    initialLoadMw: currentLoadMw,
-    capacityMw,
+    initialLoadMw: safeCurrent,
+    capacityMw: safeCap,
     deficitMw: Number(powerDeficitMw.toFixed(1)),
     batteryDispatchedMw: Number(batteryDispatchMw.toFixed(1)),
     totalSheddedMw: Number(totalSheddedMw.toFixed(1)),
     finalLoadMw,
     finalLoadPct,
     circuitsShedded,
-    protectedCircuits: feeders.filter((f) => !LOAD_TIERS[f.tier].canShed).map((f) => f.name),
+    protectedCircuits: feeders.filter((f) => !LOAD_TIERS[f.tier]?.canShed).map((f) => f.name),
     mathAudit: {
       formula: "Final_Load = Current_Load - P_Battery - Sum(P_Shed_i)",
-      equation: `${currentLoadMw}MW - ${batteryDispatchMw.toFixed(1)}MW - ${totalSheddedMw.toFixed(1)}MW = ${finalLoadMw}MW (${finalLoadPct}%)`,
+      equation: `${safeCurrent}MW - ${batteryDispatchMw.toFixed(1)}MW - ${totalSheddedMw.toFixed(1)}MW = ${finalLoadMw}MW (${finalLoadPct}%)`,
       blackoutPrevented: true
     }
   };
