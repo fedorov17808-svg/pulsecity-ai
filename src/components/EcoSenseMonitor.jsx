@@ -105,7 +105,7 @@ export default function EcoSenseMonitor({
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
               <span>Water Elevation: <strong style={{ color: isFloodImminent ? '#f43f5e' : '#38bdf8' }}>{computedWaterLevelM}m</strong> (Danger: 3.0m)</span>
-              <span>Sluice Gates: {sluiceGatesOpenPct}% Open</span>
+              <span>Sluice Gates: <strong style={{ color: '#fff' }}>{sluiceGatesOpenPct}% Open</strong></span>
             </div>
             
             {/* Elevation Bar */}
@@ -116,6 +116,12 @@ export default function EcoSenseMonitor({
                 background: isFloodImminent ? 'linear-gradient(90deg, #f59e0b, #f43f5e)' : 'linear-gradient(90deg, #10b981, #06b6d4)',
                 transition: 'width 0.3s ease'
               }} />
+            </div>
+
+            {/* Rainfall & Discharge stats */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.70rem', color: 'var(--text-muted)' }}>
+              <span>Rainfall: <strong style={{ color: '#38bdf8' }}>{rainfallRateMmH} mm/h</strong></span>
+              <span>Discharge Rate: <strong style={{ color: '#10b981' }}>{Math.round(45 + sluiceGatesOpenPct * 1.8)} m³/s</strong> (Gulf of Guinea Outflow)</span>
             </div>
 
             {/* Rainfall slider */}
@@ -134,7 +140,7 @@ export default function EcoSenseMonitor({
             </div>
           </div>
 
-          <div style={{ textAlign: 'right' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
             <button
               onClick={handleAutomateSluice}
               className="btn-primary"
@@ -142,11 +148,24 @@ export default function EcoSenseMonitor({
                 fontSize: '0.74rem',
                 padding: '6px 12px',
                 background: isFloodImminent ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)' : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                color: '#fff'
+                color: '#fff',
+                width: '100%',
+                maxWidth: '220px'
               }}
             >
               <Sliders size={13} />
-              Open Emergency Sluice Gates (90%)
+              Open Emergency Sluices (90%)
+            </button>
+
+            <button
+              onClick={() => {
+                setRainfallRateMmH(15);
+                setSluiceGatesOpenPct(45);
+              }}
+              className="btn-secondary"
+              style={{ fontSize: '0.70rem', padding: '4px 10px', width: '100%', maxWidth: '220px' }}
+            >
+              Reset to Base Flow (15 mm/h)
             </button>
           </div>
         </div>

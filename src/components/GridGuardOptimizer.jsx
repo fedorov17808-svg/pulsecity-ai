@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Zap, BatteryCharging, Sun, AlertTriangle, ShieldCheck, 
   ArrowUpRight, ArrowDownRight, RefreshCw, Cpu, CheckCircle2, 
-  Calculator, ShieldAlert, ToggleLeft, ToggleRight, Radio, Activity 
+  Calculator, ShieldAlert, ToggleLeft, ToggleRight, Radio, Activity, Sliders, Thermometer
 } from 'lucide-react';
 import { optimizeGridLoadBalance, LOAD_TIERS } from '../utils/gridOptimization';
+import { playBreakerTripSound, playFrequencyWarningHum } from '../utils/soundEffects';
 import confetti from 'canvas-confetti';
 
 export default function GridGuardOptimizer({
@@ -14,6 +15,10 @@ export default function GridGuardOptimizer({
   const [autoBalanceEnabled, setAutoBalanceEnabled] = useState(true);
   const [balancingInProgress, setBalancingInProgress] = useState(false);
   const [optimizationAudit, setOptimizationAudit] = useState(null);
+  const [baseGridStressMw, setBaseGridStressMw] = useState(85);
+
+  // Oscilloscope Canvas Ref
+  const oscCanvasRef = useRef(null);
 
   // Interactive Circuit Breakers State (SCADA emulation)
   const [circuitStates, setCircuitStates] = useState([
@@ -27,18 +32,99 @@ export default function GridGuardOptimizer({
     { id: "F-08", name: "Decorative Lighting & Pumps", tier: "TIER_4_NON_ESSENTIAL", loadMw: 12, isClosed: false, isLocked: false }
   ]);
 
-  // Compute aggregate stats from dynamic breaker loads
+  // Compute aggregate stats from dynamic breaker loads + manual stress
   const activeFeederLoad = circuitStates.filter(c => c.isClosed).reduce((acc, c) => acc + c.loadMw, 0);
-  const baseSubstation = energyNodes.find((n) => n.id === 'EN-01') || energyNodes[0];
-  const dynamicLoad = Math.min(250, 75 + activeFeederLoad);
-  const safeCapacity = baseSubstation.capacityMw * 0.85; // 212.5 MW
+  const baseSubstation = energyNodes.find((n) => n.id === 'EN-01') || energyNodes[0] || { capacityMw: 250, currentLoadMw: 232 };
+  const dynamicLoad = Math.min(250, baseGridStressMw + activeFeederLoad);
+  const safeCapacity = (baseSubstation.capacityMw || 250) * 0.85; // 212.5 MW
   
   // Power Grid Frequency: 50.00 Hz nominal, dips when load exceeds safe capacity
   const frequencyDelta = ((dynamicLoad - safeCapacity) / safeCapacity) * 0.45;
-  const gridFrequencyHz = Number(Math.max(49.45, Math.min(50.25, 50.00 - frequencyDelta)).toFixed(2));
+  const gridFrequencyHz = Number(Math.max(49.40, Math.min(50.25, 50.00 - frequencyDelta)).toFixed(2));
   const isFrequencyCritical = gridFrequencyHz < 49.80;
+  const transformerTempC = Math.round(55 + (dynamicLoad / 250) * 35);
+
+  // Play warning audio if frequency trips into critical
+  useEffect(() => {
+    if (isFrequencyCritical) {
+      playFrequencyWarningHum();
+    }
+  }, [isFrequencyCritical]);
+
+  // Real-time Canvas AC Oscilloscope Loop
+  useEffect(() => {
+    let animId;
+    let phase = 0;
+
+    const renderOscilloscope = () => {
+      const canvas = oscCanvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const width = canvas.width;
+      const height = canvas.height;
+      const midY = height / 2;
+
+      ctx.fillStyle = '#06090f';
+      ctx.fillRect(0, 0, width, height);
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < width; x += 30) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < height; y += 15) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      // Centerline
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(0, midY);
+      ctx.lineTo(width, midY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Sinusoidal Waveform
+      const freqMultiplier = gridFrequencyHz / 50.0;
+      const amplitude = isFrequencyCritical ? 24 : 18;
+      const waveColor = isFrequencyCritical ? '#f43f5e' : gridFrequencyHz < 49.92 ? '#f59e0b' : '#00f2fe';
+
+      ctx.strokeStyle = waveColor;
+      ctx.lineWidth = 2.5;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = waveColor;
+
+      ctx.beginPath();
+      for (let x = 0; x < width; x++) {
+        // Add harmonic distortion if critical
+        const harmonic = isFrequencyCritical ? Math.sin((x * 0.12 * freqMultiplier) + phase * 2) * 4 : 0;
+        const y = midY + Math.sin((x * 0.045 * freqMultiplier) + phase) * amplitude + harmonic;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      phase += 0.08 * freqMultiplier;
+      animId = requestAnimationFrame(renderOscilloscope);
+    };
+
+    renderOscilloscope();
+    return () => cancelAnimationFrame(animId);
+  }, [gridFrequencyHz, isFrequencyCritical]);
 
   const handleToggleBreaker = (circuitId) => {
+    playBreakerTripSound();
     setCircuitStates((prev) =>
       prev.map((c) => {
         if (c.id === circuitId && !c.isLocked) {
@@ -50,6 +136,7 @@ export default function GridGuardOptimizer({
   };
 
   const handleRunKnapsackOptimization = () => {
+    playBreakerTripSound();
     setBalancingInProgress(true);
     
     setTimeout(() => {
@@ -105,18 +192,78 @@ export default function GridGuardOptimizer({
           </div>
         </div>
 
-        {/* Real-time Frequency Badge */}
-        <div style={{
-          background: isFrequencyCritical ? 'rgba(244, 63, 94, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-          border: isFrequencyCritical ? '1px solid #f43f5e' : '1px solid #10b981',
-          padding: '6px 14px',
-          borderRadius: '8px',
-          textAlign: 'right'
-        }}>
-          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>GRID FREQUENCY</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)', color: isFrequencyCritical ? '#f43f5e' : '#34d399' }}>
-            {gridFrequencyHz} Hz
+        {/* Real-time Frequency & Temperature Badges */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{
+            background: transformerTempC > 80 ? 'rgba(244, 63, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+            border: transformerTempC > 80 ? '1px solid #f43f5e' : '1px solid #f59e0b',
+            padding: '4px 10px',
+            borderRadius: '8px',
+            textAlign: 'right'
+          }}>
+            <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>TRANSFORMER OIL</div>
+            <div style={{ fontSize: '0.95rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)', color: transformerTempC > 80 ? '#f43f5e' : '#fbbf24' }}>
+              {transformerTempC}°C {transformerTempC > 80 ? '🔥' : '❄️'}
+            </div>
           </div>
+
+          <div style={{
+            background: isFrequencyCritical ? 'rgba(244, 63, 94, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+            border: isFrequencyCritical ? '1px solid #f43f5e' : '1px solid #10b981',
+            padding: '4px 12px',
+            borderRadius: '8px',
+            textAlign: 'right'
+          }}>
+            <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>GRID FREQUENCY</div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)', color: isFrequencyCritical ? '#f43f5e' : '#34d399' }}>
+              {gridFrequencyHz} Hz
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Live 50Hz AC Frequency Oscilloscope Panel */}
+      <div style={{
+        background: '#070b12',
+        border: isFrequencyCritical ? '1px solid #f43f5e' : '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-md)',
+        padding: '10px 14px',
+        marginBottom: '12px',
+        boxShadow: isFrequencyCritical ? '0 0 20px rgba(244, 63, 94, 0.25)' : 'none'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem' }}>
+            <Activity size={13} color={isFrequencyCritical ? '#f43f5e' : '#00f2fe'} />
+            <span style={{ color: '#fff', fontWeight: '600' }}>Live 50.00 Hz Pure Sine SCADA Oscilloscope</span>
+          </div>
+          <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: isFrequencyCritical ? '#f43f5e' : '#38bdf8' }}>
+            {isFrequencyCritical ? 'UNDERFREQUENCY SAG COLLAPSE' : 'IEC 60034 HARMONIC TOLERANCE OK'}
+          </span>
+        </div>
+        <canvas
+          ref={oscCanvasRef}
+          width={580}
+          height={64}
+          style={{ width: '100%', height: '64px', borderRadius: '4px', display: 'block' }}
+        />
+
+        {/* Interactive Grid Surge Stress Slider */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            <Sliders size={13} />
+            <span>Simulate Grid Demand Surge:</span>
+          </div>
+          <input
+            type="range"
+            min="60"
+            max="125"
+            value={baseGridStressMw}
+            onChange={(e) => setBaseGridStressMw(Number(e.target.value))}
+            style={{ flex: 1, accentColor: isFrequencyCritical ? '#f43f5e' : '#a855f7', cursor: 'pointer' }}
+          />
+          <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 'bold', color: '#fff' }}>
+            +{baseGridStressMw} MW
+          </span>
         </div>
       </div>
 

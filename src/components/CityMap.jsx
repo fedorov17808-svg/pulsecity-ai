@@ -3,7 +3,8 @@ import L from 'leaflet';
 import { 
   Car, Zap, Wind, Eye, Flame, Radio, Navigation, Activity, Siren, CheckCircle2 
 } from 'lucide-react';
-import { findOptimalEmergencyRoute } from '../utils/roadGraphRouting';
+import { findOptimalEmergencyRoute, ACCRA_ROAD_GRAPH } from '../utils/roadGraphRouting';
+import { playEmergencySirenSound } from '../utils/soundEffects';
 import confetti from 'canvas-confetti';
 
 export default function CityMap({
@@ -31,6 +32,9 @@ export default function CityMap({
 
   const [emergencyActive, setEmergencyActive] = useState(false);
   const [activeRouteInfo, setActiveRouteInfo] = useState(null);
+  const [originNodeId, setOriginNodeId] = useState("N-CIRCLE");
+  const [destNodeId, setDestNodeId] = useState("N-37MIL");
+  const [showRadarSweep, setShowRadarSweep] = useState(false);
   const ambulanceIntervalRef = useRef(null);
 
   // Initialize Leaflet Map once
@@ -72,11 +76,20 @@ export default function CityMap({
     };
   }, []);
 
-  // Handle Emergency Green Wave Transit
+  // Handle Dynamic Emergency Green Wave Transit
   const handleTriggerAmbulance = () => {
-    const route = findOptimalEmergencyRoute("N-CIRCLE", "N-37MIL");
-    if (!route.success) return;
+    if (originNodeId === destNodeId) {
+      alert("Please select different start and destination nodes for the green wave corridor.");
+      return;
+    }
 
+    const route = findOptimalEmergencyRoute(originNodeId, destNodeId);
+    if (!route.success) {
+      alert(route.error || "No viable path found between selected nodes.");
+      return;
+    }
+
+    playEmergencySirenSound();
     setActiveRouteInfo(route);
     setEmergencyActive(true);
 
@@ -88,77 +101,75 @@ export default function CityMap({
     L.polyline(route.gpsPath, {
       color: '#10b981',
       weight: 6,
-      opacity: 0.9,
+      opacity: 0.95,
       lineCap: 'round',
       lineJoin: 'round',
-      dashArray: '10, 10'
+      dashArray: '12, 8'
     }).addTo(corridor);
 
-    // 2. Animate Ambulance Moving along the GPS Path
+    // 2. Animate Ambulance Moving along the GPS Path smoothly across all hops
     let step = 0;
-    const totalSteps = 40;
-    const startCoord = route.gpsPath[0];
-    const midCoord = route.gpsPath[1] || route.gpsPath[0];
-    const endCoord = route.gpsPath[route.gpsPath.length - 1];
+    const totalSteps = 60;
+    const numPoints = route.gpsPath.length;
 
     const ambIcon = L.divIcon({
       className: 'custom-ambulance-icon',
       html: `
         <div style="
-          width: 34px;
-          height: 34px;
+          width: 36px;
+          height: 36px;
           background: #10b981;
           border-radius: 50%;
           border: 2px solid #fff;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 20px #10b981, 0 0 10px #fff;
-          animation: pulse-ring 0.8s infinite;
+          box-shadow: 0 0 25px #10b981, 0 0 12px #fff;
+          animation: pulse-ring 0.6s infinite;
         ">
-          <span style="font-size: 16px;">🚑</span>
+          <span style="font-size: 18px;">🚑</span>
         </div>
       `,
-      iconSize: [34, 34],
-      iconAnchor: [17, 17]
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
     });
 
-    const ambMarker = L.marker(startCoord, { icon: ambIcon }).addTo(ambulance);
+    const ambMarker = L.marker(route.gpsPath[0], { icon: ambIcon }).addTo(ambulance);
 
     if (ambulanceIntervalRef.current) clearInterval(ambulanceIntervalRef.current);
 
     ambulanceIntervalRef.current = setInterval(() => {
       step++;
       const t = step / totalSteps;
-      
-      // Interpolate along the route
-      let currentLat, currentLng;
-      if (t < 0.5) {
-        const subT = t * 2;
-        currentLat = startCoord[0] + (midCoord[0] - startCoord[0]) * subT;
-        currentLng = startCoord[1] + (midCoord[1] - startCoord[1]) * subT;
-      } else {
-        const subT = (t - 0.5) * 2;
-        currentLat = midCoord[0] + (endCoord[0] - midCoord[0]) * subT;
-        currentLng = midCoord[1] + (endCoord[1] - midCoord[1]) * subT;
-      }
 
-      ambMarker.setLatLng([currentLat, currentLng]);
+      if (numPoints >= 2) {
+        const totalSegments = numPoints - 1;
+        const segmentProgress = t * totalSegments;
+        const currentSegmentIndex = Math.min(Math.floor(segmentProgress), totalSegments - 1);
+        const subT = segmentProgress - currentSegmentIndex;
+
+        const pA = route.gpsPath[currentSegmentIndex];
+        const pB = route.gpsPath[currentSegmentIndex + 1];
+
+        const currentLat = pA[0] + (pB[0] - pA[0]) * subT;
+        const currentLng = pA[1] + (pB[1] - pA[1]) * subT;
+        ambMarker.setLatLng([currentLat, currentLng]);
+      }
 
       if (step >= totalSteps) {
         clearInterval(ambulanceIntervalRef.current);
         confetti({
-          particleCount: 50,
-          spread: 60,
+          particleCount: 60,
+          spread: 70,
           origin: { y: 0.6 }
         });
         setTimeout(() => {
           setEmergencyActive(false);
           corridor.clearLayers();
           ambulance.clearLayers();
-        }, 5000);
+        }, 6000);
       }
-    }, 150);
+    }, 120);
 
     if (onEmergencyWaveTriggered) {
       onEmergencyWaveTriggered(route);
@@ -373,28 +384,85 @@ export default function CityMap({
         zIndex: 1000,
         pointerEvents: 'none',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', pointerEvents: 'auto' }}>
-          <div className="badge badge-cyan" style={{ padding: '6px 12px', fontSize: '0.8rem', backdropFilter: 'blur(8px)' }}>
-            <Radio size={14} className="pulse-indicator" style={{ color: 'var(--accent-cyan)' }} />
-            REAL LEAFLET GIS // GREATER ACCRA GRID
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexWrap: 'wrap' }}>
+          <div className="badge badge-cyan" style={{ padding: '6px 10px', fontSize: '0.74rem', backdropFilter: 'blur(8px)' }}>
+            <Radio size={13} className="pulse-indicator" style={{ color: 'var(--accent-cyan)' }} />
+            REAL LEAFLET GIS
           </div>
 
-          {/* Quick A* Ambulance Trigger Button */}
-          <button
-            onClick={handleTriggerAmbulance}
-            disabled={emergencyActive}
-            className="btn-primary"
-            style={{
-              padding: '6px 14px',
-              fontSize: '0.76rem',
-              background: emergencyActive ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
-              color: '#fff',
-              boxShadow: emergencyActive ? '0 0 15px rgba(16, 185, 129, 0.5)' : '0 0 15px rgba(239, 68, 68, 0.4)'
-            }}
-          >
-            <Siren size={14} className={emergencyActive ? 'animate-spin' : ''} />
-            {emergencyActive ? 'AMB-04 Wave Active (7.4 mins)' : 'Dispatch A* Ambulance Corridor'}
-          </button>
+          {/* Dynamic Origin & Destination Corridor Selector */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(8, 12, 20, 0.88)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '8px',
+            padding: '3px 8px',
+            fontSize: '0.74rem'
+          }}>
+            <span style={{ color: 'var(--text-muted)' }}>From:</span>
+            <select
+              value={originNodeId}
+              onChange={(e) => setOriginNodeId(e.target.value)}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff',
+                fontSize: '0.72rem',
+                borderRadius: '5px',
+                padding: '3px 6px',
+                outline: 'none',
+                maxWidth: '125px'
+              }}
+            >
+              {Object.entries(ACCRA_ROAD_GRAPH.nodes).map(([id, n]) => (
+                <option key={id} value={id} style={{ background: '#0f172a', color: '#fff' }}>
+                  {n.name.split(' ')[0]} {n.name.split(' ')[1] || ''}
+                </option>
+              ))}
+            </select>
+
+            <span style={{ color: 'var(--text-muted)' }}>To:</span>
+            <select
+              value={destNodeId}
+              onChange={(e) => setDestNodeId(e.target.value)}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff',
+                fontSize: '0.72rem',
+                borderRadius: '5px',
+                padding: '3px 6px',
+                outline: 'none',
+                maxWidth: '125px'
+              }}
+            >
+              {Object.entries(ACCRA_ROAD_GRAPH.nodes).map(([id, n]) => (
+                <option key={id} value={id} style={{ background: '#0f172a', color: '#fff' }}>
+                  {n.name.split(' ')[0]} {n.name.split(' ')[1] || ''}
+                </option>
+              ))}
+            </select>
+
+            {/* Quick A* Ambulance Trigger Button */}
+            <button
+              onClick={handleTriggerAmbulance}
+              disabled={emergencyActive}
+              className="btn-primary"
+              style={{
+                padding: '4px 10px',
+                fontSize: '0.72rem',
+                background: emergencyActive ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+                color: '#fff',
+                boxShadow: emergencyActive ? '0 0 15px rgba(16, 185, 129, 0.5)' : '0 0 12px rgba(239, 68, 68, 0.4)'
+              }}
+            >
+              <Siren size={13} className={emergencyActive ? 'animate-spin' : ''} />
+              {emergencyActive ? 'Locking Wave...' : 'Dispatch A* Wave'}
+            </button>
+          </div>
         </div>
 
         {/* Crisis Alert Banner if Active */}

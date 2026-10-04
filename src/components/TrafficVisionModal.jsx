@@ -5,6 +5,7 @@ import {
   Upload, Camera, Calculator, Play, Pause, Disc, Gauge 
 } from 'lucide-react';
 import { analyzeTrafficVision } from '../services/geminiService';
+import CctvTrafficCanvas from './CctvTrafficCanvas';
 import confetti from 'canvas-confetti';
 
 const SAMPLE_PREVIEWS = {
@@ -487,10 +488,19 @@ export default function TrafficVisionModal({
               />
             )}
 
-            {/* 3. Static/Uploaded Image or Preset CCTV */}
-            {(streamMode === 'cctv_preset' || (streamMode === 'uploaded_media' && uploadedImageSrc)) && (
+            {/* 3. Live 30 FPS Animated Computer Vision Stream in Preset Mode */}
+            {streamMode === 'cctv_preset' && (
+              <CctvTrafficCanvas
+                cameraName={activeCameraNode.name}
+                lightState={activeCameraNode.lightState || 'GREEN'}
+                isIncident={activeCameraNode.incidentActive || false}
+              />
+            )}
+
+            {/* 4. Uploaded Static Image */}
+            {streamMode === 'uploaded_media' && uploadedImageSrc && (
               <img 
-                src={uploadedImageSrc || SAMPLE_PREVIEWS[activeCameraNode.id.replace('TR-', 'CAM-')] || SAMPLE_PREVIEWS["CAM-01"]} 
+                src={uploadedImageSrc} 
                 alt="Traffic Stream"
                 style={{
                   width: '100%',
