@@ -209,26 +209,17 @@ export default function TrafficVisionModal({
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(3, 7, 18, 0.9)',
-      backdropFilter: 'blur(16px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 2000,
-      padding: '20px'
-    }}>
-      <div className="glass-panel" style={{
-        width: '100%',
-        maxWidth: '1020px',
-        maxHeight: '94vh',
-        overflowY: 'auto',
-        border: '1px solid var(--border-glow)',
-        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.85), var(--shadow-glow-cyan)',
-        padding: '24px'
-      }}>
+    <div className="modal-backdrop" onClick={() => { stopWebcam(); onClose(); }}>
+      <div 
+        className="modal-card" 
+        style={{
+          maxWidth: '1020px',
+          border: '1px solid var(--border-glow)',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.85), var(--shadow-glow-cyan)',
+          padding: '24px'
+        }}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

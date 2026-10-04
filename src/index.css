@@ -388,6 +388,36 @@ h1, h2, h3, h4, .font-display {
   box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
 }
 
+/* Custom Leaflet Controls & Glassmorphism */
+.leaflet-top.leaflet-right {
+  top: 72px !important;
+  right: 18px !important;
+}
+
+.leaflet-bar {
+  border: 1px solid rgba(0, 242, 254, 0.25) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+}
+
+.leaflet-bar a {
+  background-color: rgba(11, 19, 32, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  color: #00f2fe !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  transition: all 0.15s ease !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: rgba(0, 242, 254, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.leaflet-bar a:last-child {
+  border-bottom: none !important;
+}
+
 /* Print Styles */
 @media print {
   body {
@@ -411,4 +441,5 @@ h1, h2, h3, h4, .font-display {
     max-height: none !important;
   }
 }
+
 

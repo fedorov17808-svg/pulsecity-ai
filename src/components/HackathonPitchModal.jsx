@@ -54,26 +54,17 @@ Ready for immediate pilot deployment with Accra Metropolitan Assembly (AMA) and 
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(3, 7, 18, 0.88)',
-      backdropFilter: 'blur(16px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 110,
-      padding: '20px'
-    }}>
-      <div className="glass-panel" style={{
-        width: '100%',
-        maxWidth: '850px',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        border: '1px solid rgba(245, 158, 11, 0.4)',
-        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(245, 158, 11, 0.2)',
-        padding: '28px'
-      }}>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div 
+        className="modal-card" 
+        style={{
+          maxWidth: '850px',
+          border: '1px solid rgba(245, 158, 11, 0.4)',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(245, 158, 11, 0.2)',
+          padding: '28px'
+        }}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

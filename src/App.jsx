@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Activity, Car, Zap, Wind, Bot, Shield, Trophy, 
-  Sparkles, Radio, RefreshCw, Key, AlertTriangle, Layers, Clock, Terminal, Code2,
+  Sparkles, Layers, Clock, Terminal,
   Phone, BarChart3, FileText
 } from 'lucide-react';
 import { 
-  CITY_METRICS, TRAFFIC_NODES, ENERGY_NODES, 
+  TRAFFIC_NODES, ENERGY_NODES, 
   ECO_NODES, PRESET_CRISES 
 } from './data/mockCityData';
 import CityMap from './components/CityMap';
@@ -87,6 +87,40 @@ export default function App() {
       localStorage.setItem('pulsecity_eco_nodes', JSON.stringify(ecoNodes));
     } catch (e) { console.error('Failed to sync ecoNodes to localStorage', e); }
   }, [ecoNodes]);
+
+  // Ops Menu ref for click-outside dismissal
+  const opsMenuRef = useRef(null);
+
+  // Close Ops Menu on click outside
+  useEffect(() => {
+    if (!opsMenuOpen) return;
+    const handleClickOutside = (e) => {
+      if (opsMenuRef.current && !opsMenuRef.current.contains(e.target)) {
+        setOpsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [opsMenuOpen]);
+
+  // Global ESC key listener to close modals & menus
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setOpsMenuOpen(false);
+        setHardwareModalOpen(false);
+        setFieldHudOpen(false);
+        setUssdModalOpen(false);
+        setBenchmarkModalOpen(false);
+        setDossierModalOpen(false);
+        setPitchModalOpen(false);
+        setVisionModalOpen(false);
+        setVisionModalNode(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // GMT Clock (Accra Local Time)
   const [currentTime, setCurrentTime] = useState('');
@@ -426,7 +460,7 @@ export default function App() {
             </button>
 
             {/* Municipal Operations & Engineering Suite Dropdown */}
-            <div style={{ position: 'relative' }}>
+            <div ref={opsMenuRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setOpsMenuOpen(!opsMenuOpen)}
                 className="btn-secondary"
@@ -915,7 +949,7 @@ export default function App() {
         }}
         onBreakerToggle={(circuitId) => {
           setEnergyNodes((prev) =>
-            prev.map((n) => n.id === 'EN-01' ? { ...n, currentLoadMw: Math.max(140, n.currentLoadMw - 25), dumsorRisk: 12 } : n)
+            prev.map((n) => (n.id === (circuitId || 'EN-01')) ? { ...n, currentLoadMw: Math.max(140, n.currentLoadMw - 25), dumsorRisk: 12 } : n)
           );
         }}
       />

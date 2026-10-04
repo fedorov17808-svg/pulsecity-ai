@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Zap, BatteryCharging, Sun, AlertTriangle, ShieldCheck, 
-  ArrowUpRight, ArrowDownRight, RefreshCw, Cpu, CheckCircle2, 
-  Calculator, ShieldAlert, ToggleLeft, ToggleRight, Radio, Activity, Sliders, Thermometer
+  ArrowUpRight, RefreshCw, Cpu, 
+  Calculator, ToggleLeft, ToggleRight, Activity, Sliders
 } from 'lucide-react';
-import { optimizeGridLoadBalance, LOAD_TIERS } from '../utils/gridOptimization';
+import { optimizeGridLoadBalance } from '../utils/gridOptimization';
 import { playBreakerTripSound, playFrequencyWarningHum } from '../utils/soundEffects';
 import confetti from 'canvas-confetti';
 
@@ -12,7 +12,6 @@ export default function GridGuardOptimizer({
   energyNodes,
   onBalanceGrid
 }) {
-  const [autoBalanceEnabled, setAutoBalanceEnabled] = useState(true);
   const [balancingInProgress, setBalancingInProgress] = useState(false);
   const [optimizationAudit, setOptimizationAudit] = useState(null);
   const [baseGridStressMw, setBaseGridStressMw] = useState(85);
@@ -166,7 +165,7 @@ export default function GridGuardOptimizer({
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="glass-panel" style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
       {/* Title & Frequency Meter */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
         <div>

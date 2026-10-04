@@ -50,8 +50,8 @@ export default function CityMap({
       zoomControl: false
     });
 
-    // Place zoom controls at bottom-right to keep the top HUD completely clean and unobstructed
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    // Place zoom controls at top-right with CSS offset below the top corridor HUD
+    L.control.zoom({ position: 'topright' }).addTo(map);
 
     // Esri World Dark Gray Base (Ultra-clean, crisp, zero-watermark tactical GIS)
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
@@ -69,12 +69,29 @@ export default function CityMap({
 
     mapInstanceRef.current = map;
 
+    // Handle container resize & orientation changes
+    const handleResize = () => {
+      map.invalidateSize();
+    };
+    window.addEventListener('resize', handleResize);
+
     return () => {
+      window.removeEventListener('resize', handleResize);
       if (ambulanceIntervalRef.current) clearInterval(ambulanceIntervalRef.current);
       map.remove();
       mapInstanceRef.current = null;
     };
   }, []);
+
+  // Invalidate map size whenever active layer or tab changes to prevent blank tile artifacts
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      const timer = setTimeout(() => {
+        mapInstanceRef.current?.invalidateSize();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [activeLayer]);
 
   // Handle Dynamic Emergency Green Wave Transit
   const handleTriggerAmbulance = () => {
