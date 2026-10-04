@@ -59,6 +59,7 @@ export default function App() {
   const [ussdModalOpen, setUssdModalOpen] = useState(false);
   const [benchmarkModalOpen, setBenchmarkModalOpen] = useState(false);
   const [dossierModalOpen, setDossierModalOpen] = useState(false);
+  const [opsMenuOpen, setOpsMenuOpen] = useState(false);
 
   // Crisis state
   const [activeCrisis, setActiveCrisis] = useState(null);
@@ -280,15 +281,18 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* World-Class Command Center Header */}
-      <header style={{
-        background: 'rgba(6, 10, 18, 0.92)',
+      <header 
+        className="notranslate"
+        translate="no"
+        style={{
+        background: 'rgba(6, 10, 18, 0.95)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         position: 'sticky',
         top: 0,
         zIndex: 1000,
-        padding: '12px 24px'
+        padding: '10px 20px'
       }}>
         <div style={{
           maxWidth: '1600px',
@@ -421,49 +425,151 @@ export default function App() {
               USSD (*920*26#)
             </button>
 
-            {/* Edge Hardware & C++ / Python Hub */}
-            <button
-              onClick={() => setHardwareModalOpen(true)}
-              className="btn-secondary"
-              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
-              title="Inspect ESP32 C++ and Raspberry Pi Python firmware & BOM"
-            >
-              <Zap size={13} color="#34d399" />
-              Hardware Suite
-            </button>
+            {/* Municipal Operations & Engineering Suite Dropdown */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setOpsMenuOpen(!opsMenuOpen)}
+                className="btn-secondary"
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '0.78rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: opsMenuOpen ? 'rgba(0, 242, 254, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                  borderColor: opsMenuOpen ? 'var(--accent-cyan)' : 'rgba(255, 255, 255, 0.1)',
+                  whiteSpace: 'nowrap'
+                }}
+                title="Open Municipal Engineering, Firmware, TCO Audit & Executive Dossier"
+              >
+                <Layers size={13} color="var(--accent-cyan)" />
+                Ops Suite ▾
+              </button>
 
-            {/* Field Police / MTTD Tactical HUD */}
-            <button
-              onClick={() => setFieldHudOpen(true)}
-              className="btn-secondary"
-              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
-              title="Open Ghana Police MTTD / ECG Grid Field Officer HUD"
-            >
-              <Shield size={13} color="#fbbf24" />
-              Field HUD
-            </button>
+              {opsMenuOpen && (
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    width: '280px',
+                    background: '#090e18',
+                    border: '1px solid rgba(0, 242, 254, 0.35)',
+                    borderRadius: '14px',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.85), 0 0 25px rgba(0, 242, 254, 0.15)',
+                    padding: '8px',
+                    zIndex: 2500,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}
+                >
+                  <button
+                    onClick={() => { setHardwareModalOpen(true); setOpsMenuOpen(false); }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#e2e8f0',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <Zap size={15} color="#34d399" />
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#fff' }}>IoT Hardware Suite</div>
+                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>ESP32 C++ & RPi Python ($13.05 BOM)</div>
+                    </div>
+                  </button>
 
-            {/* TCO vs Legacy SCATS */}
-            <button
-              onClick={() => setBenchmarkModalOpen(true)}
-              className="btn-secondary"
-              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
-              title="Compare PulseCity vs Siemens Sitraffic / SCATS & LoRaWAN TCO"
-            >
-              <BarChart3 size={13} color="#38bdf8" />
-              TCO Audit
-            </button>
+                  <button
+                    onClick={() => { setFieldHudOpen(true); setOpsMenuOpen(false); }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#e2e8f0',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <Shield size={15} color="#fbbf24" />
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#fff' }}>Field Officer Tactical HUD</div>
+                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Ghana Police MTTD & ECG overrides</div>
+                    </div>
+                  </button>
 
-            {/* Executive Municipal Dossier */}
-            <button
-              onClick={() => setDossierModalOpen(true)}
-              className="btn-secondary"
-              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
-              title="Formal Executive Brief & Printable PDF for Accra Municipal Assembly"
-            >
-              <FileText size={13} color="#c084fc" />
-              Dossier
-            </button>
+                  <button
+                    onClick={() => { setBenchmarkModalOpen(true); setOpsMenuOpen(false); }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#e2e8f0',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <BarChart3 size={15} color="#38bdf8" />
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#fff' }}>TCO & Vendor Benchmark</div>
+                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>PulseCity vs Siemens & SCATS matrix</div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => { setDossierModalOpen(true); setOpsMenuOpen(false); }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#e2e8f0',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <FileText size={15} color="#c084fc" />
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#fff' }}>Accra Executive Dossier</div>
+                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Official Municipal Brief (PDF export)</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* DoraHacks Pitch Kit (Hero CTA) */}
             <button
@@ -486,10 +592,13 @@ export default function App() {
       </header>
 
       {/* Real-time Impact Metrics Ticker */}
-      <section style={{
+      <section 
+        className="notranslate"
+        translate="no"
+        style={{
         background: 'rgba(10, 16, 28, 0.75)',
         borderBottom: '1px solid var(--border-subtle)',
-        padding: '10px 24px'
+        padding: '8px 24px'
       }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

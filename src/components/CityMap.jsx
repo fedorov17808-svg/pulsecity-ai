@@ -50,7 +50,8 @@ export default function CityMap({
       zoomControl: false
     });
 
-    L.control.zoom({ position: 'topright' }).addTo(map);
+    // Place zoom controls at bottom-right to keep the top HUD completely clean and unobstructed
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     // Esri World Dark Gray Base (Ultra-clean, crisp, zero-watermark tactical GIS)
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
@@ -383,37 +384,37 @@ export default function CityMap({
         zIndex: 1000,
         pointerEvents: 'none',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexWrap: 'wrap' }}>
-          <div className="badge badge-cyan" style={{ padding: '6px 10px', fontSize: '0.74rem', backdropFilter: 'blur(8px)' }}>
-            <Radio size={13} className="pulse-indicator" style={{ color: 'var(--accent-cyan)' }} />
-            REAL LEAFLET GIS
-          </div>
-
+        <div className="notranslate" style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto', flexWrap: 'wrap' }}>
           {/* Dynamic Origin & Destination Corridor Selector */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            background: 'rgba(8, 12, 20, 0.88)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '8px',
-            padding: '3px 8px',
-            fontSize: '0.74rem'
+            gap: '8px',
+            background: 'rgba(8, 14, 24, 0.92)',
+            backdropFilter: 'blur(14px)',
+            border: '1px solid rgba(0, 242, 254, 0.3)',
+            borderRadius: '10px',
+            padding: '4px 10px',
+            fontSize: '0.74rem',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
           }}>
-            <span style={{ color: 'var(--text-muted)' }}>From:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--accent-cyan)', fontWeight: '700' }}>
+              <Navigation size={13} />
+              <span>Corridor:</span>
+            </div>
             <select
               value={originNodeId}
               onChange={(e) => setOriginNodeId(e.target.value)}
               style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
                 color: '#fff',
                 fontSize: '0.72rem',
-                borderRadius: '5px',
-                padding: '3px 6px',
+                borderRadius: '6px',
+                padding: '3px 8px',
                 outline: 'none',
-                maxWidth: '125px'
+                maxWidth: '120px',
+                cursor: 'pointer'
               }}
             >
               {Object.entries(ACCRA_ROAD_GRAPH.nodes).map(([id, n]) => (
@@ -423,19 +424,21 @@ export default function CityMap({
               ))}
             </select>
 
-            <span style={{ color: 'var(--text-muted)' }}>To:</span>
+            <span style={{ color: '#64748b' }}>➔</span>
+
             <select
               value={destNodeId}
               onChange={(e) => setDestNodeId(e.target.value)}
               style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
                 color: '#fff',
                 fontSize: '0.72rem',
-                borderRadius: '5px',
-                padding: '3px 6px',
+                borderRadius: '6px',
+                padding: '3px 8px',
                 outline: 'none',
-                maxWidth: '125px'
+                maxWidth: '120px',
+                cursor: 'pointer'
               }}
             >
               {Object.entries(ACCRA_ROAD_GRAPH.nodes).map(([id, n]) => (
@@ -451,15 +454,16 @@ export default function CityMap({
               disabled={emergencyActive}
               className="btn-primary"
               style={{
-                padding: '4px 10px',
+                padding: '4px 12px',
                 fontSize: '0.72rem',
+                borderRadius: '6px',
                 background: emergencyActive ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
                 color: '#fff',
                 boxShadow: emergencyActive ? '0 0 15px rgba(16, 185, 129, 0.5)' : '0 0 12px rgba(239, 68, 68, 0.4)'
               }}
             >
               <Siren size={13} className={emergencyActive ? 'animate-spin' : ''} />
-              {emergencyActive ? 'Locking Wave...' : 'Dispatch A* Wave'}
+              {emergencyActive ? 'Wave Active...' : 'Dispatch Green Wave'}
             </button>
           </div>
         </div>
