@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Activity, Car, Zap, Wind, Bot, Shield, Trophy, 
-  Sparkles, Radio, RefreshCw, Key, AlertTriangle, Layers, Clock, Terminal, Code2 
+  Sparkles, Radio, RefreshCw, Key, AlertTriangle, Layers, Clock, Terminal, Code2,
+  Phone, BarChart3, FileText
 } from 'lucide-react';
 import { 
   CITY_METRICS, TRAFFIC_NODES, ENERGY_NODES, 
@@ -16,6 +17,9 @@ import HackathonPitchModal from './components/HackathonPitchModal';
 import SensorIngestGateway from './components/SensorIngestGateway';
 import HardwareHubModal from './components/HardwareHubModal';
 import FieldOfficerHUD from './components/FieldOfficerHUD';
+import CitizenUssdModal from './components/CitizenUssdModal';
+import BenchmarkModal from './components/BenchmarkModal';
+import ExecutiveDossierModal from './components/ExecutiveDossierModal';
 
 export default function App() {
   // Navigation & View State
@@ -52,6 +56,9 @@ export default function App() {
   const [pitchModalOpen, setPitchModalOpen] = useState(false);
   const [hardwareModalOpen, setHardwareModalOpen] = useState(false);
   const [fieldHudOpen, setFieldHudOpen] = useState(false);
+  const [ussdModalOpen, setUssdModalOpen] = useState(false);
+  const [benchmarkModalOpen, setBenchmarkModalOpen] = useState(false);
+  const [dossierModalOpen, setDossierModalOpen] = useState(false);
 
   // Crisis state
   const [activeCrisis, setActiveCrisis] = useState(null);
@@ -495,6 +502,75 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => setUssdModalOpen(true)}
+              style={{
+                background: 'rgba(59, 130, 246, 0.15)',
+                border: '1px solid #3b82f6',
+                color: '#60a5fa',
+                padding: '7px 12px',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                fontFamily: 'var(--font-display)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 0 10px rgba(59, 130, 246, 0.2)'
+              }}
+              title="Citizen USSD Service (*920*26#) for feature phones & offline SMS"
+            >
+              <Phone size={14} color="#60a5fa" />
+              USSD (*920*26#)
+            </button>
+
+            <button
+              onClick={() => setBenchmarkModalOpen(true)}
+              style={{
+                background: 'rgba(6, 182, 212, 0.15)',
+                border: '1px solid #06b6d4',
+                color: '#22d3ee',
+                padding: '7px 12px',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                fontFamily: 'var(--font-display)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 0 10px rgba(6, 182, 212, 0.2)'
+              }}
+              title="Compare PulseCity vs Siemens Sitraffic / SCATS & LoRaWAN TCO"
+            >
+              <BarChart3 size={14} color="#22d3ee" />
+              TCO vs SCATS
+            </button>
+
+            <button
+              onClick={() => setDossierModalOpen(true)}
+              style={{
+                background: 'rgba(168, 85, 247, 0.15)',
+                border: '1px solid #a855f7',
+                color: '#c084fc',
+                padding: '7px 12px',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                fontFamily: 'var(--font-display)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 0 10px rgba(168, 85, 247, 0.2)'
+              }}
+              title="Formal Executive Brief & Printable PDF for Accra Municipal Assembly"
+            >
+              <FileText size={14} color="#c084fc" />
+              Executive Dossier
+            </button>
+
+            <button
               onClick={() => setPitchModalOpen(true)}
               className="btn-primary"
               style={{
@@ -836,6 +912,27 @@ export default function App() {
             prev.map((n) => n.id === 'EN-01' ? { ...n, currentLoadMw: Math.max(140, n.currentLoadMw - 25), dumsorRisk: 12 } : n)
           );
         }}
+      />
+
+      {/* Citizen USSD Simulator (*920*26#) */}
+      <CitizenUssdModal
+        isOpen={ussdModalOpen}
+        onClose={() => setUssdModalOpen(false)}
+        trafficNodes={trafficNodes}
+        energyNodes={energyNodes}
+        ecoNodes={ecoNodes}
+      />
+
+      {/* Competitive Benchmark & TCO Matrix */}
+      <BenchmarkModal
+        isOpen={benchmarkModalOpen}
+        onClose={() => setBenchmarkModalOpen(false)}
+      />
+
+      {/* Official Accra Municipal Assembly Executive Dossier */}
+      <ExecutiveDossierModal
+        isOpen={dossierModalOpen}
+        onClose={() => setDossierModalOpen(false)}
       />
     </div>
   );
