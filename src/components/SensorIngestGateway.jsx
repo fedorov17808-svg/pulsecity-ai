@@ -111,38 +111,100 @@ export default function SensorIngestGateway({
         </div>
 
         {/* Quick Node Template Selection */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Target Sensor:</span>
-          <select
-            value={selectedTarget}
-            onChange={(e) => {
-              const val = e.target.value;
-              setSelectedTarget(val);
-              if (val.startsWith('TR')) {
-                setPayloadJson(`{\n  "nodeId": "${val}",\n  "flowRateVehiclesPerHour": 4450,\n  "congestionPercentage": 89,\n  "incidentDetected": true,\n  "incidentDetails": "Overturned trotro blocking left slip-road",\n  "emergencyTransitActive": false\n}`);
-              } else if (val.startsWith('EN')) {
-                setPayloadJson(`{\n  "nodeId": "${val}",\n  "currentLoadMw": 242,\n  "transformerTemperatureCelsius": 89.4,\n  "dumsorRiskScore": 94,\n  "solarInputMw": 18\n}`);
-              } else {
-                setPayloadJson(`{\n  "nodeId": "${val}",\n  "aqiScore": 178,\n  "pm25UgM3": 89.2,\n  "drainageChokeDetected": true,\n  "wasteFillPercentage": 96\n}`);
-              }
-            }}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-subtle)',
-              color: '#fff',
-              padding: '4px 10px',
-              borderRadius: '6px',
-              fontSize: '0.78rem',
-              fontFamily: 'var(--font-mono)'
-            }}
-          >
-            <option value="TR-01">TR-01: Kwame Nkrumah Circle (Traffic)</option>
-            <option value="TR-02">TR-02: Tema Motorway (Traffic)</option>
-            <option value="EN-01">EN-01: Achimota Bulk Supply Point (Grid)</option>
-            <option value="EN-03">EN-03: Accra Central Substation (Grid)</option>
-            <option value="ECO-01">ECO-01: Agbogbloshie (Air & Waste)</option>
-            <option value="ECO-03">ECO-03: Makola Market Drain (Eco)</option>
-          </select>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Target Sensor:</span>
+            <select
+              value={selectedTarget}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedTarget(val);
+                if (val.startsWith('TR')) {
+                  setPayloadJson(`{\n  "nodeId": "${val}",\n  "flowRateVehiclesPerHour": 4450,\n  "congestionPercentage": 89,\n  "incidentDetected": true,\n  "incidentDetails": "Overturned trotro blocking left slip-road",\n  "emergencyTransitActive": false,\n  "protocol": "MQTT_V5_EDGE"\n}`);
+                } else if (val.startsWith('EN')) {
+                  setPayloadJson(`{\n  "nodeId": "${val}",\n  "currentLoadMw": 242,\n  "transformerTemperatureCelsius": 89.4,\n  "dumsorRiskScore": 94,\n  "solarInputMw": 18,\n  "protocol": "IEC_60870_5_104",\n  "asduType": 30\n}`);
+                } else {
+                  setPayloadJson(`{\n  "nodeId": "${val}",\n  "waterLevelMeters": 3.85,\n  "aqiScore": 178,\n  "drainageChokeDetected": true,\n  "wasteFillPercentage": 96,\n  "protocol": "LORAWAN_868MHZ"\n}`);
+                }
+              }}
+              style={{
+                flex: 1,
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border-subtle)',
+                color: '#fff',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.78rem',
+                fontFamily: 'var(--font-mono)'
+              }}
+            >
+              <option value="TR-01">TR-01: Kwame Nkrumah Circle (Traffic Vision)</option>
+              <option value="TR-02">TR-02: Tema Motorway (Traffic Vision)</option>
+              <option value="EN-01">EN-01: Achimota Bulk Supply Point (SCADA Grid)</option>
+              <option value="EN-03">EN-03: Accra Central Substation (SCADA Grid)</option>
+              <option value="ECO-01">ECO-01: Agbogbloshie Odaw Basin (LoRaWAN Flood)</option>
+              <option value="ECO-03">ECO-03: Makola Market Drain (LoRaWAN Drain)</option>
+            </select>
+          </div>
+
+          {/* Quick Industrial Protocol Payload Presets */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', alignSelf: 'center' }}>Presets:</span>
+            <button
+              onClick={() => {
+                setSelectedTarget('EN-01');
+                setPayloadJson(`{\n  "nodeId": "EN-01",\n  "protocol": "IEC_60870_5_104",\n  "asduType": 30,\n  "commonAddress": 1,\n  "ioa": 101,\n  "currentLoadMw": 232,\n  "gridFrequencyHz": 49.88,\n  "qualityDescriptor": "VALID",\n  "timestamp": "${new Date().toISOString()}"\n}`);
+              }}
+              style={{
+                background: 'rgba(56, 189, 248, 0.15)',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                color: '#38bdf8',
+                padding: '3px 8px',
+                borderRadius: '4px',
+                fontSize: '0.68rem',
+                fontFamily: 'var(--font-mono)',
+                cursor: 'pointer'
+              }}
+            >
+              ⚡ IEC-104 SCADA
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTarget('ECO-01');
+                setPayloadJson(`{\n  "nodeId": "ECO-01",\n  "protocol": "LORAWAN_868MHZ",\n  "devEui": "70B3D57ED005A12C",\n  "fPort": 10,\n  "fCnt": 24,\n  "waterLevelMeters": 2.44,\n  "aqiScore": 68,\n  "batteryVolts": 3.28,\n  "snrDb": 8.4,\n  "rssiDbm": -74\n}`);
+              }}
+              style={{
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                color: '#34d399',
+                padding: '3px 8px',
+                borderRadius: '4px',
+                fontSize: '0.68rem',
+                fontFamily: 'var(--font-mono)',
+                cursor: 'pointer'
+              }}
+            >
+              📡 LoRaWAN 868MHz
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTarget('TR-01');
+                setPayloadJson(`{\n  "nodeId": "TR-01",\n  "protocol": "MQTT_V5_TLS13",\n  "flowRateVehiclesPerHour": 4450,\n  "congestionPercentage": 89,\n  "incidentDetected": true,\n  "incidentDetails": "Overturned trotro blocking left slip-road",\n  "pcuWeighting": { "trotro": 2.5, "car": 1.0, "truck": 3.0 }\n}`);
+              }}
+              style={{
+                background: 'rgba(168, 85, 247, 0.15)',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
+                color: '#c084fc',
+                padding: '3px 8px',
+                borderRadius: '4px',
+                fontSize: '0.68rem',
+                fontFamily: 'var(--font-mono)',
+                cursor: 'pointer'
+              }}
+            >
+              👁️ Edge YOLOv8
+            </button>
+          </div>
         </div>
 
         {/* JSON Editor Textarea */}

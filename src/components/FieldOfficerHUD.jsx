@@ -267,6 +267,41 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
               </div>
             ))}
           </div>
+
+          {/* Offline Blackout & Hardware Watchdog Diagnostics */}
+          <div style={{
+            background: 'rgba(16, 185, 129, 0.05)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: '12px',
+            padding: '12px',
+            fontSize: '0.72rem',
+            fontFamily: 'var(--font-mono)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: '#34d399', fontWeight: 'bold' }}>🛡️ OFFLINE BLACKOUT RESILIENCE</span>
+              <span style={{ fontSize: '0.62rem', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '1px 6px', borderRadius: '4px' }}>
+                FAIL-SAFE ACTIVE
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+              <span>Cellular 4G Link:</span> <span style={{ color: '#f59e0b' }}>STANDBY / LOW-RSSI</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+              <span>LoRaWAN 868MHz Mesh:</span> <strong style={{ color: '#34d399' }}>CONNECTED (Peer Relay)</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+              <span>Hardware Watchdog (WDT):</span> <strong style={{ color: '#38bdf8' }}>8000ms Auto-Reset</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+              <span>LiFePO4 Solar Reserve:</span> <strong style={{ color: '#34d399' }}>72-hr Continuous Autonomous</strong>
+            </div>
+            <div style={{ fontSize: '0.66rem', color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px', marginTop: '2px' }}>
+              Fallback Mode: If cloud drops &gt;10s, intersection reverts to inductive-loop yellow/green safety splits automatically.
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

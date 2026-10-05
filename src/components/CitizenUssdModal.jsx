@@ -7,6 +7,7 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
   const [dialNumber, setDialNumber] = useState('*920*26#');
   const [reportText, setReportText] = useState('');
   const [activeSession, setActiveSession] = useState(false);
+  const [lang, setLang] = useState('EN'); // 'EN' | 'TWI'
 
   if (!isOpen) return null;
 
@@ -97,7 +98,9 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 id="ussd-modal-title" style={{ fontSize: '0.95rem', fontWeight: '700', color: '#fff' }}>Citizen USSD Terminal</h3>
+                <h3 id="ussd-modal-title" style={{ fontSize: '0.95rem', fontWeight: '700', color: '#fff' }}>
+                  {lang === 'EN' ? 'Citizen USSD Terminal' : 'Nkran Amanneɛbɔ USSD'}
+                </h3>
                 <span style={{
                   fontSize: '0.68rem',
                   fontFamily: 'var(--font-mono)',
@@ -109,7 +112,9 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
                   border: '1px solid rgba(16, 185, 129, 0.4)'
                 }}>*920*26#</span>
               </div>
-              <p style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Offline GSM Telco service for all phones in Ghana</p>
+              <p style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                {lang === 'EN' ? 'Offline GSM Telco service for all phones in Ghana' : 'Offline GSM dwumadie a ɛho nhia intanɛt'}
+              </p>
             </div>
           </div>
           <button className="modal-close-btn" onClick={onClose} aria-label="Close USSD Terminal">✕</button>
@@ -140,20 +145,39 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
+                alignItems: 'center',
                 fontSize: '0.68rem',
                 color: '#059669',
                 borderBottom: '1px solid rgba(16, 185, 129, 0.2)',
                 paddingBottom: '4px',
                 marginBottom: '8px'
               }}>
-                <span>MTN GH // 2G/EDGE</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>MTN GH // 2G/EDGE</span>
+                  <button 
+                    onClick={() => { playBeep(1400); setLang(lang === 'EN' ? 'TWI' : 'EN'); }}
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.25)',
+                      border: '1px solid #10b981',
+                      color: '#a7f3d0',
+                      borderRadius: '4px',
+                      fontSize: '0.6rem',
+                      fontWeight: '700',
+                      padding: '1px 5px',
+                      cursor: 'pointer'
+                    }}
+                    title="Toggle Language: English / Akan Twi"
+                  >
+                    {lang === 'EN' ? '🌐 TWI' : '🌐 ENG'}
+                  </button>
+                </div>
                 <span>{new Date().toLocaleTimeString().slice(0, 5)} GMT</span>
               </div>
 
               {ussdStep === 'DIALER' && (
                 <div style={{ textAlign: 'center', padding: '24px 0' }}>
                   <div style={{ fontSize: '0.7rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
-                    Dial MMI Code
+                    {lang === 'EN' ? 'Dial MMI Code' : 'Bɔ USSD Kood No'}
                   </div>
                   <div style={{
                     fontSize: '1.4rem',
@@ -169,7 +193,7 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
                     {dialNumber || "_"}
                   </div>
                   <div style={{ fontSize: '0.68rem', color: '#059669' }}>
-                    Free municipal toll. Zero data required.
+                    {lang === 'EN' ? 'Free municipal toll. Zero data required.' : 'Koma gye hwee. Data biara nni mu.'}
                   </div>
                 </div>
               )}
@@ -177,16 +201,16 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
               {ussdStep === 'MENU' && (
                 <div>
                   <div style={{ fontWeight: '700', color: '#a7f3d0', borderBottom: '1px solid rgba(16, 185, 129, 0.3)', paddingBottom: '4px', marginBottom: '8px' }}>
-                    === PULSECITY ACCRA ===
+                    {lang === 'EN' ? '=== PULSECITY ACCRA ===' : '=== NKRAN PULSECITY USSD ==='}
                   </div>
                   <div style={{ lineHeight: '1.5', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <div>1. Live Traffic (Circle/Kaneshie)</div>
-                    <div>2. ECG Dumsor Grid Status</div>
-                    <div>3. Odaw River Flood Risk</div>
-                    <div>4. Report Choked Drain (SMS)</div>
+                    <div>{lang === 'EN' ? '1. Live Traffic (Circle/Kaneshie)' : '1. Akwan Mu Tebea (Circle/Kaneshie)'}</div>
+                    <div>{lang === 'EN' ? '2. ECG Dumsor Grid Status' : '2. ECG Dumsor Amanneɛbɔ'}</div>
+                    <div>{lang === 'EN' ? '3. Odaw River Flood Risk' : '3. Odaw Asubɔnten Nsuyiri'}</div>
+                    <div>{lang === 'EN' ? '4. Report Choked Drain (SMS)' : '4. Bɔ Kakyerɛ Asɔremma (SMS)'}</div>
                   </div>
                   <div style={{ marginTop: '10px', fontSize: '0.68rem', color: '#6ee7b7' }}>
-                    Press 1-4 on keypad below:
+                    {lang === 'EN' ? 'Press 1-4 on keypad below:' : 'Mia 1-4 wɔ keypad no so:'}
                   </div>
                 </div>
               )}
@@ -194,12 +218,12 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
               {ussdStep === 'TRAFFIC' && (
                 <div style={{ lineHeight: '1.4' }}>
                   <div style={{ fontWeight: '700', color: '#a7f3d0', borderBottom: '1px solid rgba(16, 185, 129, 0.3)', paddingBottom: '4px', marginBottom: '6px' }}>
-                    🚦 GAMA TRAFFIC ADVISORY
+                    {lang === 'EN' ? '🚦 GAMA TRAFFIC ADVISORY' : '🚦 NKRAN AKWAN MU TEBEA'}
                   </div>
                   <div>• {circleNode.name.split(' ')[0]}: {circleNode.congestionLevel} ({circleNode.avgSpeedKmh} km/h)</div>
                   <div>• {kaneshieNode.name.split(' ')[0]}: {kaneshieNode.congestionLevel} ({kaneshieNode.avgSpeedKmh} km/h)</div>
                   <div style={{ marginTop: '6px', color: '#34d399', fontSize: '0.7rem' }}>
-                    Tip: Danquah to 37 Military route clear.
+                    {lang === 'EN' ? 'Tip: Danquah to 37 Military route clear.' : 'Afotu: Danquah de kɔ 37 kwan no mu da hɔ.'}
                   </div>
                 </div>
               )}
@@ -207,13 +231,13 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
               {ussdStep === 'DUMSOR' && (
                 <div style={{ lineHeight: '1.4' }}>
                   <div style={{ fontWeight: '700', color: '#a7f3d0', borderBottom: '1px solid rgba(16, 185, 129, 0.3)', paddingBottom: '4px', marginBottom: '6px' }}>
-                    ⚡ ECG DUMSOR FORECAST
+                    {lang === 'EN' ? '⚡ ECG DUMSOR FORECAST' : '⚡ ECG DUMSOR AMANNEƐBƆ'}
                   </div>
-                  <div>• {achimotaSub.name}: Normal</div>
-                  <div>• Grid Frequency: 50.02 Hz (Stable)</div>
-                  <div>• 6-hr Outage Probability: {achimotaSub.dumsorRisk}% (LOW)</div>
+                  <div>• {achimotaSub.name}: {lang === 'EN' ? 'Nominal' : 'Bɔkɔɔ'}</div>
+                  <div>• Frequency: 50.02 Hz ({lang === 'EN' ? 'Stable' : 'Pegyee'})</div>
+                  <div>• 6-hr Risk: {achimotaSub.dumsorRisk}% ({lang === 'EN' ? 'LOW' : 'KETEE'})</div>
                   <div style={{ marginTop: '6px', color: '#6ee7b7', fontSize: '0.7rem' }}>
-                    No planned load-shedding for your sector.
+                    {lang === 'EN' ? 'No planned load-shedding for your sector.' : 'Dumsor biara nni hɔ mprempren.'}
                   </div>
                 </div>
               )}
@@ -221,13 +245,13 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
               {ussdStep === 'FLOOD' && (
                 <div style={{ lineHeight: '1.4' }}>
                   <div style={{ fontWeight: '700', color: '#a7f3d0', borderBottom: '1px solid rgba(16, 185, 129, 0.3)', paddingBottom: '4px', marginBottom: '6px' }}>
-                    🌊 ODAW FLOOD EARLY WARNING
+                    {lang === 'EN' ? '🌊 ODAW FLOOD EARLY WARNING' : '🌊 ODAW NSUYIRI AMANNEƐBƆ'}
                   </div>
                   <div>• Sluice Gate: NORMAL (Open 35%)</div>
-                  <div>• Water Level: {korleNode.waterLevelMeters} m (Safe &lt; 3.0m)</div>
-                  <div>• 24h Rain Index: 4.2 mm (No surge)</div>
+                  <div>• Water Level: {korleNode.waterLevelMeters} m ({lang === 'EN' ? 'Safe < 3.0m' : 'Bɔkɔɔ < 3.0m'})</div>
+                  <div>• 24h Rain: 4.2 mm ({lang === 'EN' ? 'No surge' : 'Asorɔkye nni hɔ'})</div>
                   <div style={{ marginTop: '6px', color: '#6ee7b7', fontSize: '0.7rem' }}>
-                    Alajo & Circle drainage flow nominal.
+                    {lang === 'EN' ? 'Alajo & Circle drainage flow nominal.' : 'Alajo ne Circle nsuo kwan no yɛ.'}
                   </div>
                 </div>
               )}
@@ -235,14 +259,14 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
               {ussdStep === 'REPORT' && (
                 <div>
                   <div style={{ fontWeight: '700', color: '#a7f3d0', borderBottom: '1px solid rgba(16, 185, 129, 0.3)', paddingBottom: '4px', marginBottom: '6px' }}>
-                    📢 REPORT CHOKED DRAIN
+                    {lang === 'EN' ? '📢 REPORT CHOKED DRAIN / CRISIS' : '📢 BƆ AMANNEƐ / NSUYIRI'}
                   </div>
                   <form onSubmit={handleReportSubmit}>
                     <input
                       type="text"
                       value={reportText}
                       onChange={(e) => setReportText(e.target.value)}
-                      placeholder="e.g. Odaw basin trash pileup"
+                      placeholder={lang === 'EN' ? 'e.g. Odaw basin trash pileup' : 'e.g. Odaw asubɔnten sumii'}
                       autoFocus
                       style={{
                         width: '100%',
@@ -271,7 +295,7 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
                         cursor: 'pointer'
                       }}
                     >
-                      Send Report via SMS
+                      {lang === 'EN' ? 'Send Report via SMS' : 'Fa SMS Mane Asɔremma'}
                     </button>
                   </form>
                 </div>
@@ -279,9 +303,13 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
 
               {ussdStep === 'REPORT_CONFIRM' && (
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                  <div style={{ color: '#6ee7b7', fontWeight: '700', marginBottom: '6px' }}>✓ REPORT LOGGED</div>
+                  <div style={{ color: '#6ee7b7', fontWeight: '700', marginBottom: '6px' }}>
+                    {lang === 'EN' ? '✓ REPORT LOGGED' : '✓ YƐAGYE WO AMANNEƐBƆ'}
+                  </div>
                   <div style={{ fontSize: '0.7rem', color: '#34d399' }}>
-                    Ticket #AMA-8492 dispatched to Waste Management Taskforce.
+                    {lang === 'EN' 
+                      ? 'Ticket #AMA-8492 dispatched to Waste Management Taskforce.' 
+                      : 'Krataa #AMA-8492 kɔma Asɔremma no ntɛm ara.'}
                   </div>
                 </div>
               )}
