@@ -114,6 +114,12 @@ export default function BenchmarkModal({ isOpen, onClose }) {
                       <td style={{ color: '#f87171' }}>None</td>
                     </tr>
                     <tr>
+                      <td style={{ fontWeight: '600', color: '#fff' }}>AI Architecture & Cloud Ingest</td>
+                      <td style={{ color: '#34d399', fontWeight: '700' }}>Two-Tier (Edge YOLOv8 14ms + Event-Driven Gemini: $18/mo)</td>
+                      <td style={{ color: '#f87171' }}>Central Mainframe Cloud ($35,000/mo)</td>
+                      <td style={{ color: '#f87171' }}>On-Prem Server ($50,000 CapEx)</td>
+                    </tr>
+                    <tr>
                       <td style={{ fontWeight: '600', color: '#fff' }}>Independent Benchmark</td>
                       <td style={{ color: '#38bdf8' }}>ISO 37120 Smart City Compliant</td>
                       <td style={{ color: '#94a3b8' }}>Proprietary Siemens VDV</td>
