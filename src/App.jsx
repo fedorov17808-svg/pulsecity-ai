@@ -21,6 +21,9 @@ import CitizenUssdModal from './components/CitizenUssdModal';
 import BenchmarkModal from './components/BenchmarkModal';
 import ExecutiveDossierModal from './components/ExecutiveDossierModal';
 import GeminiConfigModal from './components/GeminiConfigModal';
+import CyberGridBackdrop from './components/CyberGridBackdrop';
+import { sfx } from './utils/soundEffects';
+import gsap from 'gsap';
 
 export default function App() {
   // Navigation & View State
@@ -506,7 +509,8 @@ export default function App() {
 
             {/* Public USSD Dialer Button */}
             <button
-              onClick={() => setUssdModalOpen(true)}
+              onClick={() => { sfx.click(); setUssdModalOpen(true); }}
+              onMouseEnter={() => sfx.hover()}
               style={{
                 background: 'rgba(16, 185, 129, 0.12)',
                 border: '1px solid rgba(16, 185, 129, 0.35)',
@@ -532,7 +536,8 @@ export default function App() {
             {/* Municipal Operations & Engineering Suite Dropdown */}
             <div ref={opsMenuRef} style={{ position: 'relative' }}>
               <button
-                onClick={() => setOpsMenuOpen(!opsMenuOpen)}
+                onClick={() => { sfx.click(); setOpsMenuOpen(!opsMenuOpen); }}
+                onMouseEnter={() => sfx.hover()}
                 className="btn-secondary"
                 style={{
                   padding: '6px 12px',
@@ -569,7 +574,7 @@ export default function App() {
                   }}
                 >
                   <button
-                    onClick={() => { setHardwareModalOpen(true); setOpsMenuOpen(false); }}
+                    onClick={() => { sfx.click(); setHardwareModalOpen(true); setOpsMenuOpen(false); }}
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -584,7 +589,7 @@ export default function App() {
                       textAlign: 'left',
                       transition: 'all 0.15s ease'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseEnter={e => { sfx.hover(); e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <Zap size={15} color="#34d399" />
@@ -595,7 +600,7 @@ export default function App() {
                   </button>
 
                   <button
-                    onClick={() => { setFieldHudOpen(true); setOpsMenuOpen(false); }}
+                    onClick={() => { sfx.click(); setFieldHudOpen(true); setOpsMenuOpen(false); }}
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -610,7 +615,7 @@ export default function App() {
                       textAlign: 'left',
                       transition: 'all 0.15s ease'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseEnter={e => { sfx.hover(); e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <Shield size={15} color="#fbbf24" />
@@ -621,7 +626,7 @@ export default function App() {
                   </button>
 
                   <button
-                    onClick={() => { setBenchmarkModalOpen(true); setOpsMenuOpen(false); }}
+                    onClick={() => { sfx.click(); setBenchmarkModalOpen(true); setOpsMenuOpen(false); }}
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -636,7 +641,7 @@ export default function App() {
                       textAlign: 'left',
                       transition: 'all 0.15s ease'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseEnter={e => { sfx.hover(); e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <BarChart3 size={15} color="#38bdf8" />
@@ -647,7 +652,7 @@ export default function App() {
                   </button>
 
                   <button
-                    onClick={() => { setDossierModalOpen(true); setOpsMenuOpen(false); }}
+                    onClick={() => { sfx.click(); setDossierModalOpen(true); setOpsMenuOpen(false); }}
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -662,7 +667,7 @@ export default function App() {
                       textAlign: 'left',
                       transition: 'all 0.15s ease'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseEnter={e => { sfx.hover(); e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <FileText size={15} color="#c084fc" />
@@ -673,7 +678,7 @@ export default function App() {
                   </button>
 
                   <button
-                    onClick={() => { setGeminiModalOpen(true); setOpsMenuOpen(false); }}
+                    onClick={() => { sfx.click(); setGeminiModalOpen(true); setOpsMenuOpen(false); }}
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -688,7 +693,7 @@ export default function App() {
                       textAlign: 'left',
                       transition: 'all 0.15s ease'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseEnter={e => { sfx.hover(); e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <Sparkles size={15} color="var(--accent-cyan)" />
@@ -715,7 +720,8 @@ export default function App() {
 
             {/* DoraHacks Pitch Kit (Hero CTA) */}
             <button
-              onClick={() => setPitchModalOpen(true)}
+              onClick={() => { sfx.click(); setPitchModalOpen(true); }}
+              onMouseEnter={() => sfx.hover()}
               className="btn-primary"
               style={{
                 background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',

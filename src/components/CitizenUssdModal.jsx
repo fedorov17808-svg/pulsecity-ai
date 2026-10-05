@@ -73,7 +73,7 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
   const korleNode = ecoNodes?.find(n => n.id === 'ECO-01') || { name: 'Korle Lagoon / Odaw Basin', floodRisk: 'LOW', waterLevelMeters: 1.4 };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="ussd-modal-title">
       <div 
         className="modal-card" 
         style={{ maxWidth: '440px', background: '#090e17', border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '24px', boxShadow: '0 25px 70px rgba(0,0,0,0.9), 0 0 30px rgba(16, 185, 129, 0.2)' }}
@@ -97,7 +97,7 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#fff' }}>Citizen USSD Terminal</h3>
+                <h3 id="ussd-modal-title" style={{ fontSize: '0.95rem', fontWeight: '700', color: '#fff' }}>Citizen USSD Terminal</h3>
                 <span style={{
                   fontSize: '0.68rem',
                   fontFamily: 'var(--font-mono)',
@@ -112,7 +112,7 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
               <p style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Offline GSM Telco service for all phones in Ghana</p>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>✕</button>
+          <button className="modal-close-btn" onClick={onClose} aria-label="Close USSD Terminal">✕</button>
         </div>
 
         {/* Feature Phone Body */}

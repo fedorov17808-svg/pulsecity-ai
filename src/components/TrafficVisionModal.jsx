@@ -209,7 +209,7 @@ export default function TrafficVisionModal({
   };
 
   return (
-    <div className="modal-backdrop" onClick={() => { stopWebcam(); onClose(); }}>
+    <div className="modal-backdrop" onClick={() => { stopWebcam(); onClose(); }} role="dialog" aria-modal="true" aria-labelledby="traffic-vision-title">
       <div 
         className="modal-card" 
         style={{
@@ -237,7 +237,7 @@ export default function TrafficVisionModal({
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '1.25rem', color: '#fff' }}>Deep Vision & Live Stream Sentinel</h3>
+                <h3 id="traffic-vision-title" style={{ fontSize: '1.25rem', color: '#fff' }}>Deep Vision & Live Stream Sentinel</h3>
                 <span className="badge badge-cyan" style={{ fontSize: '0.68rem' }}>Phase 1 Engine</span>
               </div>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
@@ -260,16 +260,10 @@ export default function TrafficVisionModal({
                 stopWebcam();
                 onClose();
               }}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                fontSize: '1.6rem',
-                cursor: 'pointer',
-                padding: '0 8px'
-              }}
+              className="modal-close-btn"
+              aria-label="Close Traffic Vision Modal"
             >
-              ×
+              ✕
             </button>
           </div>
         </div>

@@ -114,15 +114,37 @@ export default function CityMap({
     corridor.clearLayers();
     ambulance.clearLayers();
 
-    // 1. Draw Green Wave Corridor Polyline with glow
+    // 1. Draw Green Wave Corridor Polyline with dynamic laser flow animation
     L.polyline(route.gpsPath, {
+      className: 'green-wave-animated-corridor',
       color: '#10b981',
       weight: 6,
       opacity: 0.95,
       lineCap: 'round',
       lineJoin: 'round',
-      dashArray: '12, 8'
+      dashArray: '14, 10'
     }).addTo(corridor);
+
+    // 2. Add glowing transit beacons at each route waypoint
+    route.gpsPath.forEach(([lat, lng]) => {
+      const beaconIcon = L.divIcon({
+        className: 'green-wave-beacon',
+        html: `
+          <div style="
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #10b981;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 16px #10b981, 0 0 8px #ffffff;
+            animation: pulse-ring 1.2s infinite ease-in-out;
+          "></div>
+        `,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+      L.marker([lat, lng], { icon: beaconIcon }).addTo(corridor);
+    });
 
     // 2. Animate Ambulance Moving along the GPS Path smoothly across all hops
     let step = 0;

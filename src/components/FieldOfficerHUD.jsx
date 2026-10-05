@@ -23,7 +23,7 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="field-hud-title">
       <div 
         className="modal-card" 
         style={{ maxWidth: '520px', border: '2px solid rgba(245, 158, 11, 0.6)', boxShadow: '0 25px 70px rgba(0,0,0,0.9), 0 0 35px rgba(245, 158, 11, 0.25)' }}
@@ -41,7 +41,7 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fff', boxShadow: '0 0 10px #fff' }}></span>
             <div>
-              <h2 style={{ fontSize: '0.88rem', fontWeight: '900', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              <h2 id="field-hud-title" style={{ fontSize: '0.88rem', fontWeight: '900', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                 Field Tactical Terminal v2.6
               </h2>
               <p style={{ fontSize: '0.68rem', fontWeight: '700', color: '#1c1917' }}>
@@ -49,7 +49,7 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
               </p>
             </div>
           </div>
-          <button className="modal-close-btn" style={{ background: 'rgba(0,0,0,0.2)', color: '#000', border: 'none' }} onClick={onClose}>✕</button>
+          <button className="modal-close-btn" style={{ background: 'rgba(0,0,0,0.2)', color: '#000', border: 'none' }} onClick={onClose} aria-label="Close Field Officer HUD">✕</button>
         </div>
 
         {/* Agency Switcher */}

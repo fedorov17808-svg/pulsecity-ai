@@ -9,7 +9,7 @@ export default function ExecutiveDossierModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="dossier-modal-title">
       <div 
         className="modal-card" 
         style={{ maxWidth: '960px', background: '#0a0f1d', border: '1px solid rgba(168, 85, 247, 0.4)' }}
@@ -20,7 +20,7 @@ export default function ExecutiveDossierModal({ isOpen, onClose }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Award style={{ color: '#c084fc' }} size={22} />
             <div>
-              <h3 style={{ fontSize: '1rem', fontWeight: '700', color: '#fff' }}>Accra Municipal Assembly // Official Executive Brief</h3>
+              <h3 id="dossier-modal-title" style={{ fontSize: '1rem', fontWeight: '700', color: '#fff' }}>Accra Municipal Assembly // Official Executive Brief</h3>
               <p style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Formal Engineering & Procurement Dossier for Government of Ghana</p>
             </div>
           </div>
@@ -44,7 +44,7 @@ export default function ExecutiveDossierModal({ isOpen, onClose }) {
             >
               <Printer size={14} /> Print / Export PDF
             </button>
-            <button className="modal-close-btn" onClick={onClose}>✕</button>
+            <button className="modal-close-btn" onClick={onClose} aria-label="Close Executive Dossier">✕</button>
           </div>
         </div>
 

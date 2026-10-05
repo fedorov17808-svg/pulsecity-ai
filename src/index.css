@@ -119,6 +119,24 @@ h1, h2, h3, h4, .font-display {
   100% { transform: translateY(1000%); }
 }
 
+@keyframes flowDash {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.green-wave-animated-corridor {
+  animation: flowDash 0.8s linear infinite !important;
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.9)) !important;
+}
+
+/* Accessible focus indicator */
+:focus-visible {
+  outline: 2px solid var(--accent-cyan) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.5) !important;
+}
+
 .pulse-indicator {
   position: relative;
   display: inline-flex;

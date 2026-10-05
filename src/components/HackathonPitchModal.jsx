@@ -54,7 +54,7 @@ Ready for immediate pilot deployment with Accra Metropolitan Assembly (AMA) and 
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="pitch-kit-title">
       <div 
         className="modal-card" 
         style={{
@@ -83,7 +83,7 @@ Ready for immediate pilot deployment with Accra Metropolitan Assembly (AMA) and 
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '1.35rem', color: '#fff' }}>DoraHacks BUIDL Pitch Kit</h3>
+                <h3 id="pitch-kit-title" style={{ fontSize: '1.35rem', color: '#fff' }}>DoraHacks BUIDL Pitch Kit</h3>
                 <span className="badge badge-amber" style={{ fontSize: '0.68rem' }}>1st Place Submission</span>
               </div>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -94,16 +94,10 @@ Ready for immediate pilot deployment with Accra Metropolitan Assembly (AMA) and 
 
           <button 
             onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              fontSize: '1.6rem',
-              cursor: 'pointer',
-              padding: '0 8px'
-            }}
+            className="modal-close-btn"
+            aria-label="Close Pitch Kit Modal"
           >
-            ×
+            ✕
           </button>
         </div>
 

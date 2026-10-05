@@ -135,7 +135,7 @@ export default function HardwareHubModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="hardware-modal-title">
       <div 
         className="modal-card" 
         style={{ maxWidth: '960px', border: '1px solid rgba(16, 185, 129, 0.4)' }}
@@ -159,13 +159,13 @@ export default function HardwareHubModal({ isOpen, onClose }) {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#fff' }}>IoT Hardware & Edge Firmware Suite</h3>
+                <h3 id="hardware-modal-title" style={{ fontSize: '1.05rem', fontWeight: '700', color: '#fff' }}>IoT Hardware & Edge Firmware Suite</h3>
                 <span className="badge badge-emerald" style={{ fontSize: '0.68rem' }}>Sub-$20 Unit Cost</span>
               </div>
               <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Production C++ and Python Edge implementations for Ghana municipal field nodes</p>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>✕</button>
+          <button className="modal-close-btn" onClick={onClose} aria-label="Close Hardware Suite">✕</button>
         </div>
 
         {/* Tab switch */}

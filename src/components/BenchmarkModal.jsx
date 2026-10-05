@@ -7,7 +7,7 @@ export default function BenchmarkModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="benchmark-modal-title">
       <div 
         className="modal-card" 
         style={{ maxWidth: '960px', border: '1px solid rgba(0, 242, 254, 0.4)' }}
@@ -31,13 +31,13 @@ export default function BenchmarkModal({ isOpen, onClose }) {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#fff' }}>Competitive Benchmark & LoRaWAN TCO Audit</h3>
+                <h3 id="benchmark-modal-title" style={{ fontSize: '1.05rem', fontWeight: '700', color: '#fff' }}>Competitive Benchmark & LoRaWAN TCO Audit</h3>
                 <span className="badge badge-cyan" style={{ fontSize: '0.68rem' }}>Total Cost of Ownership</span>
               </div>
               <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Why legacy Western smart city vendors fail in African megacities</p>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>✕</button>
+          <button className="modal-close-btn" onClick={onClose} aria-label="Close Benchmark Audit">✕</button>
         </div>
 
         {/* Tab switch */}
