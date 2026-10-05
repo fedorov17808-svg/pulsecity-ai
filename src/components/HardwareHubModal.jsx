@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { Cpu, Terminal, Copy, Check, Shield, Layers, DollarSign } from 'lucide-react';
+import { 
+  Cpu, Terminal, Copy, Check, Shield, Layers, DollarSign,
+  Radio, Activity, Send, CheckCircle2, ShieldAlert, Zap, Lock, Eye
+} from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 const ESP32_SNIPPET = `// PulseCity AI — ESP32 WROOM-32D Environmental & Flood Telemetry Firmware
 #include <WiFi.h>
@@ -125,6 +129,19 @@ if __name__ == "__main__":
 export default function HardwareHubModal({ isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState('esp32');
   const [copied, setCopied] = useState(false);
+  const [testbedTarget, setTestbedTarget] = useState('esp32');
+  const [flashing, setFlashing] = useState(false);
+  const [flashSuccess, setFlashSuccess] = useState(false);
+  const [serialLogs, setSerialLogs] = useState([
+    '[INIT] Hardware serial monitor connected at /dev/ttyUSB0 (115200 baud)',
+    '[READY] Ready to flash municipal firmware binary.'
+  ]);
+  const [simulatedTelemetry, setSimulatedTelemetry] = useState({
+    waterLevel: 2.15,
+    aqi: 45,
+    batteryVolts: 3.32,
+    rssi: -64
+  });
 
   if (!isOpen) return null;
 
@@ -132,6 +149,41 @@ export default function HardwareHubModal({ isOpen, onClose }) {
     navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const runFirmwareFlash = () => {
+    if (flashing) return;
+    setFlashing(true);
+    setFlashSuccess(false);
+    setSerialLogs([
+      `[ESP-TOOL] Connecting to ${testbedTarget.toUpperCase()} on /dev/ttyUSB0...`,
+      '[ESP-TOOL] Chip ID: ESP32-S3 (revision v0.2, 240MHz)',
+      '[ESP-TOOL] Erasing flash partition table...',
+      '[ESP-TOOL] Writing 0x00010000 (pulsecity_firmware_v2.6.bin)... 24%',
+    ]);
+
+    setTimeout(() => {
+      setSerialLogs(prev => [
+        ...prev,
+        '[ESP-TOOL] Writing... 68%',
+        '[ESP-TOOL] Writing... 100% (MD5 Verified: a8f4c910b2)',
+        '[BOOT] Node boot OK. Mounting SPIFFS & LoRa SX1262...',
+        '[WIFI] Connected to MTN-Mesh-GAMA (IP: 192.168.4.112, RSSI: -64dBm)',
+        '[SENSOR] Sonar JSN-SR04T calibrated: Water level = 2.15m (Normal)',
+        '[SENSOR] MQ-135 AQI reading: 45 (Good - Odaw Basin Baseline)',
+        '[MQTT] Connected to pulsecity-ai.vercel.app:8883 (TLS 1.3)',
+        '[TELEMETRY] Payload dispatched: {"nodeId":"ECO-01","status":"NOMINAL","waterLevel":2.15}'
+      ]);
+      setFlashing(false);
+      setFlashSuccess(true);
+      try {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.6 }
+        });
+      } catch {}
+    }, 1200);
   };
 
   return (
@@ -189,9 +241,21 @@ export default function HardwareHubModal({ isOpen, onClose }) {
             >
               $13.05 BOM & Pinout
             </button>
+            <button
+              onClick={() => setActiveTab('testbed')}
+              className={`pill-tab ${activeTab === 'testbed' ? 'active' : ''}`}
+              style={{
+                borderColor: activeTab === 'testbed' ? '#34d399' : 'transparent',
+                background: activeTab === 'testbed' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                color: activeTab === 'testbed' ? '#fff' : 'var(--text-secondary)'
+              }}
+            >
+              <Radio size={13} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
+              Live Hardware Testbed
+            </button>
           </div>
 
-          {activeTab !== 'bom' && (
+          {activeTab !== 'bom' && activeTab !== 'testbed' && (
             <button
               onClick={() => copyCode(activeTab === 'esp32' ? ESP32_SNIPPET : RPI_PYTHON_SNIPPET)}
               style={{
@@ -315,6 +379,151 @@ export default function HardwareHubModal({ isOpen, onClose }) {
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'testbed' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Testbed Header Bar */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'rgba(15, 23, 42, 0.8)',
+                padding: '12px 18px',
+                borderRadius: '8px',
+                border: '1px solid rgba(16, 185, 129, 0.25)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Radio size={18} color="#34d399" />
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#fff' }}>
+                      WebUSB / Serial Field Deployment Rig
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                      Simulate flashing and OTA ping to field node (GAMA Metropolitan Grid)
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <select
+                    value={testbedTarget}
+                    onChange={e => setTestbedTarget(e.target.value)}
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.5)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#fff',
+                      fontSize: '0.78rem',
+                      padding: '6px 10px',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    <option value="esp32">ESP32-S3 (Flood/AQI Sensor)</option>
+                    <option value="rpi">Raspberry Pi Zero 2W (Vision Edge)</option>
+                  </select>
+
+                  <button
+                    onClick={runFirmwareFlash}
+                    disabled={flashing}
+                    className="btn-primary"
+                    style={{
+                      padding: '6px 14px',
+                      fontSize: '0.78rem',
+                      background: flashSuccess ? 'rgba(16, 185, 129, 0.3)' : undefined,
+                      borderColor: flashSuccess ? '#10b981' : undefined
+                    }}
+                  >
+                    {flashing ? 'Flashing over Serial...' : flashSuccess ? '✓ Node Active & Ingesting' : 'Flash Firmware & Ping'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Grid: Serial Monitor + Telemetry Diagnostics */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '14px' }}>
+                {/* Serial Monitor */}
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.85)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.72rem',
+                  height: '240px',
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}>
+                  <div style={{ color: '#64748b', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '4px', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>SERIAL CONSOLE — 115200 8-N-1</span>
+                    <span style={{ color: '#10b981' }}>● LIVE TTY</span>
+                  </div>
+                  {serialLogs.map((log, i) => (
+                    <div key={i} style={{
+                      color: log.includes('ERR') ? '#f87171' : log.includes('WIFI') || log.includes('MQTT') || log.includes('Verified') ? '#34d399' : log.includes('ESP-TOOL') ? '#38bdf8' : '#cbd5e1'
+                    }}>
+                      {log}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Telemetry Live HUD */}
+                <div style={{
+                  background: 'rgba(6, 24, 16, 0.6)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  borderRadius: '8px',
+                  padding: '14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#fff', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Activity size={14} color="#34d399" />
+                      Live Edge Telemetry Ingestion
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <div style={{ background: 'rgba(0,0,0,0.4)', padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Odaw Basin Water</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+                          {simulatedTelemetry.waterLevel}m
+                        </div>
+                        <div style={{ fontSize: '0.6rem', color: '#10b981' }}>Safe Clearance</div>
+                      </div>
+
+                      <div style={{ background: 'rgba(0,0,0,0.4)', padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>MQ-135 Gas AQI</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                          {simulatedTelemetry.aqi}
+                        </div>
+                        <div style={{ fontSize: '0.6rem', color: '#10b981' }}>WHO Grade I</div>
+                      </div>
+
+                      <div style={{ background: 'rgba(0,0,0,0.4)', padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>LiFePO4 Solar V</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+                          {simulatedTelemetry.batteryVolts}V
+                        </div>
+                        <div style={{ fontSize: '0.6rem', color: '#fbbf24' }}>Float Charging</div>
+                      </div>
+
+                      <div style={{ background: 'rgba(0,0,0,0.4)', padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>LoRa/MTN Mesh</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#a855f7', fontFamily: 'var(--font-mono)' }}>
+                          {simulatedTelemetry.rssi} dBm
+                        </div>
+                        <div style={{ fontSize: '0.6rem', color: '#34d399' }}>Strong Link</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '12px', fontSize: '0.68rem', color: '#94a3b8', background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '4px' }}>
+                    🔒 Ed25519 Hardware Cryptographic Signature Validated
+                  </div>
+                </div>
               </div>
             </div>
           )}
