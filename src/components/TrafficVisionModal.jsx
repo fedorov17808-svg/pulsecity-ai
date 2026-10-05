@@ -45,13 +45,6 @@ export default function TrafficVisionModal({
   const [fps, setFps] = useState(30);
   const [inferenceLatencyMs, setInferenceLatencyMs] = useState(28);
 
-  // Cleanup webcam stream on unmount
-  useEffect(() => {
-    return () => {
-      stopWebcam();
-    };
-  }, []);
-
   const stopWebcam = () => {
     if (webcamStream) {
       webcamStream.getTracks().forEach((track) => track.stop());
@@ -59,6 +52,13 @@ export default function TrafficVisionModal({
     }
     setWebcamActive(false);
   };
+
+  // Cleanup webcam stream on unmount
+  useEffect(() => {
+    return () => {
+      stopWebcam();
+    };
+  }, [webcamStream]);
 
   const handleStartWebcam = async () => {
     setWebcamError(null);

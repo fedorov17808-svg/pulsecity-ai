@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Activity, Car, Zap, Wind, Bot, Shield, Trophy, 
   Sparkles, Layers, Clock, Terminal,
-  Phone, BarChart3, FileText
+  Phone, BarChart3, FileText, Volume2, VolumeX, AlertTriangle
 } from 'lucide-react';
 import { 
   TRAFFIC_NODES, ENERGY_NODES, 
@@ -20,6 +20,7 @@ import FieldOfficerHUD from './components/FieldOfficerHUD';
 import CitizenUssdModal from './components/CitizenUssdModal';
 import BenchmarkModal from './components/BenchmarkModal';
 import ExecutiveDossierModal from './components/ExecutiveDossierModal';
+import GeminiConfigModal from './components/GeminiConfigModal';
 
 export default function App() {
   // Navigation & View State
@@ -59,7 +60,21 @@ export default function App() {
   const [ussdModalOpen, setUssdModalOpen] = useState(false);
   const [benchmarkModalOpen, setBenchmarkModalOpen] = useState(false);
   const [dossierModalOpen, setDossierModalOpen] = useState(false);
+  const [geminiModalOpen, setGeminiModalOpen] = useState(false);
   const [opsMenuOpen, setOpsMenuOpen] = useState(false);
+  const [sfxMuted, setSfxMuted] = useState(() => sfx.muted);
+
+  // Layout & Animation Refs
+  const workspaceRef = useRef(null);
+  const crisisBannerRef = useRef(null);
+
+  const toggleAudio = () => {
+    const nextMuted = sfx.toggleMute();
+    setSfxMuted(nextMuted);
+    if (!nextMuted) {
+      sfx.click();
+    }
+  };
 
   // Crisis state
   const [activeCrisis, setActiveCrisis] = useState(null);
@@ -68,6 +83,31 @@ export default function App() {
   const [apiKey, setApiKey] = useState(() => {
     return localStorage.getItem('pulsecity_gemini_key') || '';
   });
+
+  // GSAP: Animate workspace on activeTab changes
+  useEffect(() => {
+    if (workspaceRef.current) {
+      gsap.fromTo(
+        workspaceRef.current,
+        { opacity: 0.35, y: 12 },
+        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }
+      );
+    }
+  }, [activeTab]);
+
+  // GSAP: Animate crisis banner & play alarm on activeCrisis
+  useEffect(() => {
+    if (activeCrisis) {
+      sfx.alarm();
+      if (crisisBannerRef.current) {
+        gsap.fromTo(
+          crisisBannerRef.current,
+          { scale: 0.95, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.45, ease: 'back.out(1.7)' }
+        );
+      }
+    }
+  }, [activeCrisis]);
 
   // Sync to localStorage
   useEffect(() => {
@@ -114,6 +154,7 @@ export default function App() {
         setBenchmarkModalOpen(false);
         setDossierModalOpen(false);
         setPitchModalOpen(false);
+        setGeminiModalOpen(false);
         setVisionModalOpen(false);
         setVisionModalNode(null);
       }
@@ -160,6 +201,7 @@ export default function App() {
   const handleIngestTelemetry = (payload) => {
     const { nodeId } = payload;
     if (!nodeId) return;
+    sfx.scan();
 
     if (nodeId.startsWith('TR')) {
       setTrafficNodes((prev) =>
@@ -212,6 +254,7 @@ export default function App() {
 
   // Actions
   const handleApplyTrafficOptimization = (nodeId, newGreenDuration) => {
+    sfx.success();
     setTrafficNodes((prev) =>
       prev.map((n) => {
         if (n.id === nodeId) {
@@ -231,6 +274,7 @@ export default function App() {
   };
 
   const handleBalanceGrid = () => {
+    sfx.success();
     setEnergyNodes((prev) =>
       prev.map((n) => {
         if (n.id === 'EN-01') {
@@ -256,6 +300,7 @@ export default function App() {
   };
 
   const handleDispatchWasteTruck = (nodeId) => {
+    sfx.success();
     setEcoNodes((prev) =>
       prev.map((n) => {
         if (n.id === nodeId) {
@@ -275,6 +320,7 @@ export default function App() {
   const handleTriggerScenario = (scenarioId) => {
     const crisis = PRESET_CRISES.find((c) => c.id === scenarioId);
     if (!crisis) return;
+    sfx.alarm();
     setActiveCrisis(crisis);
 
     if (scenarioId === 'crisis-motorway-pileup') {
@@ -297,6 +343,7 @@ export default function App() {
 
   const handleResolveCrisis = () => {
     if (!activeCrisis) return;
+    sfx.success();
     if (activeCrisis.id === 'crisis-motorway-pileup') {
       handleApplyTrafficOptimization('TR-02', 65);
     } else if (activeCrisis.id === 'crisis-achimota-dumsor') {
@@ -313,7 +360,10 @@ export default function App() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* Sci-Fi Global Interactive Grid Backdrop */}
+      <CyberGridBackdrop />
+
       {/* World-Class Command Center Header */}
       <header 
         className="notranslate"
@@ -369,17 +419,10 @@ export default function App() {
           </div>
 
           {/* Subsystem Navigation Pills */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            background: 'rgba(15, 23, 42, 0.7)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            padding: '4px',
-            borderRadius: '12px',
-            gap: '4px'
-          }}>
+          <div className="tab-nav-container">
             <button
-              onClick={() => setActiveTab('overview')}
+              onClick={() => { sfx.click(); setActiveTab('overview'); }}
+              onMouseEnter={() => sfx.hover()}
               className={`pill-tab ${activeTab === 'overview' ? 'active' : ''}`}
             >
               <Layers size={14} />
@@ -387,7 +430,8 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => { setActiveTab('traffic'); setMapLayer('traffic'); }}
+              onClick={() => { sfx.click(); setActiveTab('traffic'); setMapLayer('traffic'); }}
+              onMouseEnter={() => sfx.hover()}
               className={`pill-tab ${activeTab === 'traffic' ? 'active' : ''}`}
             >
               <Car size={14} />
@@ -395,7 +439,8 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => { setActiveTab('energy'); setMapLayer('energy'); }}
+              onClick={() => { sfx.click(); setActiveTab('energy'); setMapLayer('energy'); }}
+              onMouseEnter={() => sfx.hover()}
               className={`pill-tab ${activeTab === 'energy' ? 'active' : ''}`}
             >
               <Zap size={14} />
@@ -403,7 +448,8 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => { setActiveTab('eco'); setMapLayer('eco'); }}
+              onClick={() => { sfx.click(); setActiveTab('eco'); setMapLayer('eco'); }}
+              onMouseEnter={() => sfx.hover()}
               className={`pill-tab ${activeTab === 'eco' ? 'active' : ''}`}
             >
               <Wind size={14} />
@@ -411,7 +457,8 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => setActiveTab('gateway')}
+              onClick={() => { sfx.click(); setActiveTab('gateway'); }}
+              onMouseEnter={() => sfx.hover()}
               className={`pill-tab ${activeTab === 'gateway' ? 'active' : ''}`}
             >
               <Terminal size={14} />
@@ -419,7 +466,8 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => setActiveTab('commander')}
+              onClick={() => { sfx.click(); setActiveTab('commander'); }}
+              onMouseEnter={() => sfx.hover()}
               className={`pill-tab ${activeTab === 'commander' ? 'active' : ''}`}
             >
               <Bot size={14} />
@@ -428,11 +476,33 @@ export default function App() {
           </div>
 
           {/* Tactical Action Bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#64748b', fontFamily: 'var(--font-mono)', marginRight: '4px' }}>
               <Clock size={13} />
               {currentTime}
             </div>
+
+            {/* Audio Feedback Toggle */}
+            <button
+              onClick={toggleAudio}
+              style={{
+                background: sfxMuted ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 242, 254, 0.12)',
+                border: sfxMuted ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 242, 254, 0.35)',
+                color: sfxMuted ? '#64748b' : 'var(--accent-cyan)',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                transition: 'all 0.2s ease'
+              }}
+              title={sfxMuted ? 'Enable Sci-Fi Audio HUD' : 'Mute Sci-Fi Audio HUD'}
+            >
+              {sfxMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+              <span style={{ fontSize: '0.7rem', fontWeight: '600' }}>{sfxMuted ? 'SFX OFF' : 'SFX ON'}</span>
+            </button>
 
             {/* Public USSD Dialer Button */}
             <button
@@ -601,6 +671,44 @@ export default function App() {
                       <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Official Municipal Brief (PDF export)</div>
                     </div>
                   </button>
+
+                  <button
+                    onClick={() => { setGeminiModalOpen(true); setOpsMenuOpen(false); }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#e2e8f0',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <Sparkles size={15} color="var(--accent-cyan)" />
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        Gemini Neural Engine
+                        <span style={{
+                          fontSize: '0.62rem',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          background: apiKey ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                          color: apiKey ? '#34d399' : '#fbbf24',
+                          fontFamily: 'var(--font-mono)'
+                        }}>
+                          {apiKey ? 'API Online' : 'Simulated'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Multi-modal vision & agentic dispatch key</div>
+                    </div>
+                  </button>
                 </div>
               )}
             </div>
@@ -634,7 +742,7 @@ export default function App() {
         borderBottom: '1px solid var(--border-subtle)',
         padding: '8px 24px'
       }}>
-        <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <div className="metrics-grid">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Car size={16} color="#38bdf8" />
             <div>
@@ -670,7 +778,96 @@ export default function App() {
       </section>
 
       {/* Main Dynamic Workspace Area */}
-      <main style={{ flex: 1, padding: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
+      <main ref={workspaceRef} style={{ flex: 1, padding: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
+        {/* Active Crisis Command Banner */}
+        {activeCrisis && (
+          <div
+            ref={crisisBannerRef}
+            style={{
+              marginBottom: '20px',
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(185, 28, 28, 0.3) 100%)',
+              border: '1px solid rgba(239, 68, 68, 0.65)',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              boxShadow: '0 0 30px rgba(239, 68, 68, 0.35)',
+              backdropFilter: 'blur(10px)',
+              flexWrap: 'wrap'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                background: 'rgba(239, 68, 68, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #ef4444'
+              }}>
+                <AlertTriangle size={22} color="#fca5a5" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontWeight: '800', color: '#fff', fontSize: '0.95rem', letterSpacing: '0.02em' }}>
+                    CRITICAL INCIDENT ACTIVE: {activeCrisis.title}
+                  </span>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    background: '#ef4444',
+                    color: '#fff',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontWeight: '700'
+                  }}>
+                    SEV-1 ALERT
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#fca5a5', marginTop: '2px' }}>
+                  {activeCrisis.desc} // Impact: <strong style={{ color: '#fff' }}>{activeCrisis.severity}</strong>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={handleResolveCrisis}
+                className="btn-primary"
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontWeight: '700',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 15px rgba(16, 185, 129, 0.4)'
+                }}
+              >
+                Execute Autonomous Remediation
+              </button>
+              <button
+                onClick={() => { sfx.click(); setActiveCrisis(null); }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: '#e2e8f0',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Layer Controls when viewing map */}
         {(activeTab === 'overview' || activeTab === 'traffic' || activeTab === 'energy' || activeTab === 'eco') && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -680,7 +877,8 @@ export default function App() {
                 {['all', 'traffic', 'energy', 'eco'].map((l) => (
                   <button
                     key={l}
-                    onClick={() => setMapLayer(l)}
+                    onClick={() => { sfx.click(); setMapLayer(l); }}
+                    onMouseEnter={() => sfx.hover()}
                     style={{
                       background: mapLayer === l ? 'rgba(0, 242, 254, 0.2)' : 'rgba(255, 255, 255, 0.04)',
                       border: mapLayer === l ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
@@ -701,7 +899,8 @@ export default function App() {
 
             {/* Quick CCTV button */}
             <button
-              onClick={() => openVisionForNode(trafficNodes[0])}
+              onClick={() => { sfx.click(); openVisionForNode(trafficNodes[0]); }}
+              onMouseEnter={() => sfx.hover()}
               className="btn-secondary"
               style={{ fontSize: '0.78rem', padding: '6px 14px' }}
             >
@@ -713,7 +912,7 @@ export default function App() {
 
         {/* Tab 1: Overview & Digital Twin Map Layout */}
         {activeTab === 'overview' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.9fr 1.1fr', gap: '24px', alignItems: 'start' }}>
+          <div className="overview-grid">
             <div>
               <CityMap
                 activeLayer={mapLayer}
@@ -748,7 +947,7 @@ export default function App() {
 
         {/* Tab 2: Traffic Sentinel */}
         {activeTab === 'traffic' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px' }}>
+          <div className="traffic-grid">
             <CityMap
               activeLayer="traffic"
               trafficNodes={trafficNodes}
@@ -973,6 +1172,14 @@ export default function App() {
       <ExecutiveDossierModal
         isOpen={dossierModalOpen}
         onClose={() => setDossierModalOpen(false)}
+      />
+
+      {/* Gemini Neural Engine Hub */}
+      <GeminiConfigModal
+        isOpen={geminiModalOpen}
+        onClose={() => setGeminiModalOpen(false)}
+        apiKey={apiKey}
+        setApiKey={setApiKey}
       />
     </div>
   );
