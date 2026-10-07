@@ -23,7 +23,7 @@ const TOUR_STEPS = [
     description: "Instead of $85,000 Siemens cabinet overhauls, PulseCity installs in 20 minutes using non-invasive Optical Current Transformer (CT) Clamps. A mechanical Conflict Monitor Unit (CMU) fail-safe relay physically prevents impossible dual-green phases even if software crashes.",
     actionLabel: "Inspecting $340 Hardware BOM & Safety Circuit...",
     tab: "overview",
-    openVision: true,
+    openHardware: true,
     icon: Sparkles,
     color: "#38bdf8"
   },

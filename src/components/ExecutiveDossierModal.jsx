@@ -190,10 +190,60 @@ export default function ExecutiveDossierModal({ isOpen, onClose }) {
               </div>
 
               <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '10px', padding: '14px' }}>
-                <div style={{ fontWeight: '700', color: '#38bdf8', marginBottom: '4px' }}>$45 Retrofit vs $65,000 Cabinet Teardown</div>
+                <div style={{ fontWeight: '700', color: '#38bdf8', marginBottom: '4px' }}>$340 Retrofit vs $85,000 Cabinet Teardown</div>
                 <p style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>
-                  Complies with PPA Act 663 value-for-money thresholds. Installs an optocoupled solid-state relay interrupter inside legacy 1990s analog signal cabinets in 20 minutes, saving taxpayers $65,000 per intersection compared to Siemens/SCATS overhauls.
+                  Complies with PPA Act 663 value-for-money thresholds. Installs an optocoupled solid-state relay interrupter inside legacy 1990s analog signal cabinets in 18 minutes, saving taxpayers $84,660 per intersection compared to Siemens/SCATS overhauls.
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 5: 5-Year Municipal Financial Model & World Bank GRSF ROI */}
+          <div>
+            <h4 style={{ fontSize: '0.92rem', fontWeight: '800', color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+              5. 5-Year Municipal Financial Model & World Bank GRSF ROI
+            </h4>
+            <div style={{
+              background: 'rgba(16, 185, 129, 0.06)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '12px'
+              }}>
+                <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '10px 12px', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>PILOT DEPLOYMENT GRANT</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: '800', color: '#34d399', fontFamily: 'var(--font-mono)' }}>$250,000 USD</div>
+                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>World Bank GRSF Facility</div>
+                </div>
+
+                <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '10px 12px', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>PHASE 1 (40 NODES) CAPEX</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: '800', color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>$13,600 USD</div>
+                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>40 Nodes @ $340 vs $3.4M Siemens</div>
+                </div>
+
+                <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '10px 12px', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>ANNUAL FUEL SAVINGS</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: '800', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$4,200,000 / yr</div>
+                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>-18.5m per commuter trip</div>
+                </div>
+
+                <div style={{ background: 'rgba(0, 0, 0, 0.35)', padding: '10px 12px', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>FULL CAPEX PAYBACK</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: '800', color: '#c084fc', fontFamily: 'var(--font-mono)' }}>&lt; 45 Days</div>
+                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Reduced idle fuel & emissions</div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: '0.74rem', color: '#cbd5e1', lineHeight: '1.5' }}>
+                <strong>B2G SaaS & Telemetry Maintenance SLA:</strong> Billed at <strong>$45 / node / month</strong>, covering real-time 2G/4G cellular data tunnels, over-the-air (OTA) Webster algorithm tuning, and 99.98% SLA for ambulance green-wave preemption. PPA Act 663 single-source justification is established under Section 40(1)(a) due to proprietary non-invasive optical CT clamp safety architecture requiring zero destruction of legacy underground conduit.
               </div>
             </div>
           </div>

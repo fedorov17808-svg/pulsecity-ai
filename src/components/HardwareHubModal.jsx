@@ -4,6 +4,7 @@ import {
   Radio, Activity, Send, CheckCircle2, ShieldAlert, Zap, Lock, Eye
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import HardwareSchematicViewer from './HardwareSchematicViewer';
 
 const ESP32_SNIPPET = `// PulseCity AI — ESP32 WROOM-32D Environmental & Flood Telemetry Firmware
 #include <WiFi.h>
@@ -127,7 +128,7 @@ if __name__ == "__main__":
         time.sleep(5.0)`;
 
 export default function HardwareHubModal({ isOpen, onClose }) {
-  const [activeTab, setActiveTab] = useState('esp32');
+  const [activeTab, setActiveTab] = useState('schematic');
   const [copied, setCopied] = useState(false);
   const [testbedTarget, setTestbedTarget] = useState('esp32');
   const [flashing, setFlashing] = useState(false);
@@ -297,7 +298,29 @@ export default function HardwareHubModal({ isOpen, onClose }) {
 
         {/* Tab switch */}
         <div style={{ padding: '12px 24px', background: 'rgba(5, 18, 12, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setActiveTab('schematic')}
+              className={`pill-tab ${activeTab === 'schematic' ? 'active' : ''}`}
+              style={{
+                borderColor: activeTab === 'schematic' ? '#fbbf24' : 'transparent',
+                background: activeTab === 'schematic' ? 'rgba(245, 158, 11, 0.22)' : 'transparent',
+                color: activeTab === 'schematic' ? '#fbbf24' : 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: '800'
+              }}
+            >
+              <Zap size={13} color="#fbbf24" />
+              ⚡ $340 Wiring & CMU Safety Interlock
+            </button>
+            <button
+              onClick={() => setActiveTab('bom')}
+              className={`pill-tab ${activeTab === 'bom' ? 'active' : ''}`}
+            >
+              $13.05 BOM & Pinout
+            </button>
             <button
               onClick={() => setActiveTab('protocols')}
               className={`pill-tab ${activeTab === 'protocols' ? 'active' : ''}`}
@@ -324,12 +347,6 @@ export default function HardwareHubModal({ isOpen, onClose }) {
               className={`pill-tab ${activeTab === 'rpi' ? 'active' : ''}`}
             >
               Raspberry Pi Vision (Python)
-            </button>
-            <button
-              onClick={() => setActiveTab('bom')}
-              className={`pill-tab ${activeTab === 'bom' ? 'active' : ''}`}
-            >
-              $13.05 BOM & Pinout
             </button>
             <button
               onClick={() => setActiveTab('testbed')}
@@ -360,7 +377,7 @@ export default function HardwareHubModal({ isOpen, onClose }) {
             </button>
           </div>
 
-          {activeTab !== 'bom' && activeTab !== 'testbed' && activeTab !== 'protocols' && activeTab !== 'rugged' && (
+          {activeTab !== 'bom' && activeTab !== 'testbed' && activeTab !== 'protocols' && activeTab !== 'rugged' && activeTab !== 'schematic' && (
             <button
               onClick={() => copyCode(activeTab === 'esp32' ? ESP32_SNIPPET : RPI_PYTHON_SNIPPET)}
               style={{
@@ -385,6 +402,12 @@ export default function HardwareHubModal({ isOpen, onClose }) {
 
         {/* Body */}
         <div style={{ padding: '24px', overflowY: 'auto' }}>
+          {activeTab === 'schematic' && (
+            <div style={{ animation: 'fadeIn 0.25s ease' }}>
+              <HardwareSchematicViewer />
+            </div>
+          )}
+
           {activeTab === 'rugged' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', animation: 'fadeIn 0.25s ease' }}>
               {/* Header Box */}
@@ -665,30 +688,30 @@ export default function HardwareHubModal({ isOpen, onClose }) {
                     </thead>
                     <tbody>
                       <tr>
-                        <td style={{ fontWeight: '600', color: '#fff' }}>Optocoupled SSR Interceptor</td>
-                        <td>4-Phase solid-state relay bank; overrides analog dial timers via dry contacts</td>
-                        <td>UL 508 / IEC 60947</td>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>NEMA TS2 / CMU Interceptor</td>
+                        <td>Preemption Terminal Strip (Pins 101–108) + Conflict Monitor (CMU-16LE) hardware interlock (Zero green-green overlap possible)</td>
+                        <td>NEMA TS2 / UL 508</td>
                         <td>1</td>
                         <td style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$14.50</td>
                       </tr>
                       <tr>
                         <td style={{ fontWeight: '600', color: '#fff' }}>Industrial MCU Board</td>
-                        <td>ESP32-S3 Dual-Core with fail-safe hardware watchdog default-pass circuit</td>
+                        <td>ESP32-S3 Dual-Core with fail-safe hardware watchdog default-pass de-energized bypass relay</td>
                         <td>CE / FCC Part 15</td>
                         <td>1</td>
                         <td style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$5.80</td>
                       </tr>
                       <tr>
                         <td style={{ fontWeight: '600', color: '#fff' }}>Dual 4G/LoRa Gateway</td>
-                        <td>Quectel EC25 + SX1262 LoRaWAN for resilient Dumsor mesh failover</td>
+                        <td>Quectel EC25 + SX1262 LoRaWAN for resilient Dumsor mesh failover (AES-256 encrypted)</td>
                         <td>PTCRB / GCF</td>
                         <td>1</td>
                         <td style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$16.20</td>
                       </tr>
                       <tr>
-                        <td style={{ fontWeight: '600', color: '#fff' }}>DIN-Rail PSU (AC/DC)</td>
-                        <td>MEAN WELL HDR-15-5 (85-264V AC input, immune to Ghana brownouts)</td>
-                        <td>EN 61558</td>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>Dumsor-Proof DIN PSU</td>
+                        <td>MEAN WELL HDR-30-12 (85-264V AC wide input, 10kV MOV surge arrestor, brownout ride-through)</td>
+                        <td>EN 61558 / IEC 61000</td>
                         <td>1</td>
                         <td style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$5.50</td>
                       </tr>

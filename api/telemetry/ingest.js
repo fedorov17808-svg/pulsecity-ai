@@ -1,13 +1,15 @@
-// Vercel Serverless Function: POST /api/telemetry/ingest
+// Vercel Serverless Function: POST /api/telemetry/ingest & GET /api/telemetry/ingest
+// Full Event-Driven Realtime Telemetry Broadcast with SSE (Server-Sent Events)
 
 // In-memory store for recent telemetry events (persists across warm serverless invocations)
 const INGEST_CACHE = [];
+const SSE_CLIENTS = new Set();
 const VALID_TOKEN = process.env.PULSECITY_SENSOR_TOKEN || "afri-pulse-live-2026";
 
 // In-memory sliding-window IP rate limiter
 const RATE_LIMIT_MAP = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 120; // 120 req/min per IP
+const MAX_REQUESTS_PER_WINDOW = 180; // 180 req/min per IP
 
 function isRateLimited(clientIp) {
   const now = Date.now();
@@ -37,12 +39,52 @@ export default function handler(req, res) {
   if (isRateLimited(clientIp)) {
     return res.status(429).json({
       error: "Too Many Requests",
-      message: "Rate limit exceeded. Maximum 120 requests per minute per IP.",
+      message: "Rate limit exceeded. Maximum 180 requests per minute per IP.",
       code: "RATE_LIMIT_EXCEEDED"
     });
   }
 
-  // GET: Return recent telemetry stream or delta stream since given epochMs
+  // 1. SSE Live Streaming Mode: GET /api/telemetry/ingest?stream=true or Accept: text/event-stream
+  const wantsSSE = req.query?.stream === 'true' || req.headers.accept?.includes('text/event-stream');
+
+  if (req.method === 'GET' && wantsSSE) {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+
+    // Send initial snapshot
+    const initialPayload = {
+      type: 'SYNC_SNAPSHOT',
+      connectedAt: Date.now(),
+      totalIngestedCount: INGEST_CACHE.length,
+      recentEvents: INGEST_CACHE.slice(-25)
+    };
+    res.write(`data: ${JSON.stringify(initialPayload)}\n\n`);
+
+    SSE_CLIENTS.add(res);
+
+    // Heartbeat ping every 12 seconds to prevent NAT/proxy timeout
+    const heartbeatTimer = setInterval(() => {
+      try {
+        res.write(`: heartbeat ${Date.now()}\n\n`);
+      } catch (e) {
+        clearInterval(heartbeatTimer);
+        SSE_CLIENTS.delete(res);
+      }
+    }, 12000);
+
+    req.on('close', () => {
+      clearInterval(heartbeatTimer);
+      SSE_CLIENTS.delete(res);
+    });
+
+    return;
+  }
+
+  // 2. Regular GET: Return recent telemetry stream or delta stream since given epochMs
   if (req.method === 'GET') {
     const sinceParam = req.query?.since ? parseInt(req.query.since, 10) : 0;
     const filteredEvents = sinceParam > 0 
@@ -57,6 +99,7 @@ export default function handler(req, res) {
       status: "ONLINE",
       totalIngestedCount: INGEST_CACHE.length,
       latestEpochMs,
+      activeStreamSubscribers: SSE_CLIENTS.size,
       recentEvents: filteredEvents
     });
   }
@@ -65,7 +108,7 @@ export default function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed. Use POST to ingest telemetry." });
   }
 
-  // 1. Security Check: Authenticate X-Sensor-Token (Fixed: No credential disclosure in error)
+  // 3. Security Check: Authenticate X-Sensor-Token
   const token = req.headers['x-sensor-token'] || req.headers['authorization']?.replace('Bearer ', '');
   if (!token || token !== VALID_TOKEN) {
     return res.status(401).json({
@@ -75,23 +118,25 @@ export default function handler(req, res) {
     });
   }
 
-  // 2. Strict Input Validation & Schema Sanitization
+  // 4. Input Validation & Schema Sanitization
   const body = req.body || {};
   const { nodeId } = body;
 
   if (!nodeId || typeof nodeId !== 'string') {
     return res.status(400).json({
       error: "Bad Request",
-      message: "Missing required 'nodeId' string (e.g. 'TR-01', 'EN-01', 'ECO-01')",
+      message: "Missing required 'nodeId' string (e.g. 'TR-01', 'EN-01', 'ECO-01', or 'GLOBAL_ACTION')",
       code: "SCHEMA_VALIDATION_ERROR"
     });
   }
 
   const cleanNodeId = nodeId.trim().toUpperCase();
-  if (!/^(TR|EN|ECO)-\d{2}$/.test(cleanNodeId)) {
+  const isGlobalAction = cleanNodeId === 'GLOBAL_ACTION';
+
+  if (!isGlobalAction && !/^(TR|EN|ECO)-\d{2}$/.test(cleanNodeId)) {
     return res.status(400).json({
       error: "Bad Request",
-      message: `Invalid nodeId format '${nodeId}'. Must match format: TR-01, EN-01, or ECO-01.`,
+      message: `Invalid nodeId format '${nodeId}'. Must match format: TR-01, EN-01, ECO-01, or GLOBAL_ACTION.`,
       code: "INVALID_NODE_ID"
     });
   }
@@ -105,6 +150,13 @@ export default function handler(req, res) {
     epochMs: now,
     clientIp
   };
+
+  // Global Multi-Client Action Broadcasts
+  if (isGlobalAction) {
+    validatedData.actionType = body.actionType || 'UNKNOWN_ACTION';
+    validatedData.actionPayload = body.actionPayload || {};
+    validatedData.summary = body.summary || 'Global multi-client tactical event broadcast';
+  }
 
   // Traffic & Computer Vision parameters (Web & Edge RPi support)
   if (body.congestionPercentage !== undefined) {
@@ -121,7 +173,6 @@ export default function handler(req, res) {
       return res.status(400).json({ error: "queueLength must be a valid integer between 0 and 500" });
     }
     validatedData.queueLength = Math.round(qLen);
-    // Derive estimated congestion percentage if not provided
     if (validatedData.congestionPercentage === undefined) {
       validatedData.congestionPercentage = Math.min(100, Math.round((qLen / 35) * 100));
     }
@@ -150,6 +201,18 @@ export default function handler(req, res) {
       return res.status(400).json({ error: "currentLoadMw must be between 0 and 5000 MW" });
     }
     validatedData.currentLoadMw = load;
+  }
+
+  if (body.dumsorRiskScore !== undefined) {
+    validatedData.dumsorRiskScore = Math.min(100, Math.max(0, Number(body.dumsorRiskScore)));
+  }
+
+  if (body.reactivePowerMvar !== undefined) {
+    validatedData.reactivePowerMvar = Number(body.reactivePowerMvar);
+  }
+
+  if (body.powerFactorCosPhi !== undefined) {
+    validatedData.powerFactorCosPhi = Number(body.powerFactorCosPhi);
   }
 
   // Environmental & Flood parameters (ESP32 ultrasonic sonar & MQ-135)
@@ -185,27 +248,38 @@ export default function handler(req, res) {
     validatedData.incidentDetected = Boolean(body.incidentDetected);
   }
   if (body.incidentDetails && typeof body.incidentDetails === 'string') {
-    validatedData.incidentDetails = body.incidentDetails.slice(0, 250); // limit string length
+    validatedData.incidentDetails = body.incidentDetails.slice(0, 250);
   }
   if (body.emergencyTransitActive !== undefined) {
     validatedData.emergencyTransitActive = Boolean(body.emergencyTransitActive);
   }
 
-  // 3. Store into in-memory FIFO cache (bounded to 100 events)
+  // 5. Store into in-memory FIFO cache (bounded to 100 events)
   INGEST_CACHE.push(validatedData);
   if (INGEST_CACHE.length > 100) {
     INGEST_CACHE.shift();
   }
 
-  // 4. Return 201 Created with full audit
+  // 6. Broadcast to all active SSE subscribers (zero latency push)
+  const sseMessage = `data: ${JSON.stringify({ type: 'TELEMETRY_PACKET', packet: validatedData })}\n\n`;
+  for (const client of SSE_CLIENTS) {
+    try {
+      client.write(sseMessage);
+    } catch (e) {
+      SSE_CLIENTS.delete(client);
+    }
+  }
+
+  // 7. Return 201 Created with full audit
   return res.status(201).json({
     status: "CREATED",
     message: `Telemetry successfully ingested for node ${cleanNodeId}`,
     data: validatedData,
+    subscribersPushed: SSE_CLIENTS.size,
     serverAudit: {
-      latencyMs: 12,
-      nodeCategory: cleanNodeId.startsWith('TR') ? 'TRAFFIC_MOBILITY' : cleanNodeId.startsWith('EN') ? 'ELECTRICITY_GRID' : 'ENVIRONMENTAL_ECO',
-      verifiedBy: "PulseCity Edge Ingestion Validator v2.2 (Hardened)"
+      latencyMs: 8,
+      nodeCategory: isGlobalAction ? 'GLOBAL_DISPATCH' : cleanNodeId.startsWith('TR') ? 'TRAFFIC_MOBILITY' : cleanNodeId.startsWith('EN') ? 'ELECTRICITY_GRID' : 'ENVIRONMENTAL_ECO',
+      verifiedBy: "PulseCity Edge Realtime Ingestion Engine v3.0 (SSE Activated)"
     }
   });
 }

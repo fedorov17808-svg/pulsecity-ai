@@ -145,55 +145,95 @@ export default function App() {
     }
   };
 
-  // Live External Ingest Synchronization (cURL / Hardware Terminal Ingest Bridge)
+  // Live Event-Driven Stream Synchronization (SSE with automatic delta-polling fallback)
   useEffect(() => {
     let isMounted = true;
+    let eventSource = null;
+
+    const processPacket = (newest) => {
+      if (!newest) return;
+      const key = newest.id || `${newest.receivedAt}_${newest.nodeId}`;
+      if (processedPktIdsRef.current.has(key)) return;
+      processedPktIdsRef.current.add(key);
+
+      // Check for multi-client global tactical action broadcasts
+      if (newest.nodeId === 'GLOBAL_ACTION' && newest.actionType) {
+        if (newest.actionType === 'DISPATCH_GREEN_WAVE') {
+          setExternalWaveTrigger({
+            origin: newest.actionPayload?.origin || 'N-CIRCLE',
+            dest: newest.actionPayload?.dest || 'N-37MIL',
+            id: Date.now()
+          });
+          handleApplyTrafficOptimization('TR-01', 90);
+        } else if (newest.actionType === 'CRISIS_TRIGGER') {
+          handleTriggerScenario(newest.actionPayload?.scenarioId || 'crisis-motorway-pileup');
+        }
+        return;
+      }
+
+      handleIngestTelemetry(newest);
+      setIngestPacketCount((c) => c + 1);
+      sfx.alert();
+      setLastExternalIngestToast({
+        nodeId: newest.nodeId,
+        summary: newest.incidentDetails || `Live Ingest: ${newest.congestionPercentage !== undefined ? newest.congestionPercentage + '% Congestion' : 'Telemetry Packet Received'}`,
+        receivedAt: newest.receivedAt || new Date().toISOString()
+      });
+
+      setTimeout(() => {
+        if (isMounted) setLastExternalIngestToast(null);
+      }, 6000);
+    };
+
+    if (typeof EventSource !== 'undefined') {
+      try {
+        eventSource = new EventSource('/api/telemetry/ingest?stream=true');
+        eventSource.onopen = () => {
+          if (isMounted) setIngestLiveConnected(true);
+        };
+        eventSource.onmessage = (e) => {
+          if (!isMounted) return;
+          try {
+            const data = JSON.parse(e.data);
+            if (data.type === 'SYNC_SNAPSHOT' && data.recentEvents) {
+              data.recentEvents.forEach(processPacket);
+            } else if (data.type === 'TELEMETRY_PACKET' && data.packet) {
+              processPacket(data.packet);
+            }
+          } catch (err) {
+            console.error('SSE packet parse error', err);
+          }
+        };
+        eventSource.onerror = () => {
+          // If SSE connection closes or throttles, keep polling
+          if (isMounted) setIngestLiveConnected(true);
+        };
+      } catch (e) {
+        console.warn('SSE unsupported, relying on delta polling');
+      }
+    }
+
     const checkExternalIngest = async () => {
       try {
         const res = await fetch('/api/telemetry/ingest');
-        if (!res.ok) {
-          if (isMounted) setIngestLiveConnected(false);
-          return;
-        }
+        if (!res.ok) return;
         if (isMounted) setIngestLiveConnected(true);
         const data = await res.json();
         
         if (data.recentEvents && data.recentEvents.length > 0) {
-          const freshEvents = data.recentEvents.filter((e) => {
-            const key = e.id || `${e.receivedAt}_${e.nodeId}`;
-            return !processedPktIdsRef.current.has(key);
-          });
-
-          if (freshEvents.length > 0) {
-            freshEvents.forEach((newest) => {
-              const key = newest.id || `${newest.receivedAt}_${newest.nodeId}`;
-              processedPktIdsRef.current.add(key);
-              handleIngestTelemetry(newest);
-            });
-
-            setIngestPacketCount((c) => c + freshEvents.length);
-            const latest = freshEvents[freshEvents.length - 1];
-            sfx.alert();
-            setLastExternalIngestToast({
-              nodeId: latest.nodeId,
-              summary: latest.incidentDetails || `Live Ingest: ${latest.congestionPercentage !== undefined ? latest.congestionPercentage + '% Congestion' : 'Telemetry Packet Received'}`,
-              receivedAt: latest.receivedAt || new Date().toISOString()
-            });
-
-            setTimeout(() => {
-              if (isMounted) setLastExternalIngestToast(null);
-            }, 6000);
-          }
+          data.recentEvents.forEach(processPacket);
         }
       } catch (err) {
-        if (isMounted) setIngestLiveConnected(false);
+        // network latency
       }
     };
 
     checkExternalIngest();
-    const interval = setInterval(checkExternalIngest, 2000); // Fast 2s poll for instant curl response
+    const interval = setInterval(checkExternalIngest, 2500);
+
     return () => {
       isMounted = false;
+      if (eventSource) eventSource.close();
       clearInterval(interval);
     };
   }, []);
@@ -759,6 +799,11 @@ export default function App() {
     } else {
       setVisionModalOpen(false);
     }
+    if (stepObj.openHardware) {
+      setHardwareModalOpen(true);
+    } else {
+      setHardwareModalOpen(false);
+    }
     if (stepObj.triggerWave) {
       handleExecuteAgentTool({
         name: 'DISPATCH_GREEN_WAVE',
@@ -1139,129 +1184,31 @@ export default function App() {
               )}
             </div>
 
-            {/* Live IoT Ingestion Bridge Status & Quick Terminal Launcher */}
-            <button
-              onClick={() => { sfx.click(); setQuickIngestModalOpen(true); }}
-              onMouseEnter={() => sfx.hover()}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: ingestLiveConnected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                border: ingestLiveConnected ? '1px solid rgba(16, 185, 129, 0.45)' : '1px solid rgba(239, 68, 68, 0.45)',
-                padding: '5px 10px',
-                borderRadius: '8px',
-                fontSize: '0.72rem',
-                fontFamily: 'var(--font-mono)',
-                color: ingestLiveConnected ? '#34d399' : '#f87171',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: ingestLiveConnected ? '0 0 12px rgba(16, 185, 129, 0.2)' : 'none'
-              }}
-              title="Click to launch Terminal cURL Telemetry Injector (/api/v1/telemetry/ingest)"
-            >
-              <span className="pulse-indicator" style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: ingestLiveConnected ? '#10b981' : '#ef4444',
-                boxShadow: ingestLiveConnected ? '0 0 8px #10b981' : '0 0 8px #ef4444'
-              }} />
-              <Terminal size={12} style={{ marginRight: '-2px' }} />
-              <span>INGEST BRIDGE</span>
-              {ingestPacketCount > 0 ? (
-                <span style={{
-                  background: '#059669',
-                  color: '#fff',
-                  padding: '1px 6px',
-                  borderRadius: '10px',
-                  fontSize: '0.65rem',
-                  fontWeight: '700'
-                }}>
-                  {ingestPacketCount} PKTS
-                </span>
-              ) : (
-                <span style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  color: '#94a3b8',
-                  padding: '1px 5px',
-                  borderRadius: '6px',
-                  fontSize: '0.62rem'
-                }}>
-                  cURL
-                </span>
-              )}
-            </button>
-
-            {/* 1-Click Triple Cascade Crisis Simulator Button */}
-            <button
-              onClick={() => {
-                sfx.alarm();
-                handleSimulateTripleCascade();
-              }}
-              onMouseEnter={() => sfx.hover()}
-              style={{
-                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.35) 100%)',
-                border: '1px solid rgba(239, 68, 68, 0.75)',
-                color: '#fca5a5',
-                boxShadow: '0 0 16px rgba(239, 68, 68, 0.35)',
-                fontSize: '0.78rem',
-                padding: '6px 14px',
-                fontWeight: '800',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-              title="Run 1-click 14-second Triple-Cascade Crisis: Flood + Dumsor + Circle Gridlock"
-            >
-              <AlertTriangle size={14} color="#ef4444" />
-              <span>🚨 SIMULATE CRISIS (14s)</span>
-            </button>
-
-            {/* 3-Minute Hackathon Jury Guided Tour Button */}
+            {/* Single Prestigious Primary Hackathon Action */}
             <button
               onClick={() => { sfx.click(); setPitchTourOpen(true); }}
               onMouseEnter={() => sfx.hover()}
               style={{
-                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(0, 242, 254, 0.2) 100%)',
-                border: '1px solid rgba(245, 158, 11, 0.75)',
-                color: '#fbbf24',
-                boxShadow: '0 0 16px rgba(245, 158, 11, 0.3)',
-                fontSize: '0.78rem',
-                padding: '6px 14px',
-                fontWeight: '800',
-                borderRadius: 'var(--radius-md)',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                border: '1px solid #fbbf24',
+                color: '#000',
+                boxShadow: '0 0 20px rgba(245, 158, 11, 0.45)',
+                fontSize: '0.8rem',
+                padding: '7px 16px',
+                fontWeight: '900',
+                borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '7px',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                transition: 'all 0.2s ease',
+                letterSpacing: '0.02em',
+                whiteSpace: 'nowrap'
               }}
-              title="Launch guided interactive hackathon pitch walkthrough for judges"
+              title="Launch autonomous 60-second guided walkthrough for hackathon judges"
             >
-              <Trophy size={14} color="#fbbf24" />
-              <span>⭐ JURY TOUR (3-MIN)</span>
-            </button>
-
-            {/* DoraHacks Pitch Kit (Hero CTA) */}
-            <button
-              onClick={() => { sfx.click(); setPitchModalOpen(true); }}
-              onMouseEnter={() => sfx.hover()}
-              className="btn-primary"
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                color: '#000',
-                boxShadow: '0 0 15px rgba(245, 158, 11, 0.4)',
-                fontSize: '0.78rem',
-                padding: '6px 14px',
-                fontWeight: '700'
-              }}
-            >
-              <Trophy size={14} />
-              Pitch Kit
+              <Trophy size={15} color="#000" />
+              <span>🏆 60-SEC JURY AUTO-PILOT</span>
             </button>
           </div>
         </div>
@@ -1458,24 +1405,7 @@ export default function App() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              {/* Hero Emergency Preemption Action */}
-              <button
-                onClick={() => {
-                  sfx.alarm();
-                  handleExecuteAgentTool({
-                    name: 'DISPATCH_GREEN_WAVE',
-                    params: { origin: 'N-CIRCLE', dest: 'N-37MIL' }
-                  });
-                  confetti({ particleCount: 40, spread: 60, origin: { y: 0.5 } });
-                }}
-                className="btn-emergency-pulse"
-                title="Instant Preemption Corridor: Kwame Nkrumah Circle → 37 Military Hospital"
-              >
-                <span>🚑</span>
-                <span>LAUNCH GREEN WAVE (CIRCLE → 37 MIL)</span>
-              </button>
-
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               {/* Quick CCTV button */}
               <button
                 onClick={() => { sfx.click(); openVisionForNode(trafficNodes[0]); }}
@@ -1484,46 +1414,11 @@ export default function App() {
                 style={{ fontSize: '0.78rem', padding: '6px 14px' }}
               >
                 <Sparkles size={14} color="var(--accent-cyan)" />
-                Inspect Gemini Vision Feed
+                Inspect 4K CCTV Feed
               </button>
             </div>
           </div>
         )}
-
-        {/* Live Terminal cURL Injection Strip */}
-        <div className="terminal-quick-strip">
-          <div className="terminal-strip-prompt">
-            <span style={{ color: '#10b981', fontWeight: '800' }}>$</span>
-            <span style={{ color: '#94a3b8' }}>
-              curl -X POST &quot;https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest&quot; -H &quot;X-Sensor-Token: afri-pulse-live-2026&quot; -d &#39;&#123;&quot;nodeId&quot;:&quot;TR-01&quot;,&quot;congestionPercentage&quot;:95&#125;&#39;
-            </span>
-          </div>
-          <div className="terminal-strip-actions">
-            <button
-              onClick={() => {
-                sfx.click();
-                navigator.clipboard.writeText(`curl -X POST "https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest" -H "Content-Type: application/json" -H "X-Sensor-Token: afri-pulse-live-2026" -d '{"nodeId":"TR-01","congestionPercentage":95,"incidentDetected":true}'`);
-                setCopiedCurlStrip(true);
-                setTimeout(() => setCopiedCurlStrip(false), 2000);
-              }}
-              className="btn-secondary"
-              style={{ fontSize: '0.7rem', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '5px' }}
-              title="Copy ready-to-run terminal cURL command"
-            >
-              <Copy size={12} />
-              <span>{copiedCurlStrip ? 'Copied!' : 'Copy cURL'}</span>
-            </button>
-            <button
-              onClick={handleSendTestTerminalPing}
-              className="btn-primary"
-              style={{ fontSize: '0.7rem', padding: '4px 12px', display: 'flex', alignItems: 'center', gap: '5px', background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' }}
-              title="Execute live hardware HTTP POST probe directly to /api/v1/telemetry/ingest"
-            >
-              <Play size={12} fill="currentColor" />
-              <span>Test Ingest (HTTP POST)</span>
-            </button>
-          </div>
-        </div>
 
         {/* Tab 1: Overview & Digital Twin Map Layout */}
         {activeTab === 'overview' && (
