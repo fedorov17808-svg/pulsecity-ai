@@ -240,7 +240,7 @@ function getSimulatedVisionAnalysis(cameraName, situationNotes) {
 }
 
 /**
- * Incident Commander agent chat
+ * Incident Commander agent chat with Autonomous Actuator Tool Calling
  */
 export async function queryIncidentCommander(apiKey, userMessage, cityState) {
   const systemContext = `Current City Telemetry:
@@ -248,6 +248,8 @@ export async function queryIncidentCommander(apiKey, userMessage, cityState) {
 - Grid Reserve: ${cityState.gridReserve || '68% (Achimota Substation strained at 92.8%)'}
 - Air Quality Index (AQI): ${cityState.avgAqi || '72 Moderate'}
 - Active Emergencies: ${cityState.activeEmergencies || 'None'}`;
+
+  let rawReply = null;
 
   // 1. Attempt Serverless Proxy
   try {
@@ -260,7 +262,7 @@ export async function queryIncidentCommander(apiKey, userMessage, cityState) {
       method: "POST",
       headers: proxyHeaders,
       body: JSON.stringify({
-        prompt: `${systemContext}\n\nOperator Command: ${userMessage}`,
+        prompt: `${systemContext}\n\nOperator Command: ${userMessage}\n\nRespond with tactical incident resolution. If action is required, specify target nodes and actuators.`,
         model: "gemini-1.5-flash"
       })
     });
@@ -268,7 +270,7 @@ export async function queryIncidentCommander(apiKey, userMessage, cityState) {
     if (proxyRes.ok) {
       const data = await proxyRes.json();
       if (data.result && typeof data.result === 'string') {
-        return data.result;
+        rawReply = data.result;
       }
     }
   } catch (proxyErr) {
@@ -276,7 +278,7 @@ export async function queryIncidentCommander(apiKey, userMessage, cityState) {
   }
 
   // 2. Direct client call
-  if (apiKey && apiKey.trim().length > 10) {
+  if (!rawReply && apiKey && apiKey.trim().length > 10) {
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`;
       const response = await fetch(endpoint, {
@@ -295,14 +297,94 @@ export async function queryIncidentCommander(apiKey, userMessage, cityState) {
       if (response.ok) {
         const data = await response.json();
         const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (reply) return reply;
+        if (reply) rawReply = reply;
       }
     } catch (err) {
       console.warn("Gemini chat direct call failed:", err.message);
     }
   }
 
-  return getSimulatedCommanderResponse(userMessage, cityState);
+  // 3. Fallback simulated response if no API reply received
+  if (!rawReply) {
+    rawReply = getSimulatedCommanderResponse(userMessage, cityState);
+  }
+
+  // 4. Extract or synthesize Agentic Actuator Tool Call
+  const toolCall = extractToolCall(rawReply, userMessage);
+
+  return {
+    text: rawReply,
+    toolCall
+  };
+}
+
+function extractToolCall(text, query) {
+  const q = (query || "").toLowerCase();
+  const t = (text || "").toLowerCase();
+
+  if (q.includes("ambulance") || q.includes("emergency") || q.includes("hospital") || q.includes("corridor") || q.includes("скор") || t.includes("emergency corridor activated")) {
+    return {
+      name: "DISPATCH_GREEN_WAVE",
+      label: "Autonomous Emergency Green Wave Preemption",
+      params: { 
+        origin: "N-CIRCLE", 
+        dest: "N-37MIL", 
+        preemptionSeconds: 90, 
+        corridor: "Kwame Nkrumah Circle → 37 Military Hospital" 
+      },
+      status: "EXECUTED",
+      latencyMs: Math.floor(Math.random() * 25 + 105),
+      hardwareAck: "200 OK • 4 RTU Signals Locked GREEN"
+    };
+  }
+
+  if (q.includes("blackout") || q.includes("dumsor") || q.includes("power") || q.includes("grid") || q.includes("shed") || q.includes("свет") || q.includes("электр") || t.includes("gridguard priority knapsack")) {
+    return {
+      name: "BALANCE_GRID_SHED",
+      label: "SCADA Dynamic Priority Knapsack Load Shedding",
+      params: { 
+        substationId: "EN-01", 
+        batteryInjectionMw: 35, 
+        shedTier4Mw: 8, 
+        targetCeilingMw: 212.5 
+      },
+      status: "EXECUTED",
+      latencyMs: Math.floor(Math.random() * 20 + 82),
+      hardwareAck: "200 OK • Relays Switched in 80ms"
+    };
+  }
+
+  if (q.includes("waste") || q.includes("flood") || q.includes("pollution") || q.includes("odaw") || q.includes("drain") || q.includes("мусор") || q.includes("эколог") || t.includes("ecosense drainage resilience")) {
+    return {
+      name: "DRAIN_SLUICE_GATES",
+      label: "Hydro Sluice Gate Motorized Winch Automation",
+      params: { 
+        basinNodeId: "ECO-01", 
+        openPercentage: 85, 
+        rerouteCompactors: ["#04", "#08"] 
+      },
+      status: "EXECUTED",
+      latencyMs: Math.floor(Math.random() * 35 + 115),
+      hardwareAck: "200 OK • Odaw Sluice Winch Active"
+    };
+  }
+
+  if (q.includes("override") || q.includes("traffic light") || q.includes("clear") || q.includes("signal") || q.includes("светофор") || q.includes("пробк")) {
+    return {
+      name: "OVERRIDE_TRAFFIC_LIGHT",
+      label: "Webster Adaptive Phase Allocation",
+      params: { 
+        nodeId: "TR-01", 
+        durationSec: 75, 
+        lightState: "GREEN" 
+      },
+      status: "EXECUTED",
+      latencyMs: Math.floor(Math.random() * 20 + 95),
+      hardwareAck: "200 OK • Microcontroller Signal Confirmed"
+    };
+  }
+
+  return null;
 }
 
 function getSimulatedCommanderResponse(query, cityState) {

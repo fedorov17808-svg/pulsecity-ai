@@ -17,7 +17,8 @@ export default function CityMap({
   onOpenVisionModal,
   activeCrisis,
   onResolveCrisis,
-  onEmergencyWaveTriggered
+  onEmergencyWaveTriggered,
+  externalWaveTrigger
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -93,19 +94,32 @@ export default function CityMap({
     }
   }, [activeLayer]);
 
+  // Programmatic external trigger (e.g. from Incident Commander Agent Tool Call)
+  useEffect(() => {
+    if (externalWaveTrigger && externalWaveTrigger.id) {
+      const orig = externalWaveTrigger.origin || "N-CIRCLE";
+      const dest = externalWaveTrigger.dest || "N-37MIL";
+      handleTriggerAmbulance(orig, dest);
+    }
+  }, [externalWaveTrigger]);
+
   // Handle Dynamic Emergency Green Wave Transit
-  const handleTriggerAmbulance = () => {
-    if (originNodeId === destNodeId) {
-      alert("Please select different start and destination nodes for the green wave corridor.");
+  const handleTriggerAmbulance = (optOrigin, optDest) => {
+    const oId = optOrigin || originNodeId;
+    const dId = optDest || destNodeId;
+    if (oId === dId) {
+      if (!optOrigin) alert("Please select different start and destination nodes for the green wave corridor.");
       return;
     }
 
-    const route = findOptimalEmergencyRoute(originNodeId, destNodeId);
+    const route = findOptimalEmergencyRoute(oId, dId);
     if (!route.success) {
-      alert(route.error || "No viable path found between selected nodes.");
+      if (!optOrigin) alert(route.error || "No viable path found between selected nodes.");
       return;
     }
 
+    setOriginNodeId(oId);
+    setDestNodeId(dId);
     playEmergencySirenSound();
     setActiveRouteInfo(route);
     setEmergencyActive(true);

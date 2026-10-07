@@ -22,6 +22,8 @@ import BenchmarkModal from './components/BenchmarkModal';
 import ExecutiveDossierModal from './components/ExecutiveDossierModal';
 import GeminiConfigModal from './components/GeminiConfigModal';
 import CyberGridBackdrop from './components/CyberGridBackdrop';
+import GuidedPitchTour from './components/GuidedPitchTour';
+import { calculateWebsterSignalTiming } from './utils/websterAlgorithm';
 import { sfx } from './utils/soundEffects';
 import gsap from 'gsap';
 
@@ -65,6 +67,7 @@ export default function App() {
   const [dossierModalOpen, setDossierModalOpen] = useState(false);
   const [geminiModalOpen, setGeminiModalOpen] = useState(false);
   const [opsMenuOpen, setOpsMenuOpen] = useState(false);
+  const [pitchTourOpen, setPitchTourOpen] = useState(false);
   const [sfxMuted, setSfxMuted] = useState(() => sfx.muted);
 
   // Layout & Animation Refs
@@ -86,6 +89,80 @@ export default function App() {
   const [apiKey, setApiKey] = useState(() => {
     return localStorage.getItem('pulsecity_gemini_key') || '';
   });
+
+  // Autonomous Actuator & External Hardware Telemetry State
+  const [externalWaveTrigger, setExternalWaveTrigger] = useState(null);
+  const [lastExternalIngestToast, setLastExternalIngestToast] = useState(null);
+  const lastProcessedIngestTimeRef = useRef(Date.now());
+
+  // Live External Ingest Synchronization (cURL / Hardware Terminal Ingest)
+  useEffect(() => {
+    const checkExternalIngest = async () => {
+      try {
+        const res = await fetch(`/api/telemetry/ingest?since=${lastProcessedIngestTimeRef.current}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.recentEvents && data.recentEvents.length > 0) {
+          const newest = data.recentEvents[data.recentEvents.length - 1];
+          const eventTime = newest.epochMs || new Date(newest.receivedAt).getTime();
+          if (eventTime > lastProcessedIngestTimeRef.current) {
+            lastProcessedIngestTimeRef.current = eventTime;
+            sfx.alert();
+            setLastExternalIngestToast({
+              nodeId: newest.nodeId,
+              summary: newest.incidentDetails || `Live Ingest: ${newest.congestionPercentage !== undefined ? newest.congestionPercentage + '% Congestion' : 'Telemetry Packet Received'}`,
+              receivedAt: newest.receivedAt
+            });
+
+            if (newest.nodeId.startsWith('TR')) {
+              setTrafficNodes(prev => prev.map(n => {
+                if (n.id === newest.nodeId) {
+                  return {
+                    ...n,
+                    congestion: newest.congestionPercentage !== undefined ? newest.congestionPercentage : n.congestion,
+                    alert: newest.incidentDetails || n.alert,
+                    incidentActive: newest.incidentDetected !== undefined ? newest.incidentDetected : n.incidentActive
+                  };
+                }
+                return n;
+              }));
+            } else if (newest.nodeId.startsWith('EN')) {
+              setEnergyNodes(prev => prev.map(n => {
+                if (n.id === newest.nodeId) {
+                  return {
+                    ...n,
+                    currentLoadMw: newest.currentLoadMw !== undefined ? newest.currentLoadMw : n.currentLoadMw,
+                    dumsorRisk: newest.dumsorRisk !== undefined ? newest.dumsorRisk : n.dumsorRisk
+                  };
+                }
+                return n;
+              }));
+            } else if (newest.nodeId.startsWith('ECO')) {
+              setEcoNodes(prev => prev.map(n => {
+                if (n.id === newest.nodeId) {
+                  return {
+                    ...n,
+                    waterLevelMeters: newest.waterLevelMeters !== undefined ? newest.waterLevelMeters : n.waterLevelMeters,
+                    aqi: newest.aqiScore !== undefined ? newest.aqiScore : n.aqi
+                  };
+                }
+                return n;
+              }));
+            }
+
+            setTimeout(() => {
+              setLastExternalIngestToast(null);
+            }, 6000);
+          }
+        }
+      } catch (err) {
+        // quiet fallback
+      }
+    };
+
+    const interval = setInterval(checkExternalIngest, 3500);
+    return () => clearInterval(interval);
+  }, []);
 
   // GSAP: Animate workspace on activeTab changes
   useEffect(() => {
@@ -357,9 +434,65 @@ export default function App() {
     setActiveCrisis(null);
   };
 
+  // Autonomous Agent Actuator Execution Handler
+  const handleExecuteAgentTool = (toolCall) => {
+    if (!toolCall) return;
+
+    if (toolCall.name === 'DISPATCH_GREEN_WAVE') {
+      sfx.alarm();
+      setActiveTab('overview');
+      setExternalWaveTrigger({
+        origin: toolCall.params?.origin || 'N-CIRCLE',
+        dest: toolCall.params?.dest || 'N-37MIL',
+        id: Date.now()
+      });
+      handleApplyTrafficOptimization('TR-01', 90);
+    } else if (toolCall.name === 'OVERRIDE_TRAFFIC_LIGHT') {
+      const targetId = toolCall.params?.nodeId || 'TR-01';
+      handleApplyTrafficOptimization(targetId, toolCall.params?.durationSec || 75);
+    } else if (toolCall.name === 'BALANCE_GRID_SHED') {
+      handleBalanceGrid();
+    } else if (toolCall.name === 'DRAIN_SLUICE_GATES') {
+      handleDispatchWasteTruck('ECO-01');
+    }
+  };
+
   const openVisionForNode = (node) => {
     setVisionModalNode(node);
     setVisionModalOpen(true);
+  };
+
+  // 90-Second Guided Pitch Tour Step Handler
+  const handleTourStepChange = (stepObj) => {
+    if (!stepObj) return;
+    sfx.click();
+    if (stepObj.tab) {
+      setActiveTab(stepObj.tab);
+    }
+    if (stepObj.layer) {
+      setMapLayer(stepObj.layer);
+    }
+    if (stepObj.openVision) {
+      openVisionForNode(trafficNodes[0]);
+    } else {
+      setVisionModalOpen(false);
+    }
+    if (stepObj.triggerWave) {
+      handleExecuteAgentTool({
+        name: 'DISPATCH_GREEN_WAVE',
+        params: { origin: 'N-CIRCLE', dest: 'N-37MIL' }
+      });
+    }
+    if (stepObj.openUssd) {
+      setUssdModalOpen(true);
+    } else {
+      setUssdModalOpen(false);
+    }
+    if (stepObj.openBenchmark) {
+      setBenchmarkModalOpen(true);
+    } else {
+      setBenchmarkModalOpen(false);
+    }
   };
 
   return (
@@ -718,6 +851,31 @@ export default function App() {
               )}
             </div>
 
+            {/* 90-Second Hackathon Jury Guided Tour Button */}
+            <button
+              onClick={() => { sfx.click(); setPitchTourOpen(true); }}
+              onMouseEnter={() => sfx.hover()}
+              style={{
+                background: 'linear-gradient(135deg, rgba(0, 242, 254, 0.22) 0%, rgba(56, 189, 248, 0.12) 100%)',
+                border: '1px solid rgba(0, 242, 254, 0.65)',
+                color: '#00f2fe',
+                boxShadow: '0 0 16px rgba(0, 242, 254, 0.25)',
+                fontSize: '0.78rem',
+                padding: '6px 13px',
+                fontWeight: '700',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Launch guided 90s interactive hackathon pitch walkthrough for judges"
+            >
+              <Sparkles size={14} color="#00f2fe" />
+              <span>▶ 90s Tour</span>
+            </button>
+
             {/* DoraHacks Pitch Kit (Hero CTA) */}
             <button
               onClick={() => { sfx.click(); setPitchModalOpen(true); }}
@@ -930,6 +1088,7 @@ export default function App() {
                 onOpenVisionModal={openVisionForNode}
                 activeCrisis={activeCrisis}
                 onResolveCrisis={handleResolveCrisis}
+                externalWaveTrigger={externalWaveTrigger}
               />
             </div>
 
@@ -945,6 +1104,7 @@ export default function App() {
                     activeEmergencies: activeCrisis ? activeCrisis.title : 'None active'
                   }}
                   onTriggerScenario={handleTriggerScenario}
+                  onExecuteAgentTool={handleExecuteAgentTool}
                 />
               </div>
             </div>
@@ -964,6 +1124,7 @@ export default function App() {
               onOpenVisionModal={openVisionForNode}
               activeCrisis={activeCrisis}
               onResolveCrisis={handleResolveCrisis}
+              externalWaveTrigger={externalWaveTrigger}
             />
             <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
@@ -1081,6 +1242,7 @@ export default function App() {
                 activeEmergencies: activeCrisis ? activeCrisis.title : 'None active'
               }}
               onTriggerScenario={handleTriggerScenario}
+              onExecuteAgentTool={handleExecuteAgentTool}
             />
           </div>
         )}
@@ -1186,6 +1348,60 @@ export default function App() {
         onClose={() => setGeminiModalOpen(false)}
         apiKey={apiKey}
         setApiKey={setApiKey}
+      />
+
+      {/* Live External Telemetry Ingestion Alert Toast */}
+      {lastExternalIngestToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 9999,
+          background: 'rgba(6, 15, 25, 0.96)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid #00f2fe',
+          boxShadow: '0 0 30px rgba(0, 242, 254, 0.45)',
+          borderRadius: '14px',
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px'
+        }}>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            background: 'rgba(0, 242, 254, 0.15)',
+            border: '1px solid #00f2fe',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px'
+          }}>
+            📡
+          </div>
+          <div>
+            <div style={{ color: '#00f2fe', fontWeight: '700', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>EXTERNAL INGEST VERIFIED: {lastExternalIngestToast.nodeId}</span>
+              <span style={{ fontSize: '0.65rem', background: '#10b981', color: '#022c22', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                HTTP 201 CREATED
+              </span>
+            </div>
+            <div style={{ color: '#94a3b8', fontSize: '0.74rem', marginTop: '2px' }}>
+              {lastExternalIngestToast.summary}
+            </div>
+            <div style={{ color: '#64748b', fontSize: '0.66rem', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+              Received at: {new Date(lastExternalIngestToast.receivedAt).toLocaleTimeString()} • Authenticated via X-Sensor-Token
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 90-Second Interactive Guided Pitch Tour for Hackathon Judges */}
+      <GuidedPitchTour
+        isOpen={pitchTourOpen}
+        onClose={() => setPitchTourOpen(false)}
+        onStepChange={handleTourStepChange}
       />
     </div>
   );

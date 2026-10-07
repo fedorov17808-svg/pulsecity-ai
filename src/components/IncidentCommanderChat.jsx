@@ -8,7 +8,8 @@ import { queryIncidentCommander } from '../services/geminiService';
 export default function IncidentCommanderChat({
   apiKey,
   cityState,
-  onTriggerScenario
+  onTriggerScenario,
+  onExecuteAgentTool
 }) {
   const [messages, setMessages] = useState([
     {
@@ -48,14 +49,23 @@ Type a tactical command or click one of the quick scenario stress-tests below.`,
     setLoading(true);
 
     try {
-      const reply = await queryIncidentCommander(apiKey, userMsg.text, cityState);
+      const result = await queryIncidentCommander(apiKey, userMsg.text, cityState);
+      const replyText = typeof result === 'object' && result.text ? result.text : result;
+      const toolCall = typeof result === 'object' && result.toolCall ? result.toolCall : null;
+
       const agentMsg = {
         id: Date.now() + 1,
         sender: 'agent',
-        text: reply,
+        text: replyText,
+        toolCall,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, agentMsg]);
+
+      // Automatically fire physical actuator tool callback to map & city state!
+      if (toolCall && onExecuteAgentTool) {
+        onExecuteAgentTool(toolCall);
+      }
     } catch (err) {
       console.error(err);
       const fallbackMsg = {
@@ -217,6 +227,40 @@ Type a tactical command or click one of the quick scenario stress-tests below.`,
               <div style={{ whiteSpace: 'pre-wrap' }}>
                 {msg.text}
               </div>
+
+              {/* Autonomous Actuator Tool Card */}
+              {msg.toolCall && (
+                <div style={{
+                  marginTop: '12px',
+                  background: 'rgba(0, 242, 254, 0.07)',
+                  border: '1px solid rgba(0, 242, 254, 0.45)',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.74rem',
+                  boxShadow: '0 0 15px rgba(0, 242, 254, 0.12)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ color: 'var(--accent-cyan)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Terminal size={13} />
+                      ACTUATOR EXECUTED: {msg.toolCall.name}
+                    </span>
+                    <span style={{ color: '#10b981', fontSize: '0.64rem', background: 'rgba(16, 185, 129, 0.18)', border: '1px solid #10b981', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                      {msg.toolCall.hardwareAck}
+                    </span>
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.7rem' }}>
+                    {msg.toolCall.label} • Latency: <strong style={{ color: '#38bdf8' }}>{msg.toolCall.latencyMs}ms</strong>
+                  </div>
+                  {msg.toolCall.params && (
+                    <div style={{ marginTop: '6px', background: 'rgba(0,0,0,0.5)', padding: '6px 8px', borderRadius: '6px', color: '#a5f3fc', fontSize: '0.68rem', overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
+                      <span style={{ color: '#64748b' }}>// Telemetry Payload Injected:</span><br />
+                      {JSON.stringify(msg.toolCall.params, null, 2)}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div style={{
                 fontSize: '0.68rem',
                 color: isAgent ? 'var(--text-muted)' : 'rgba(255,255,255,0.7)',

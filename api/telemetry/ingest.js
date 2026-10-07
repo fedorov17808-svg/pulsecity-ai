@@ -42,12 +42,22 @@ export default function handler(req, res) {
     });
   }
 
-  // GET: Return recent telemetry stream
+  // GET: Return recent telemetry stream or delta stream since given epochMs
   if (req.method === 'GET') {
+    const sinceParam = req.query?.since ? parseInt(req.query.since, 10) : 0;
+    const filteredEvents = sinceParam > 0 
+      ? INGEST_CACHE.filter(e => (e.epochMs || 0) > sinceParam)
+      : INGEST_CACHE.slice(-25);
+
+    const latestEpochMs = INGEST_CACHE.length > 0 
+      ? Math.max(...INGEST_CACHE.map(e => e.epochMs || 0))
+      : Date.now();
+
     return res.status(200).json({
       status: "ONLINE",
       totalIngestedCount: INGEST_CACHE.length,
-      recentEvents: INGEST_CACHE.slice(-20)
+      latestEpochMs,
+      recentEvents: filteredEvents
     });
   }
 
@@ -86,10 +96,13 @@ export default function handler(req, res) {
     });
   }
 
+  const now = Date.now();
   // Build validated telemetry record
   const validatedData = {
+    id: `pkt_${now}_${Math.random().toString(36).slice(2, 7)}`,
     nodeId: cleanNodeId,
-    receivedAt: new Date().toISOString(),
+    receivedAt: new Date(now).toISOString(),
+    epochMs: now,
     clientIp
   };
 
