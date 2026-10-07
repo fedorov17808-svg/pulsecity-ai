@@ -7,10 +7,10 @@ import {
 const TOUR_STEPS = [
   {
     step: 1,
-    title: "1. The Megacity Mobility Crisis",
-    tagline: "Kwame Nkrumah Circle & Tema Motorway Bottlenecks",
-    description: "4.2M citizens in Greater Accra lose 2.5 hours daily to traffic gridlock. Conventional fixed-cycle timers fail during erratic minibus (trotro) loading surges, costing Ghana over $400M annually in wasted fuel and emergency delays.",
-    actionLabel: "Focusing Accra Traffic Grid...",
+    title: "1. The Megacity Mobility Crisis (Accra, Ghana)",
+    tagline: "45-Minute Emergency Bottlenecks at Kwame Nkrumah Circle",
+    description: "In Greater Accra, 4.2M citizens lose 2.5 hours daily in uncoordinated traffic surges. Ambulances frequently spend up to 45 minutes trapped behind Trotro minibuses at Circle Interchange, missing the critical Golden Hour for trauma survival.",
+    actionLabel: "Auditing Accra Road Graph & Bottlenecks...",
     tab: "overview",
     layer: "traffic",
     icon: Navigation,
@@ -18,10 +18,10 @@ const TOUR_STEPS = [
   },
   {
     step: 2,
-    title: "2. Edge Vision & Real Webster Math",
-    tagline: "Hardware Edge AI replacing $60k SCATS Sensors",
-    description: "PulseCity runs YOLOv8 vehicle detection on $35 Raspberry Pi nodes. Real Webster delay algorithms dynamically compute optimal green light splits in <150ms rather than relying on obsolete static timers.",
-    actionLabel: "Opening Edge Computer Vision Feed...",
+    title: "2. $340 Non-Invasive Hardware Retrofit & Safety CMU",
+    tagline: "No Wire Cutting • No Warranty Void • Hardware Fail-Safe",
+    description: "Instead of $85,000 Siemens cabinet overhauls, PulseCity installs in 20 minutes using non-invasive Optical Current Transformer (CT) Clamps. A mechanical Conflict Monitor Unit (CMU) fail-safe relay physically prevents impossible dual-green phases even if software crashes.",
+    actionLabel: "Inspecting $340 Hardware BOM & Safety Circuit...",
     tab: "overview",
     openVision: true,
     icon: Sparkles,
@@ -29,10 +29,10 @@ const TOUR_STEPS = [
   },
   {
     step: 3,
-    title: "3. Autonomous Actuator: Green Wave Preemption",
-    tagline: "Closed-Loop Cyber-Physical Intervention",
-    description: "When an emergency is detected or commanded by Incident Commander Kofi, the system preempts all 4 junction microcontrollers to continuous GREEN wave, slashing ambulance transit to 37 Military Hospital from 26 to 7.4 minutes.",
-    actionLabel: "Executing Autonomous Green Wave Corridor...",
+    title: "3. Closed-Loop Green Wave Preemption",
+    tagline: "Dijkstra Routing + Live Webster Adaptive Overrides",
+    description: "When an emergency is detected or commanded, PulseCity calculates the optimal path across the road graph and preempts 4 sequential junctions to continuous GREEN, slashing ambulance transit to 37 Military Hospital from 42.4 to 9.2 minutes (-78.3%).",
+    actionLabel: "Executing Real-Time Green Wave Preemption...",
     tab: "overview",
     triggerWave: true,
     icon: Zap,
@@ -40,10 +40,10 @@ const TOUR_STEPS = [
   },
   {
     step: 4,
-    title: "4. Inclusive Resilience: 2G USSD (*920*26#)",
-    tagline: "Bilingual English + Akan Twi Offline Access",
-    description: "Smart cities cannot require expensive smartphones and mobile data. PulseCity provides an offline GSM USSD gateway (*920*26#) working on every basic Nokia phone in Ghana, with authentic local Twi language support.",
-    actionLabel: "Launching Citizen USSD Terminal...",
+    title: "4. Inclusive Offline Resilience: GSM USSD (*920*26#)",
+    tagline: "Zero-Fiber Requirement • Basic 2G Feature Phones",
+    description: "Smart cities cannot depend on fragile fiber or costly smartphones. PulseCity provides an offline GSM USSD gateway (*920*26#) accessible from basic Nokia phones, with bilingual English + Akan Twi support and on-chip microcontroller Webster autonomy.",
+    actionLabel: "Testing Citizen USSD Terminal Simulator...",
     tab: "overview",
     openUssd: true,
     icon: Phone,
@@ -51,10 +51,10 @@ const TOUR_STEPS = [
   },
   {
     step: 5,
-    title: "5. Mathematical Superiority & Municipal ROI",
-    tagline: "The Winning Hackathon Proof",
-    description: "PulseCity saves $4.2M/yr for Accra Metropolitan Assembly with an installation CapEx 92% lower than Siemens or SCATS. Dumsor-proof solar batteries ensure 24/7 continuous uptime during power grid blackouts.",
-    actionLabel: "Opening Mathematical A/B Benchmark...",
+    title: "5. Mathematical Validation & Municipal ROI",
+    tagline: "Webster 1958 & HCM 2020 Validated by Automated Tests",
+    description: "Saves $4.2M/yr for Accra Metropolitan Assembly with 92% lower CapEx than legacy vendors. Validated by 11 automated Vitest unit tests verifying cycle length formulas, knapsack battery allocation, and road graph shortest path calculations.",
+    actionLabel: "Reviewing Mathematical Proof & Benchmarks...",
     tab: "overview",
     openBenchmark: true,
     icon: Trophy,
@@ -68,7 +68,7 @@ export default function GuidedPitchTour({
   onStepChange
 }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   const currentStep = TOUR_STEPS[currentStepIndex];
 

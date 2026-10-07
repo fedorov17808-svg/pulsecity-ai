@@ -1423,6 +1423,10 @@ export default function App() {
             sfx.click();
             setUssdModalOpen(true);
           }}
+          onStartAutoTour={() => {
+            sfx.click();
+            setPitchTourOpen(true);
+          }}
         />
 
         {/* Layer Controls when viewing map */}
