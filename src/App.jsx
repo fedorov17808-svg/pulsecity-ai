@@ -1552,6 +1552,15 @@ export default function App() {
                   }}
                   onTriggerScenario={handleTriggerScenario}
                   onExecuteAgentTool={handleExecuteAgentTool}
+                  onSimulateTripleCascade={handleSimulateTripleCascade}
+                  tripleCascadeState={tripleCascadeState}
+                  onStopTripleCascade={handleStopTripleCascade}
+                  onOpenVisionModal={openVisionForNode}
+                  onOpenUssdModal={() => setUssdModalOpen(true)}
+                  onOpenHardwareModal={() => setHardwareModalOpen(true)}
+                  trafficNodes={trafficNodes}
+                  energyNodes={energyNodes}
+                  ecoNodes={ecoNodes}
                 />
               </div>
             </div>
@@ -1690,6 +1699,15 @@ export default function App() {
               }}
               onTriggerScenario={handleTriggerScenario}
               onExecuteAgentTool={handleExecuteAgentTool}
+              onSimulateTripleCascade={handleSimulateTripleCascade}
+              tripleCascadeState={tripleCascadeState}
+              onStopTripleCascade={handleStopTripleCascade}
+              onOpenVisionModal={openVisionForNode}
+              onOpenUssdModal={() => setUssdModalOpen(true)}
+              onOpenHardwareModal={() => setHardwareModalOpen(true)}
+              trafficNodes={trafficNodes}
+              energyNodes={energyNodes}
+              ecoNodes={ecoNodes}
             />
           </div>
         )}
