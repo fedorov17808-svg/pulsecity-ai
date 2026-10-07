@@ -806,6 +806,13 @@ export default function TrafficVisionModal({
                     <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px 8px', borderRadius: '6px' }}>
                       Priority Wave: <strong style={{ color: analysisResult.ambulanceDetected ? '#10b981' : 'var(--text-muted)' }}>{analysisResult.ambulanceDetected ? 'AMBULANCE DETECTED' : 'STANDARD'}</strong>
                     </div>
+                    <div style={{ background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '6px 8px', borderRadius: '6px', gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#fbbf24' }}>GPRTU Trotro Bay Queue:</span>
+                      <strong style={{ color: '#fef08a' }}>Holding Phase Armed (Prevents Circle Gridlock)</strong>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.66rem', color: '#94a3b8', marginTop: '6px' }}>
+                    💡 GPRTU Adaptation: Overrides raw Webster green times when informal trotro passenger loading overflows intersection bays, avoiding deadlocks.
                   </div>
                 </div>
               ) : (

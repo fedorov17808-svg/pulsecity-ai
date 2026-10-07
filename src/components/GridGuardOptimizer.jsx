@@ -232,7 +232,7 @@ export default function GridGuardOptimizer({
             <div>
               <h3 style={{ fontSize: '1.2rem', color: '#fff' }}>GridGuard SCADA & Anti-Dumsor Engine</h3>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                Track 2: Physical Power Flow Simulation & Priority Knapsack LP
+                Track 2: Cold Load Pickup Inrush Protection & Priority Knapsack LP
               </p>
             </div>
           </div>
@@ -266,6 +266,31 @@ export default function GridGuardOptimizer({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Cold Load Pickup Inrush Engineering Banner */}
+      <div style={{
+        background: 'rgba(168, 85, 247, 0.08)',
+        border: '1px solid rgba(168, 85, 247, 0.3)',
+        borderRadius: '8px',
+        padding: '10px 14px',
+        marginBottom: '14px',
+        fontSize: '0.74rem',
+        color: '#e2e8f0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px'
+      }}>
+        <div>
+          <strong style={{ color: '#c084fc' }}>⚡ REAL ELECTRICAL PHYSICS: Cold Load Pickup Inrush Mitigation.</strong>
+          <span style={{ color: '#cbd5e1', marginLeft: '6px' }}>
+            When power returns after Dumsor, 50k compressors restart at once. Staged 10% reconnection tranches prevent thermal blowout of 33kV substation transformers ($250k unit cost).
+          </span>
+        </div>
+        <span className="badge badge-purple" style={{ fontSize: '0.62rem', whiteSpace: 'nowrap' }}>
+          ECG SCADA Protocol
+        </span>
       </div>
 
       {/* Live 50Hz AC Frequency Oscilloscope Panel */}

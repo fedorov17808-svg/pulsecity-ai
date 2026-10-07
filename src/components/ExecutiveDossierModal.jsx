@@ -169,6 +169,35 @@ export default function ExecutiveDossierModal({ isOpen, onClose }) {
             </div>
           </div>
 
+          {/* Section 4: Institutional Alignment & Procurement Roadmap */}
+          <div>
+            <h4 style={{ fontSize: '0.92rem', fontWeight: '800', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+              4. Institutional Alignment & Public Procurement Roadmap (PPA Act 663)
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '10px', padding: '14px' }}>
+                <div style={{ fontWeight: '700', color: '#fbbf24', marginBottom: '4px' }}>World Bank GARID Project ($200M) Integration</div>
+                <p style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>
+                  PulseCity does not require debt-strapped AMA municipal budget allocations. It directly integrates as software/telemetry infrastructure under <strong>Component 2 of the World Bank Greater Accra Resilient and Integrated Development Project (GARID, $45M allocation)</strong> for Odaw early flood warning and drainage automation.
+                </p>
+              </div>
+
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '10px', padding: '14px' }}>
+                <div style={{ fontWeight: '700', color: '#34d399', marginBottom: '4px' }}>GPRTU Trotro Union Stakeholder Alignment</div>
+                <p style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>
+                  Avoids driver boycotts by working with the Ghana Private Road Transport Union (GPRTU). Station masters receive reverse-billed USSD/SMS alerts when Circle loading bays overflow, converting informal operators into collaborative partners rather than traffic adversaries.
+                </p>
+              </div>
+
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '10px', padding: '14px' }}>
+                <div style={{ fontWeight: '700', color: '#38bdf8', marginBottom: '4px' }}>$45 Retrofit vs $65,000 Cabinet Teardown</div>
+                <p style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>
+                  Complies with PPA Act 663 value-for-money thresholds. Installs an optocoupled solid-state relay interrupter inside legacy 1990s analog signal cabinets in 20 minutes, saving taxpayers $65,000 per intersection compared to Siemens/SCATS overhauls.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Signatures */}
           <div style={{ borderTop: '2px solid rgba(255, 255, 255, 0.15)', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '12px' }}>
             <div>

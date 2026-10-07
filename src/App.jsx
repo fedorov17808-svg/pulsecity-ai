@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Activity, Car, Zap, Wind, Bot, Shield, Trophy, 
   Sparkles, Layers, Clock, Terminal,
-  Phone, BarChart3, FileText, Volume2, VolumeX, AlertTriangle
+  Phone, BarChart3, FileText, Volume2, VolumeX, AlertTriangle,
+  Copy, Play
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { 
   TRAFFIC_NODES, ENERGY_NODES, 
   ECO_NODES, PRESET_CRISES 
@@ -97,7 +99,38 @@ export default function App() {
   const [lastExternalIngestToast, setLastExternalIngestToast] = useState(null);
   const [ingestPacketCount, setIngestPacketCount] = useState(0);
   const [ingestLiveConnected, setIngestLiveConnected] = useState(true);
-  const processedPktIdsRef = useRef(new Set());
+  const [copiedCurlStrip, setCopiedCurlStrip] = useState(false);
+
+  // Send live telemetry probe via REST API from the Dashboard Quick Strip
+  const handleSendTestTerminalPing = async () => {
+    sfx.click();
+    try {
+      const payload = {
+        nodeId: 'TR-01',
+        flowRateVehiclesPerHour: 4920,
+        congestionPercentage: 94,
+        incidentDetected: true,
+        incidentDetails: 'Hardware sensor burst injected via Terminal Quick Strip',
+        protocol: 'MQTT_V5_EDGE'
+      };
+
+      const res = await fetch('/api/v1/telemetry/ingest', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sensor-Token': 'afri-pulse-live-2026'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        handleIngestTelemetry(payload);
+        confetti({ particleCount: 32, spread: 55, origin: { y: 0.6 } });
+      }
+    } catch (e) {
+      console.error('Terminal ping error:', e);
+    }
+  };
 
   // Live External Ingest Synchronization (cURL / Hardware Terminal Ingest Bridge)
   useEffect(() => {
@@ -1160,18 +1193,72 @@ export default function App() {
               </div>
             </div>
 
-            {/* Quick CCTV button */}
-            <button
-              onClick={() => { sfx.click(); openVisionForNode(trafficNodes[0]); }}
-              onMouseEnter={() => sfx.hover()}
-              className="btn-secondary"
-              style={{ fontSize: '0.78rem', padding: '6px 14px' }}
-            >
-              <Sparkles size={14} color="var(--accent-cyan)" />
-              Inspect Gemini Vision Feed
-            </button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              {/* Hero Emergency Preemption Action */}
+              <button
+                onClick={() => {
+                  sfx.alarm();
+                  handleExecuteAgentTool({
+                    name: 'DISPATCH_GREEN_WAVE',
+                    params: { origin: 'N-CIRCLE', dest: 'N-37MIL' }
+                  });
+                  confetti({ particleCount: 40, spread: 60, origin: { y: 0.5 } });
+                }}
+                className="btn-emergency-pulse"
+                title="Instant Preemption Corridor: Kwame Nkrumah Circle → 37 Military Hospital"
+              >
+                <span>🚑</span>
+                <span>LAUNCH GREEN WAVE (CIRCLE → 37 MIL)</span>
+              </button>
+
+              {/* Quick CCTV button */}
+              <button
+                onClick={() => { sfx.click(); openVisionForNode(trafficNodes[0]); }}
+                onMouseEnter={() => sfx.hover()}
+                className="btn-secondary"
+                style={{ fontSize: '0.78rem', padding: '6px 14px' }}
+              >
+                <Sparkles size={14} color="var(--accent-cyan)" />
+                Inspect Gemini Vision Feed
+              </button>
+            </div>
           </div>
         )}
+
+        {/* Live Terminal cURL Injection Strip */}
+        <div className="terminal-quick-strip">
+          <div className="terminal-strip-prompt">
+            <span style={{ color: '#10b981', fontWeight: '800' }}>$</span>
+            <span style={{ color: '#94a3b8' }}>
+              curl -X POST &quot;https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest&quot; -H &quot;X-Sensor-Token: afri-pulse-live-2026&quot; -d &#39;&#123;&quot;nodeId&quot;:&quot;TR-01&quot;,&quot;congestionPercentage&quot;:95&#125;&#39;
+            </span>
+          </div>
+          <div className="terminal-strip-actions">
+            <button
+              onClick={() => {
+                sfx.click();
+                navigator.clipboard.writeText(`curl -X POST "https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest" -H "Content-Type: application/json" -H "X-Sensor-Token: afri-pulse-live-2026" -d '{"nodeId":"TR-01","congestionPercentage":95,"incidentDetected":true}'`);
+                setCopiedCurlStrip(true);
+                setTimeout(() => setCopiedCurlStrip(false), 2000);
+              }}
+              className="btn-secondary"
+              style={{ fontSize: '0.7rem', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '5px' }}
+              title="Copy ready-to-run terminal cURL command"
+            >
+              <Copy size={12} />
+              <span>{copiedCurlStrip ? 'Copied!' : 'Copy cURL'}</span>
+            </button>
+            <button
+              onClick={handleSendTestTerminalPing}
+              className="btn-primary"
+              style={{ fontSize: '0.7rem', padding: '4px 12px', display: 'flex', alignItems: 'center', gap: '5px', background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' }}
+              title="Execute live hardware HTTP POST probe directly to /api/v1/telemetry/ingest"
+            >
+              <Play size={12} fill="currentColor" />
+              <span>Test Ingest (HTTP POST)</span>
+            </button>
+          </div>
+        </div>
 
         {/* Tab 1: Overview & Digital Twin Map Layout */}
         {activeTab === 'overview' && (
@@ -1508,7 +1595,7 @@ export default function App() {
       <QuickIngestModal
         isOpen={quickIngestModalOpen}
         onClose={() => setQuickIngestModalOpen(false)}
-        onIngestTelemetry={handleExternalTelemetryPacket}
+        onIngestTelemetry={handleIngestTelemetry}
         ingestPacketCount={ingestPacketCount}
       />
     </div>

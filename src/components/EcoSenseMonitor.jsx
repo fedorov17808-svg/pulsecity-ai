@@ -92,9 +92,14 @@ export default function EcoSenseMonitor({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Waves size={16} color={isFloodImminent ? '#f43f5e' : '#38bdf8'} />
-            <span style={{ fontSize: '0.84rem', fontWeight: 'bold', color: '#fff' }}>
-              Odaw River & Korle Basin Hydro-Telemetry
-            </span>
+            <div>
+              <span style={{ fontSize: '0.84rem', fontWeight: 'bold', color: '#fff' }}>
+                Odaw River & Korle Basin Hydro-Telemetry
+              </span>
+              <span style={{ fontSize: '0.66rem', color: '#38bdf8', marginLeft: '8px' }}>
+                [FMCW 24GHz Radar + 316L Hydrostatic • Penetrates 2m Floating Plastic Carpet]
+              </span>
+            </div>
           </div>
           <span className={`badge ${isFloodImminent ? 'badge-rose' : 'badge-cyan'}`} style={{ fontSize: '0.65rem' }}>
             {isFloodImminent ? 'CRITICAL FLOOD RISK' : 'NORMAL BASIN FLOW'}

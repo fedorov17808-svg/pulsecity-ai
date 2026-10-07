@@ -436,6 +436,7 @@ export default function HardwareHubModal({ isOpen, onClose }) {
                     <li><strong>Silicone Conformal Coating:</strong> All PCB traces and solder joints dip-coated to resist abrasive Sahara silica dust (PM2.5/PM10) and Gulf of Guinea coastal salt fog.</li>
                     <li><strong>IP68 Polycarbonate Shell:</strong> UV-stabilized Makrolon® enclosure rated IK10 against blunt projectile impact; submersible to 2 meters for 72 hours during Odaw flash floods.</li>
                     <li><strong>Gore-Tex Hydrophobic Vent:</strong> Equalizes internal pressure without allowing water ingress, preventing condensation during rapid temperature swings from 42°C daytime to tropical downpours.</li>
+                    <li><strong>FMCW 24GHz + Hydrostatic Fusion:</strong> Overcomes the 2m floating plastic and foam carpet in Korle Lagoon (which absorbs 40kHz ultrasound) via millimeter-wave radar penetration paired with submerged 316L stainless pressure transducer.</li>
                   </ul>
                 </div>
 
@@ -580,60 +581,131 @@ export default function HardwareHubModal({ isOpen, onClose }) {
           )}
 
           {activeTab === 'bom' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <table className="tech-table">
-                  <thead>
-                    <tr>
-                      <th>Module / Component</th>
-                      <th>Model & Specs</th>
-                      <th>Power Draw</th>
-                      <th>Quantity</th>
-                      <th>Total Cost</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style={{ fontWeight: '600', color: '#fff' }}>MCU Core</td>
-                      <td>ESP32-S3 Dual-Core 240MHz</td>
-                      <td>80 mA (Active) / 10 µA (Sleep)</td>
-                      <td>1</td>
-                      <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$3.80</td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: '600', color: '#fff' }}>LoRa Mesh Node</td>
-                      <td>Semtech SX1262 868MHz SPI</td>
-                      <td>22 mA TX @ +14dBm</td>
-                      <td>1</td>
-                      <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$2.95</td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: '600', color: '#fff' }}>Sonar Flood Gauge</td>
-                      <td>JSN-SR04T Waterproof Ultrasonic</td>
-                      <td>15 mA @ 5V</td>
-                      <td>1</td>
-                      <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$2.10</td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: '600', color: '#fff' }}>Gas & Smoke AQI</td>
-                      <td>MQ-135 Air Quality Sensor</td>
-                      <td>150 mA (Heater)</td>
-                      <td>1</td>
-                      <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$1.00</td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: '600', color: '#fff' }}>Solar & Battery</td>
-                      <td>3.2V 32700 LiFePO4 + 5W Panel</td>
-                      <td>Unlimited autonomous solar</td>
-                      <td>1</td>
-                      <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$3.20</td>
-                    </tr>
-                    <tr style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
-                      <td colSpan="4" style={{ fontWeight: '800', color: '#fff' }}>CERTIFIED MUNICIPAL BOM PER FIELD NODE</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '800', color: '#34d399', fontSize: '0.95rem' }}>$13.05 USD</td>
-                    </tr>
-                  </tbody>
-                </table>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h4 style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fff' }}>1. Municipal Environmental & Flood Gauge Field Node ($13.05 BOM)</h4>
+                  <span className="badge badge-emerald" style={{ fontSize: '0.62rem' }}>Odaw Basin & Korle Lagoon</span>
+                </div>
+                <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <table className="tech-table">
+                    <thead>
+                      <tr>
+                        <th>Module / Component</th>
+                        <th>Model & Specs</th>
+                        <th>Power Draw</th>
+                        <th>Quantity</th>
+                        <th>Total Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>MCU Core</td>
+                        <td>ESP32-S3 Dual-Core 240MHz</td>
+                        <td>80 mA (Active) / 10 µA (Sleep)</td>
+                        <td>1</td>
+                        <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$3.80</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>LoRa Mesh Node</td>
+                        <td>Semtech SX1262 868MHz SPI</td>
+                        <td>22 mA TX @ +14dBm</td>
+                        <td>1</td>
+                        <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$2.95</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>Dual Hydro Depth</td>
+                        <td>FMCW 24GHz Radar + 316L Hydrostatic</td>
+                        <td>18 mA @ 5V (Penetrates plastic carpet)</td>
+                        <td>1</td>
+                        <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$2.10</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>Gas & Smoke AQI</td>
+                        <td>MQ-135 Air Quality Sensor</td>
+                        <td>150 mA (Heater)</td>
+                        <td>1</td>
+                        <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$1.00</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>Solar & Battery</td>
+                        <td>3.2V 32700 LiFePO4 + 5W Panel</td>
+                        <td>Unlimited autonomous solar</td>
+                        <td>1</td>
+                        <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$3.20</td>
+                      </tr>
+                      <tr style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
+                        <td colSpan="4" style={{ fontWeight: '800', color: '#fff' }}>CERTIFIED MUNICIPAL BOM PER SENSOR NODE</td>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '800', color: '#34d399', fontSize: '0.95rem' }}>$13.05 USD</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* $45 Retrofit Controller for 1990s Analog Cabinets */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div>
+                    <h4 style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fbbf24' }}>2. Plug-and-Play Retrofit Controller for Legacy 1990s Analog Junction Cabinets</h4>
+                    <p style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Eliminates $65,000 Siemens cabinet teardowns. Wires directly into existing 220V AC signal contactors in 20 mins.</p>
+                  </div>
+                  <span className="badge badge-amber" style={{ fontSize: '0.62rem' }}>Zero Infrastructure Replacement</span>
+                </div>
+                <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                  <table className="tech-table">
+                    <thead>
+                      <tr>
+                        <th>Retrofit Component</th>
+                        <th>Engineering Functionality</th>
+                        <th>Certification</th>
+                        <th>Qty</th>
+                        <th>Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>Optocoupled SSR Interceptor</td>
+                        <td>4-Phase solid-state relay bank; overrides analog dial timers via dry contacts</td>
+                        <td>UL 508 / IEC 60947</td>
+                        <td>1</td>
+                        <td style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$14.50</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>Industrial MCU Board</td>
+                        <td>ESP32-S3 Dual-Core with fail-safe hardware watchdog default-pass circuit</td>
+                        <td>CE / FCC Part 15</td>
+                        <td>1</td>
+                        <td style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$5.80</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>Dual 4G/LoRa Gateway</td>
+                        <td>Quectel EC25 + SX1262 LoRaWAN for resilient Dumsor mesh failover</td>
+                        <td>PTCRB / GCF</td>
+                        <td>1</td>
+                        <td style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$16.20</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>DIN-Rail PSU (AC/DC)</td>
+                        <td>MEAN WELL HDR-15-5 (85-264V AC input, immune to Ghana brownouts)</td>
+                        <td>EN 61558</td>
+                        <td>1</td>
+                        <td style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$5.50</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>IP66 Enclosure & Loom</td>
+                        <td>Flameretardant ABS casing + pre-crimped terminal blocks for 15-min retrofit</td>
+                        <td>NEMA 4X / IP66</td>
+                        <td>1</td>
+                        <td style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$3.00</td>
+                      </tr>
+                      <tr style={{ background: 'rgba(245, 158, 11, 0.12)' }}>
+                        <td colSpan="4" style={{ fontWeight: '800', color: '#fff' }}>TOTAL PLUG-AND-PLAY RETROFIT COST PER INTERSECTION</td>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '800', color: '#fbbf24', fontSize: '0.95rem' }}>$45.00 USD</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

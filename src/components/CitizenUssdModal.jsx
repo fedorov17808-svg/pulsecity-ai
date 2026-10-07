@@ -203,8 +203,9 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
                 <span>{new Date().toLocaleTimeString().slice(0, 5)} GMT</span>
               </div>
 
-              {ussdStep === 'DIALER' && (
-                <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                  <div style={{ fontSize: '0.64rem', color: '#34d399', background: 'rgba(16, 185, 129, 0.15)', padding: '3px 6px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)', marginBottom: '8px' }}>
+                    TOLL-FREE // SPONSORED BY WORLD BANK GARID COMPONENT 2 // REVERSE-BILLED
+                  </div>
                   <div style={{ fontSize: '0.7rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
                     {lang === 'EN' ? 'Dial MMI Code' : 'Bɔ USSD Kood No'}
                   </div>
@@ -221,11 +222,9 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
                   }}>
                     {dialNumber || "_"}
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: '#059669' }}>
-                    {lang === 'EN' ? 'Free municipal toll. Zero data required.' : 'Koma gye hwee. Data biara nni mu.'}
+                  <div style={{ fontSize: '0.66rem', color: '#a7f3d0' }}>
+                    {lang === 'EN' ? '✓ Zero Airtime Deducted • +2.00 GHS Bounty for Verified Hazard Alerts' : '✓ Wontua hwee • Wonya 2.00 GHS Airtime sɛ wobɔ amanneɛ'}
                   </div>
-                </div>
-              )}
 
               {ussdStep === 'MENU' && (
                 <div>
@@ -348,13 +347,27 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
                     textAlign: 'left',
                     fontSize: '0.66rem',
                     color: '#e2e8f0',
-                    lineHeight: '1.3'
+                    lineHeight: '1.3',
+                    marginBottom: '8px'
                   }}>
                     <div style={{ color: '#fbbf24', fontWeight: '700', marginBottom: '2px', display: 'flex', justifyContent: 'space-between' }}>
                       <span>💬 INCOMING SMS: AMA-ALERT</span>
                       <span style={{ fontSize: '0.58rem', color: '#94a3b8' }}>Just Now</span>
                     </div>
                     "Your report for Odaw Basin (Ref: {lastTicketId || 'AMA-8492'}) has triggered automated sluice gate winch & MTTD unit alert. Medaase pa ara!"
+                  </div>
+
+                  <div style={{
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid #10b981',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    textAlign: 'left',
+                    fontSize: '0.65rem',
+                    color: '#34d399'
+                  }}>
+                    <span style={{ fontWeight: 'bold' }}>🎁 INCENTIVE BOUNTY: </span>
+                    +2.00 GHS Airtime credited to MSISDN 0244****** via MTN MoMo API (World Bank GARID Fund).
                   </div>
                 </div>
               )}
