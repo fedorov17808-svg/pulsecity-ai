@@ -93,75 +93,61 @@ export default function App() {
   // Autonomous Actuator & External Hardware Telemetry State
   const [externalWaveTrigger, setExternalWaveTrigger] = useState(null);
   const [lastExternalIngestToast, setLastExternalIngestToast] = useState(null);
-  const lastProcessedIngestTimeRef = useRef(Date.now());
+  const [ingestPacketCount, setIngestPacketCount] = useState(0);
+  const [ingestLiveConnected, setIngestLiveConnected] = useState(true);
+  const processedPktIdsRef = useRef(new Set());
 
-  // Live External Ingest Synchronization (cURL / Hardware Terminal Ingest)
+  // Live External Ingest Synchronization (cURL / Hardware Terminal Ingest Bridge)
   useEffect(() => {
+    let isMounted = true;
     const checkExternalIngest = async () => {
       try {
-        const res = await fetch(`/api/telemetry/ingest?since=${lastProcessedIngestTimeRef.current}`);
-        if (!res.ok) return;
+        const res = await fetch('/api/telemetry/ingest');
+        if (!res.ok) {
+          if (isMounted) setIngestLiveConnected(false);
+          return;
+        }
+        if (isMounted) setIngestLiveConnected(true);
         const data = await res.json();
+        
         if (data.recentEvents && data.recentEvents.length > 0) {
-          const newest = data.recentEvents[data.recentEvents.length - 1];
-          const eventTime = newest.epochMs || new Date(newest.receivedAt).getTime();
-          if (eventTime > lastProcessedIngestTimeRef.current) {
-            lastProcessedIngestTimeRef.current = eventTime;
-            sfx.alert();
-            setLastExternalIngestToast({
-              nodeId: newest.nodeId,
-              summary: newest.incidentDetails || `Live Ingest: ${newest.congestionPercentage !== undefined ? newest.congestionPercentage + '% Congestion' : 'Telemetry Packet Received'}`,
-              receivedAt: newest.receivedAt
+          const freshEvents = data.recentEvents.filter((e) => {
+            const key = e.id || `${e.receivedAt}_${e.nodeId}`;
+            return !processedPktIdsRef.current.has(key);
+          });
+
+          if (freshEvents.length > 0) {
+            freshEvents.forEach((newest) => {
+              const key = newest.id || `${newest.receivedAt}_${newest.nodeId}`;
+              processedPktIdsRef.current.add(key);
+              handleIngestTelemetry(newest);
             });
 
-            if (newest.nodeId.startsWith('TR')) {
-              setTrafficNodes(prev => prev.map(n => {
-                if (n.id === newest.nodeId) {
-                  return {
-                    ...n,
-                    congestion: newest.congestionPercentage !== undefined ? newest.congestionPercentage : n.congestion,
-                    alert: newest.incidentDetails || n.alert,
-                    incidentActive: newest.incidentDetected !== undefined ? newest.incidentDetected : n.incidentActive
-                  };
-                }
-                return n;
-              }));
-            } else if (newest.nodeId.startsWith('EN')) {
-              setEnergyNodes(prev => prev.map(n => {
-                if (n.id === newest.nodeId) {
-                  return {
-                    ...n,
-                    currentLoadMw: newest.currentLoadMw !== undefined ? newest.currentLoadMw : n.currentLoadMw,
-                    dumsorRisk: newest.dumsorRisk !== undefined ? newest.dumsorRisk : n.dumsorRisk
-                  };
-                }
-                return n;
-              }));
-            } else if (newest.nodeId.startsWith('ECO')) {
-              setEcoNodes(prev => prev.map(n => {
-                if (n.id === newest.nodeId) {
-                  return {
-                    ...n,
-                    waterLevelMeters: newest.waterLevelMeters !== undefined ? newest.waterLevelMeters : n.waterLevelMeters,
-                    aqi: newest.aqiScore !== undefined ? newest.aqiScore : n.aqi
-                  };
-                }
-                return n;
-              }));
-            }
+            setIngestPacketCount((c) => c + freshEvents.length);
+            const latest = freshEvents[freshEvents.length - 1];
+            sfx.alert();
+            setLastExternalIngestToast({
+              nodeId: latest.nodeId,
+              summary: latest.incidentDetails || `Live Ingest: ${latest.congestionPercentage !== undefined ? latest.congestionPercentage + '% Congestion' : 'Telemetry Packet Received'}`,
+              receivedAt: latest.receivedAt || new Date().toISOString()
+            });
 
             setTimeout(() => {
-              setLastExternalIngestToast(null);
+              if (isMounted) setLastExternalIngestToast(null);
             }, 6000);
           }
         }
       } catch (err) {
-        // quiet fallback
+        if (isMounted) setIngestLiveConnected(false);
       }
     };
 
-    const interval = setInterval(checkExternalIngest, 3500);
-    return () => clearInterval(interval);
+    checkExternalIngest();
+    const interval = setInterval(checkExternalIngest, 2000); // Fast 2s poll for instant curl response
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // GSAP: Animate workspace on activeTab changes
@@ -255,21 +241,56 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Periodic Telemetry Simulation (traffic light cycling and slight flow drift)
+  // Webster-Synchronized Real-Time Traffic Light Cycle
   useEffect(() => {
     const interval = setInterval(() => {
       setTrafficNodes((prev) => 
         prev.map((node) => {
           let nextRem = node.cycleRemainingSec - 1;
           let nextLight = node.lightState;
+          let websterMeta = node.websterTiming;
+
           if (nextRem <= 0) {
-            nextLight = node.lightState === 'GREEN' ? 'YELLOW' : node.lightState === 'YELLOW' ? 'RED' : 'GREEN';
-            nextRem = nextLight === 'GREEN' ? 35 : nextLight === 'YELLOW' ? 5 : 25;
+            // Compute real F.V. Webster optimal split based on current node saturation and flow
+            const flow = node.flowRate || Math.max(800, node.congestion * 45);
+            const sat = node.saturationFlow || 3800;
+            const webster = calculateWebsterSignalTiming({
+              phases: [
+                { name: `${node.name} Primary Approach`, flowRate: flow, saturationFlow: sat, minGreen: 20 },
+                { name: `${node.name} Cross-Turn Approach`, flowRate: Math.round(flow * 0.42), saturationFlow: sat, minGreen: 12 }
+              ],
+              lostTimePerPhase: 4,
+              maxCycleLength: 120,
+              minCycleLength: 40
+            });
+
+            websterMeta = {
+              optimalCycle: webster.optimumCycleLengthSeconds,
+              effectiveGreen: webster.phases[0]?.effectiveGreenSeconds || 45,
+              totalFlowRatioY: webster.totalFlowRatio_Y,
+              estimatedDelaySec: webster.phases[0]?.estimatedDelaySecPerVehicle || 15
+            };
+
+            const greenSec = websterMeta.effectiveGreen;
+            const redSec = Math.max(16, websterMeta.optimalCycle - greenSec - 4);
+
+            if (node.lightState === 'GREEN') {
+              nextLight = 'YELLOW';
+              nextRem = 4;
+            } else if (node.lightState === 'YELLOW') {
+              nextLight = 'RED';
+              nextRem = redSec;
+            } else {
+              nextLight = 'GREEN';
+              nextRem = greenSec;
+            }
           }
+
           return {
             ...node,
             lightState: nextLight,
-            cycleRemainingSec: nextRem
+            cycleRemainingSec: nextRem,
+            websterTiming: websterMeta
           };
         })
       );
@@ -851,18 +872,55 @@ export default function App() {
               )}
             </div>
 
-            {/* 90-Second Hackathon Jury Guided Tour Button */}
+            {/* Live IoT Ingestion Bridge Status Badge */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: ingestLiveConnected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+              border: ingestLiveConnected ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(239, 68, 68, 0.35)',
+              padding: '5px 10px',
+              borderRadius: '8px',
+              fontSize: '0.72rem',
+              fontFamily: 'var(--font-mono)',
+              color: ingestLiveConnected ? '#34d399' : '#f87171'
+            }}
+            title="PulseCity IoT Edge Ingest Bridge (/api/telemetry/ingest) active polling & cURL sync"
+            >
+              <span className="pulse-indicator" style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: ingestLiveConnected ? '#10b981' : '#ef4444',
+                boxShadow: ingestLiveConnected ? '0 0 8px #10b981' : '0 0 8px #ef4444'
+              }} />
+              <span>INGEST BRIDGE</span>
+              {ingestPacketCount > 0 && (
+                <span style={{
+                  background: '#059669',
+                  color: '#fff',
+                  padding: '1px 6px',
+                  borderRadius: '10px',
+                  fontSize: '0.65rem',
+                  fontWeight: '700'
+                }}>
+                  {ingestPacketCount} PKTS
+                </span>
+              )}
+            </div>
+
+            {/* 3-Minute Hackathon Jury Guided Tour Button */}
             <button
               onClick={() => { sfx.click(); setPitchTourOpen(true); }}
               onMouseEnter={() => sfx.hover()}
               style={{
-                background: 'linear-gradient(135deg, rgba(0, 242, 254, 0.22) 0%, rgba(56, 189, 248, 0.12) 100%)',
-                border: '1px solid rgba(0, 242, 254, 0.65)',
-                color: '#00f2fe',
-                boxShadow: '0 0 16px rgba(0, 242, 254, 0.25)',
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(0, 242, 254, 0.2) 100%)',
+                border: '1px solid rgba(245, 158, 11, 0.75)',
+                color: '#fbbf24',
+                boxShadow: '0 0 16px rgba(245, 158, 11, 0.3)',
                 fontSize: '0.78rem',
-                padding: '6px 13px',
-                fontWeight: '700',
+                padding: '6px 14px',
+                fontWeight: '800',
                 borderRadius: 'var(--radius-md)',
                 display: 'flex',
                 alignItems: 'center',
@@ -870,10 +928,10 @@ export default function App() {
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
-              title="Launch guided 90s interactive hackathon pitch walkthrough for judges"
+              title="Launch guided interactive hackathon pitch walkthrough for judges"
             >
-              <Sparkles size={14} color="#00f2fe" />
-              <span>▶ 90s Tour</span>
+              <Trophy size={14} color="#fbbf24" />
+              <span>⭐ JURY TOUR (3-MIN)</span>
             </button>
 
             {/* DoraHacks Pitch Kit (Hero CTA) */}
