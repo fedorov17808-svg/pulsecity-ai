@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Shield, Zap, AlertTriangle, Radio, Navigation, CheckCircle2, Siren } from 'lucide-react';
 
 export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onBreakerToggle }) {
-  const [role, setRole] = useState('mttd'); // 'mttd' | 'ecg'
+  const [role, setRole] = useState('mttd'); // 'mttd' | 'ecg' | 'ama'
   const [activeOverride, setActiveOverride] = useState(null);
   const [radioLog, setRadioLog] = useState([
     { id: 1, time: '12:18:02', text: 'MTTD Unit 4: Kwame Nkrumah Circle congestion surge. Heavy trotro accumulation.' },
-    { id: 2, time: '12:19:45', text: 'ECG Control: Achimota Bulk Supply Point reported 14 MW reserve deficit.' }
+    { id: 2, time: '12:19:45', text: 'ECG Control: Achimota Bulk Supply Point reported 14 MW reserve deficit.' },
+    { id: 3, time: '12:20:10', text: 'AMA Sanitation: Korle Lagoon sluice gate telemetry synchronized. Basin depth 2.44m.' }
   ]);
   const [actionNotice, setActionNotice] = useState(null);
 
@@ -26,7 +27,7 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="field-hud-title">
       <div 
         className="modal-card" 
-        style={{ maxWidth: '520px', border: '2px solid rgba(245, 158, 11, 0.6)', boxShadow: '0 25px 70px rgba(0,0,0,0.9), 0 0 35px rgba(245, 158, 11, 0.25)' }}
+        style={{ maxWidth: '540px', border: '2px solid rgba(245, 158, 11, 0.6)', boxShadow: '0 25px 70px rgba(0,0,0,0.9), 0 0 35px rgba(245, 158, 11, 0.25)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Tactical Header */}
@@ -42,10 +43,10 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
             <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fff', boxShadow: '0 0 10px #fff' }}></span>
             <div>
               <h2 id="field-hud-title" style={{ fontSize: '0.88rem', fontWeight: '900', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Field Tactical Terminal v2.6
+                Field Tactical Terminal v2.6 // Multi-Agency RBAC
               </h2>
               <p style={{ fontSize: '0.68rem', fontWeight: '700', color: '#1c1917' }}>
-                DIRECTORATE OF URBAN CRISIS MANAGEMENT // GAMA
+                DIRECTORATE OF URBAN CRISIS MANAGEMENT // GAMA (MTTD • ECG • AMA)
               </p>
             </div>
           </div>
@@ -53,20 +54,27 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
         </div>
 
         {/* Agency Switcher */}
-        <div style={{ padding: '12px 18px', background: 'rgba(15, 23, 42, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '8px' }}>
+        <div style={{ padding: '10px 14px', background: 'rgba(15, 23, 42, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
           <button
             onClick={() => setRole('mttd')}
             className={`pill-tab ${role === 'mttd' ? 'active' : ''}`}
-            style={{ flex: 1, justifyContent: 'center' }}
+            style={{ justifyContent: 'center', fontSize: '0.72rem', padding: '6px 8px' }}
           >
-            🚓 MTTD Traffic Police
+            🚓 MTTD Police
           </button>
           <button
             onClick={() => setRole('ecg')}
             className={`pill-tab ${role === 'ecg' ? 'active' : ''}`}
-            style={{ flex: 1, justifyContent: 'center' }}
+            style={{ justifyContent: 'center', fontSize: '0.72rem', padding: '6px 8px' }}
           >
-            ⚡ ECG Grid Engineering
+            ⚡ ECG Grid
+          </button>
+          <button
+            onClick={() => setRole('ama')}
+            className={`pill-tab ${role === 'ama' ? 'active' : ''}`}
+            style={{ justifyContent: 'center', fontSize: '0.72rem', padding: '6px 8px' }}
+          >
+            🍃 AMA Flood/Waste
           </button>
         </div>
 
@@ -89,7 +97,7 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
 
         {/* Main Body */}
         <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
-          {role === 'mttd' ? (
+          {role === 'mttd' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.78rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -200,7 +208,9 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
                 </button>
               </div>
             </div>
-          ) : (
+          )}
+
+          {role === 'ecg' && (
             /* ECG Grid Engineering */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.78rem' }}>
@@ -237,6 +247,97 @@ export default function FieldOfficerHUD({ isOpen, onClose, onSignalOverride, onB
                   <div style={{ textAlign: 'left' }}>
                     <div>⚡ TRIP NON-CRITICAL BREAKER</div>
                     <div style={{ fontSize: '0.68rem', color: '#fbbf24', fontWeight: 'normal' }}>Saves 25 MW • Preserves Korle Bu Hospital</div>
+                  </div>
+                  <span style={{ fontSize: '1.2rem' }}>&rarr;</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {role === 'ama' && (
+            /* AMA Municipal Sanitation & Flood Response */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.78rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#94a3b8' }}>Monitored Drainage Basin:</span>
+                  <span style={{ color: '#34d399', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>Korle Lagoon / Odaw River (ECO-01)</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#94a3b8' }}>Basin Water Level:</span>
+                  <span style={{ color: '#38bdf8', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>2.44m (High Tide Clearance: 1.8m)</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#94a3b8' }}>Culvert Choke Index:</span>
+                  <span style={{ color: '#fbbf24', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>38% Solid Waste Accumulation</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                <button
+                  onClick={() => triggerAction('OPEN KORLE SLUICE GATES (65%)', 'Atlantic tidal gates motorized actuation engaged. Draining 48,000 m³/hr to sea.')}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    color: '#e0f2fe',
+                    fontWeight: '700',
+                    fontSize: '0.78rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ textAlign: 'left' }}>
+                    <div>🌊 ACTUATE KORLE LAGOON SLUICE GATES</div>
+                    <div style={{ fontSize: '0.66rem', color: '#38bdf8', fontWeight: 'normal' }}>Open to 65% capacity • Atlantic tidal outflow</div>
+                  </div>
+                  <span style={{ fontSize: '1.2rem' }}>&rarr;</span>
+                </button>
+
+                <button
+                  onClick={() => triggerAction('DISPATCH COMPACTOR #04 (ODAW DRAIN)', 'Rapid desilting compactor truck mobilized to Kwame Nkrumah Circle culvert.')}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    color: '#d1fae5',
+                    fontWeight: '700',
+                    fontSize: '0.78rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ textAlign: 'left' }}>
+                    <div>🚛 DISPATCH RAPID COMPACTOR TRUCK #04</div>
+                    <div style={{ fontSize: '0.66rem', color: '#34d399', fontWeight: 'normal' }}>Circle Culvert desilting • Clears choked plastic bottleneck</div>
+                  </div>
+                  <span style={{ fontSize: '1.2rem' }}>&rarr;</span>
+                </button>
+
+                <button
+                  onClick={() => triggerAction('FLASH EVACUATION ALERT (ALAJO BASIN)', 'Emergency broadcast transmitted over USSD *920*26# and GSM cell towers.')}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#fee2e2',
+                    fontWeight: '700',
+                    fontSize: '0.78rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ textAlign: 'left' }}>
+                    <div>📢 BROADCAST FLASH BASIN EVACUATION</div>
+                    <div style={{ fontSize: '0.66rem', color: '#f87171', fontWeight: 'normal' }}>Cell-broadcast & USSD alarm to flood risk zones</div>
                   </div>
                   <span style={{ fontSize: '1.2rem' }}>&rarr;</span>
                 </button>
