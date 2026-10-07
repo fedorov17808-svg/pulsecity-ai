@@ -6,6 +6,7 @@ import {
 import { findOptimalEmergencyRoute, ACCRA_ROAD_GRAPH } from '../utils/roadGraphRouting';
 import { playEmergencySirenSound } from '../utils/soundEffects';
 import confetti from 'canvas-confetti';
+import circleCctvImg from '../assets/cctv_circle_interchange.jpg';
 
 export default function CityMap({
   activeLayer, // 'all', 'traffic', 'energy', 'eco'
@@ -741,6 +742,86 @@ export default function CityMap({
           )}
         </div>
       )}
+
+      {/* Live 4K Circle Interchange CCTV Picture-in-Picture Tile */}
+      <div 
+        onClick={() => onOpenVisionModal && onOpenVisionModal(trafficNodes ? trafficNodes[0] : null)}
+        style={{
+          position: 'absolute',
+          bottom: '16px',
+          left: '16px',
+          width: '230px',
+          background: 'rgba(7, 13, 23, 0.94)',
+          border: '1px solid rgba(0, 242, 254, 0.45)',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          zIndex: 1000,
+          cursor: 'pointer',
+          boxShadow: '0 12px 30px rgba(0,0,0,0.85), 0 0 16px rgba(0, 242, 254, 0.25)',
+          backdropFilter: 'blur(10px)',
+          transition: 'all 0.2s ease'
+        }}
+        className="cctv-pip-widget notranslate"
+        title="Click to launch 4K YOLOv8 Computer Vision Feed & Webster Controls"
+      >
+        <div style={{ position: 'relative', height: '115px', overflow: 'hidden' }}>
+          <img 
+            src={circleCctvImg} 
+            alt="Kwame Nkrumah Circle 4K CCTV" 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+          />
+          {/* Scanline overlay */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px)',
+            pointerEvents: 'none'
+          }} />
+          {/* Camera Tag HUD */}
+          <div style={{
+            position: 'absolute',
+            top: '6px',
+            left: '6px',
+            background: 'rgba(0,0,0,0.8)',
+            padding: '2px 7px',
+            borderRadius: '4px',
+            fontSize: '0.62rem',
+            fontFamily: 'var(--font-mono)',
+            color: '#00f2fe',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f43f5e' }} className="pulse-indicator" />
+            <span>● 4K CCTV // CIRCLE</span>
+          </div>
+          <div style={{
+            position: 'absolute',
+            bottom: '6px',
+            right: '6px',
+            background: 'rgba(0,0,0,0.8)',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            fontSize: '0.6rem',
+            fontFamily: 'var(--font-mono)',
+            color: '#34d399'
+          }}>
+            YOLOv8 INT8 • 4,450 PCU
+          </div>
+        </div>
+        <div style={{
+          padding: '6px 10px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: '0.68rem',
+          background: 'rgba(10, 16, 28, 0.95)',
+          borderTop: '1px solid rgba(255,255,255,0.08)'
+        }}>
+          <span style={{ color: '#fff', fontWeight: '600' }}>Kwame Nkrumah Overpass</span>
+          <span style={{ color: 'var(--accent-cyan)', fontSize: '0.62rem', fontWeight: 'bold' }}>EXPAND ↗</span>
+        </div>
+      </div>
     </div>
   );
 }

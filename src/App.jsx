@@ -26,6 +26,7 @@ import GeminiConfigModal from './components/GeminiConfigModal';
 import CyberGridBackdrop from './components/CyberGridBackdrop';
 import GuidedPitchTour from './components/GuidedPitchTour';
 import QuickIngestModal from './components/QuickIngestModal';
+import HackathonJuryProofBanner from './components/HackathonJuryProofBanner';
 import { calculateWebsterSignalTiming } from './utils/websterAlgorithm';
 import { sfx } from './utils/soundEffects';
 import gsap from 'gsap';
@@ -77,6 +78,18 @@ export default function App() {
   // Layout & Animation Refs
   const workspaceRef = useRef(null);
   const crisisBannerRef = useRef(null);
+  const processedPktIdsRef = useRef(new Set());
+  const cascadeTimerRef = useRef([]);
+
+  // Triple-Cascade Crisis State
+  const [tripleCascadeState, setTripleCascadeState] = useState({
+    active: false,
+    step: 0,
+    stepTitle: '',
+    stepDesc: '',
+    progress: 0,
+    metrics: null
+  });
 
   const toggleAudio = () => {
     const nextMuted = sfx.toggleMute();
@@ -493,9 +506,206 @@ export default function App() {
     }
   };
 
+  // Cleanup cascade timers on unmount
+  useEffect(() => {
+    return () => {
+      cascadeTimerRef.current.forEach((t) => clearTimeout(t));
+    };
+  }, []);
+
+  const handleStopTripleCascade = () => {
+    cascadeTimerRef.current.forEach((t) => clearTimeout(t));
+    cascadeTimerRef.current = [];
+    setTripleCascadeState({
+      active: false,
+      step: 0,
+      stepTitle: '',
+      stepDesc: '',
+      progress: 0,
+      metrics: null
+    });
+    setActiveCrisis(null);
+    sfx.click();
+  };
+
+  const handleSimulateTripleCascade = () => {
+    sfx.alarm();
+    setActiveTab('overview');
+    cascadeTimerRef.current.forEach((t) => clearTimeout(t));
+    cascadeTimerRef.current = [];
+
+    // Phase 1 (t = 0s): Odaw Flash Flood
+    setTripleCascadeState({
+      active: true,
+      step: 1,
+      stepTitle: 'PHASE 1/4: ODAW RIVER BASIN FLASH FLOOD',
+      stepDesc: 'Torrential downpour causes Odaw canal gauge to surge to 3.42m (+1.8m/hr). Sluice intake clogged with plastic debris.',
+      progress: 20,
+      metrics: { odawLevel: '3.42m', gridFreq: '50.01Hz', circleCongestion: '82%' }
+    });
+    setActiveCrisis({
+      id: 'crisis-triple-cascade',
+      title: 'ACCRA TRIPLE CASCADE: FLOOD + DUMSOR + CIRCLE GRIDLOCK',
+      location: 'Odaw Basin → Achimota Substation → Kwame Nkrumah Circle',
+      desc: 'Simultaneous flash flood, high-voltage frequency drop, and arterial gridlock across Greater Accra.',
+      severity: 'CATASTROPHIC (SEV-1)',
+      impact: 'Potential $4.2M economic disruption, transformer burnout, and road drowning.'
+    });
+    setEcoNodes((prev) =>
+      prev.map((n) => (n.id === 'ECO-01' ? { ...n, wasteLevelPct: 98, aqi: 185, status: 'CRITICAL' } : n))
+    );
+    setMapLayer('eco');
+
+    // Phase 2 (t = 3.5s): Achimota Grid Surge & Frequency Dip
+    const t2 = setTimeout(() => {
+      sfx.alarm();
+      setTripleCascadeState({
+        active: true,
+        step: 2,
+        stepTitle: 'PHASE 2/4: ACHIMOTA BULK GRID COLLAPSE THREAT',
+        stepDesc: 'Surging storm load drops grid frequency to 49.18Hz (trip threshold: 49.50Hz). Dumsor cascade imminent.',
+        progress: 45,
+        metrics: { odawLevel: '3.50m', gridFreq: '49.18Hz', circleCongestion: '88%' }
+      });
+      setEnergyNodes((prev) =>
+        prev.map((n) => (n.id === 'EN-01' ? { ...n, currentLoadMw: 248, dumsorRisk: 98, status: 'CRITICAL' } : n))
+      );
+      setMapLayer('energy');
+    }, 3500);
+    cascadeTimerRef.current.push(t2);
+
+    // Phase 3 (t = 7s): Circle Gridlock & Trapped Ambulance
+    const t3 = setTimeout(() => {
+      sfx.alarm();
+      setTripleCascadeState({
+        active: true,
+        step: 3,
+        stepTitle: 'PHASE 3/4: CIRCLE ARTERIAL GRIDLOCK & AMBULANCE TRAPPED',
+        stepDesc: 'Kwame Nkrumah Circle locks at 99% congestion. Ambulance #EMS-04 from Ridge Hospital trapped with critical trauma patient.',
+        progress: 70,
+        metrics: { odawLevel: '3.52m', gridFreq: '49.16Hz', circleCongestion: '99%' }
+      });
+      setTrafficNodes((prev) =>
+        prev.map((n) =>
+          n.id === 'TR-01'
+            ? { ...n, congestion: 99, speedKmh: 2, incidentActive: true, alert: 'CRITICAL GRIDLOCK: 84 Trotros blocked at Circle Overpass' }
+            : n
+        )
+      );
+      setMapLayer('traffic');
+    }, 7000);
+    cascadeTimerRef.current.push(t3);
+
+    // Phase 4 (t = 10.5s): Autonomous Multi-Agent Intervention
+    const t4 = setTimeout(() => {
+      sfx.success();
+      setTripleCascadeState({
+        active: true,
+        step: 4,
+        stepTitle: 'PHASE 4/4: AUTONOMOUS URBAN NERVOUS SYSTEM INTERVENTION',
+        stepDesc: 'Cross-pillar actuators firing: Korle sluice opened 75%, SCADA soft-sheds Feeder 4 (10% inrush safe), Green Wave corridor engaged.',
+        progress: 90,
+        metrics: { odawLevel: '1.45m', gridFreq: '50.02Hz', circleCongestion: '28%' }
+      });
+      // 1. Eco Actuation
+      setEcoNodes((prev) =>
+        prev.map((n) =>
+          n.id === 'ECO-01'
+            ? { ...n, wasteLevelPct: 22, aqi: 48, status: 'GOOD', recommendation: 'Automated sluice flush complete. Odaw gauge safe at 1.45m.' }
+            : n
+        )
+      );
+      // 2. Grid Actuation
+      setEnergyNodes((prev) =>
+        prev.map((n) =>
+          n.id === 'EN-01' ? { ...n, currentLoadMw: 174, dumsorRisk: 12, status: 'NOMINAL', batteryReservePct: 88 } : n
+        )
+      );
+      // 3. Traffic Actuation & Preemption Corridor
+      setTrafficNodes((prev) =>
+        prev.map((n) =>
+          n.id === 'TR-01'
+            ? {
+                ...n,
+                congestion: 28,
+                speedKmh: 46,
+                incidentActive: false,
+                lightState: 'GREEN',
+                cycleRemainingSec: 85,
+                alert: 'Green Wave Active: Emergency corridor cleared'
+              }
+            : n
+        )
+      );
+      setExternalWaveTrigger({ origin: 'N-CIRCLE', dest: 'N-37MIL', id: Date.now() });
+      setMapLayer('all');
+    }, 10500);
+    cascadeTimerRef.current.push(t4);
+
+    // Phase 5 (t = 14s): Complete Victory & Resolution
+    const t5 = setTimeout(() => {
+      sfx.success();
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+      setTripleCascadeState({
+        active: false,
+        step: 5,
+        stepTitle: 'VICTORY: TRIPLE CASCADE AVERTED AUTONOMOUSLY',
+        stepDesc: '14.2s autonomous multi-agent response saved $250k transformer, averted canal inundation, and delivered ambulance with 0 stops.',
+        progress: 100,
+        metrics: { odawLevel: '1.38m', gridFreq: '50.02Hz', circleCongestion: '24%' }
+      });
+      setActiveCrisis(null);
+    }, 14000);
+    cascadeTimerRef.current.push(t5);
+  };
+
   const handleResolveCrisis = () => {
     if (!activeCrisis) return;
     sfx.success();
+    if (activeCrisis.id === 'crisis-triple-cascade') {
+      cascadeTimerRef.current.forEach((t) => clearTimeout(t));
+      cascadeTimerRef.current = [];
+      setEcoNodes((prev) =>
+        prev.map((n) =>
+          n.id === 'ECO-01'
+            ? { ...n, wasteLevelPct: 22, aqi: 48, status: 'GOOD', recommendation: 'Automated sluice flush complete. Odaw gauge safe at 1.45m.' }
+            : n
+        )
+      );
+      setEnergyNodes((prev) =>
+        prev.map((n) =>
+          n.id === 'EN-01' ? { ...n, currentLoadMw: 174, dumsorRisk: 12, status: 'NOMINAL', batteryReservePct: 88 } : n
+        )
+      );
+      setTrafficNodes((prev) =>
+        prev.map((n) =>
+          n.id === 'TR-01'
+            ? {
+                ...n,
+                congestion: 28,
+                speedKmh: 46,
+                incidentActive: false,
+                lightState: 'GREEN',
+                cycleRemainingSec: 85,
+                alert: 'Green Wave Active: Emergency corridor cleared'
+              }
+            : n
+        )
+      );
+      setExternalWaveTrigger({ origin: 'N-CIRCLE', dest: 'N-37MIL', id: Date.now() });
+      setMapLayer('all');
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+      setTripleCascadeState({
+        active: false,
+        step: 5,
+        stepTitle: 'VICTORY: TRIPLE CASCADE AVERTED AUTONOMOUSLY',
+        stepDesc: '14.2s autonomous multi-agent response saved $250k transformer, averted canal inundation, and delivered ambulance with 0 stops.',
+        progress: 100,
+        metrics: { odawLevel: '1.38m', gridFreq: '50.02Hz', circleCongestion: '24%' }
+      });
+      setActiveCrisis(null);
+      return;
+    }
     if (activeCrisis.id === 'crisis-motorway-pileup') {
       handleApplyTrafficOptimization('TR-02', 65);
     } else if (activeCrisis.id === 'crisis-achimota-dumsor') {
@@ -983,6 +1193,34 @@ export default function App() {
               )}
             </button>
 
+            {/* 1-Click Triple Cascade Crisis Simulator Button */}
+            <button
+              onClick={() => {
+                sfx.alarm();
+                handleSimulateTripleCascade();
+              }}
+              onMouseEnter={() => sfx.hover()}
+              style={{
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.35) 100%)',
+                border: '1px solid rgba(239, 68, 68, 0.75)',
+                color: '#fca5a5',
+                boxShadow: '0 0 16px rgba(239, 68, 68, 0.35)',
+                fontSize: '0.78rem',
+                padding: '6px 14px',
+                fontWeight: '800',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Run 1-click 14-second Triple-Cascade Crisis: Flood + Dumsor + Circle Gridlock"
+            >
+              <AlertTriangle size={14} color="#ef4444" />
+              <span>🚨 SIMULATE CRISIS (14s)</span>
+            </button>
+
             {/* 3-Minute Hackathon Jury Guided Tour Button */}
             <button
               onClick={() => { sfx.click(); setPitchTourOpen(true); }}
@@ -1163,6 +1401,29 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* 1st-Place Hackathon Executive Jury Proof Banner */}
+        <HackathonJuryProofBanner
+          onLaunchGreenWave={() => {
+            sfx.alarm();
+            handleExecuteAgentTool({
+              name: 'DISPATCH_GREEN_WAVE',
+              params: { origin: 'N-CIRCLE', dest: 'N-37MIL' }
+            });
+          }}
+          onOpenQuickIngest={() => {
+            sfx.click();
+            setQuickIngestModalOpen(true);
+          }}
+          onOpenHardwareHub={() => {
+            sfx.click();
+            setHardwareModalOpen(true);
+          }}
+          onOpenUssdModal={() => {
+            sfx.click();
+            setUssdModalOpen(true);
+          }}
+        />
 
         {/* Layer Controls when viewing map */}
         {(activeTab === 'overview' || activeTab === 'traffic' || activeTab === 'energy' || activeTab === 'eco') && (
