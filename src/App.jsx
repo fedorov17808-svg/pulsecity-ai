@@ -23,6 +23,7 @@ import ExecutiveDossierModal from './components/ExecutiveDossierModal';
 import GeminiConfigModal from './components/GeminiConfigModal';
 import CyberGridBackdrop from './components/CyberGridBackdrop';
 import GuidedPitchTour from './components/GuidedPitchTour';
+import QuickIngestModal from './components/QuickIngestModal';
 import { calculateWebsterSignalTiming } from './utils/websterAlgorithm';
 import { sfx } from './utils/soundEffects';
 import gsap from 'gsap';
@@ -68,6 +69,7 @@ export default function App() {
   const [geminiModalOpen, setGeminiModalOpen] = useState(false);
   const [opsMenuOpen, setOpsMenuOpen] = useState(false);
   const [pitchTourOpen, setPitchTourOpen] = useState(false);
+  const [quickIngestModalOpen, setQuickIngestModalOpen] = useState(false);
   const [sfxMuted, setSfxMuted] = useState(() => sfx.muted);
 
   // Layout & Animation Refs
@@ -220,6 +222,8 @@ export default function App() {
         setBenchmarkModalOpen(false);
         setDossierModalOpen(false);
         setPitchModalOpen(false);
+        setPitchTourOpen(false);
+        setQuickIngestModalOpen(false);
         setGeminiModalOpen(false);
         setVisionModalOpen(false);
         setVisionModalNode(null);
@@ -416,6 +420,20 @@ export default function App() {
         return n;
       })
     );
+  };
+
+  const handleUssdIncidentReport = (payload) => {
+    sfx.alarm();
+    handleIngestTelemetry(payload);
+    setActiveCrisis({
+      id: "crisis-ussd-flood",
+      title: "CITIZEN USSD FLASH ALERT (*920*26#)",
+      location: "Odaw Basin / Circle Sluice Gate (ECO-01)",
+      description: payload.incidentDetails,
+      severity: "CRITICAL",
+      impact: "Blocked drainage grating threatens low-lying Circle market under torrential rain."
+    });
+    setMapLayer('eco');
   };
 
   const handleTriggerScenario = (scenarioId) => {
@@ -639,7 +657,7 @@ export default function App() {
               {currentTime}
             </div>
 
-            {/* Audio Feedback Toggle */}
+            {/* Audio Feedback Toggle with Sci-Fi Equalizer */}
             <button
               onClick={toggleAudio}
               style={{
@@ -652,13 +670,19 @@ export default function App() {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
+                gap: '7px',
                 transition: 'all 0.2s ease'
               }}
               title={sfxMuted ? 'Enable Sci-Fi Audio HUD' : 'Mute Sci-Fi Audio HUD'}
             >
               {sfxMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
               <span style={{ fontSize: '0.7rem', fontWeight: '600' }}>{sfxMuted ? 'SFX OFF' : 'SFX ON'}</span>
+              <div className="audio-equalizer">
+                <span className={`audio-bar ${sfxMuted ? 'muted' : 'animating'}`}></span>
+                <span className={`audio-bar ${sfxMuted ? 'muted' : 'animating'}`}></span>
+                <span className={`audio-bar ${sfxMuted ? 'muted' : 'animating'}`}></span>
+                <span className={`audio-bar ${sfxMuted ? 'muted' : 'animating'}`}></span>
+              </div>
             </button>
 
             {/* Public USSD Dialer Button */}
@@ -872,20 +896,26 @@ export default function App() {
               )}
             </div>
 
-            {/* Live IoT Ingestion Bridge Status Badge */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: ingestLiveConnected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-              border: ingestLiveConnected ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(239, 68, 68, 0.35)',
-              padding: '5px 10px',
-              borderRadius: '8px',
-              fontSize: '0.72rem',
-              fontFamily: 'var(--font-mono)',
-              color: ingestLiveConnected ? '#34d399' : '#f87171'
-            }}
-            title="PulseCity IoT Edge Ingest Bridge (/api/telemetry/ingest) active polling & cURL sync"
+            {/* Live IoT Ingestion Bridge Status & Quick Terminal Launcher */}
+            <button
+              onClick={() => { sfx.click(); setQuickIngestModalOpen(true); }}
+              onMouseEnter={() => sfx.hover()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: ingestLiveConnected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                border: ingestLiveConnected ? '1px solid rgba(16, 185, 129, 0.45)' : '1px solid rgba(239, 68, 68, 0.45)',
+                padding: '5px 10px',
+                borderRadius: '8px',
+                fontSize: '0.72rem',
+                fontFamily: 'var(--font-mono)',
+                color: ingestLiveConnected ? '#34d399' : '#f87171',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: ingestLiveConnected ? '0 0 12px rgba(16, 185, 129, 0.2)' : 'none'
+              }}
+              title="Click to launch Terminal cURL Telemetry Injector (/api/v1/telemetry/ingest)"
             >
               <span className="pulse-indicator" style={{
                 width: '6px',
@@ -894,8 +924,9 @@ export default function App() {
                 background: ingestLiveConnected ? '#10b981' : '#ef4444',
                 boxShadow: ingestLiveConnected ? '0 0 8px #10b981' : '0 0 8px #ef4444'
               }} />
+              <Terminal size={12} style={{ marginRight: '-2px' }} />
               <span>INGEST BRIDGE</span>
-              {ingestPacketCount > 0 && (
+              {ingestPacketCount > 0 ? (
                 <span style={{
                   background: '#059669',
                   color: '#fff',
@@ -906,8 +937,18 @@ export default function App() {
                 }}>
                   {ingestPacketCount} PKTS
                 </span>
+              ) : (
+                <span style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#94a3b8',
+                  padding: '1px 5px',
+                  borderRadius: '6px',
+                  fontSize: '0.62rem'
+                }}>
+                  cURL
+                </span>
               )}
-            </div>
+            </button>
 
             {/* 3-Minute Hackathon Jury Guided Tour Button */}
             <button
@@ -1386,6 +1427,7 @@ export default function App() {
         trafficNodes={trafficNodes}
         energyNodes={energyNodes}
         ecoNodes={ecoNodes}
+        onReportIncident={handleUssdIncidentReport}
       />
 
       {/* Competitive Benchmark & TCO Matrix */}
@@ -1460,6 +1502,14 @@ export default function App() {
         isOpen={pitchTourOpen}
         onClose={() => setPitchTourOpen(false)}
         onStepChange={handleTourStepChange}
+      />
+
+      {/* Quick IoT Ingestion & Terminal cURL Modal */}
+      <QuickIngestModal
+        isOpen={quickIngestModalOpen}
+        onClose={() => setQuickIngestModalOpen(false)}
+        onIngestTelemetry={handleExternalTelemetryPacket}
+        ingestPacketCount={ingestPacketCount}
       />
     </div>
   );

@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Phone, MessageSquare, Radio, Shield, Send, ArrowLeft, RefreshCw, CheckCircle2, Volume2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energyNodes, ecoNodes }) {
+export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energyNodes, ecoNodes, onReportIncident }) {
   const [ussdStep, setUssdStep] = useState('DIALER'); // 'DIALER', 'MENU', 'TRAFFIC', 'DUMSOR', 'FLOOD', 'REPORT', 'REPORT_CONFIRM'
   const [dialNumber, setDialNumber] = useState('*920*26#');
   const [reportText, setReportText] = useState('');
+  const [lastTicketId, setLastTicketId] = useState('');
   const [activeSession, setActiveSession] = useState(false);
   const [lang, setLang] = useState('EN'); // 'EN' | 'TWI'
 
@@ -55,8 +56,36 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
     e.preventDefault();
     if (!reportText.trim()) return;
     playBeep(1500);
+
+    const ticketId = 'AMA-' + Math.floor(1000 + Math.random() * 9000);
+    setLastTicketId(ticketId);
     setUssdStep('REPORT_CONFIRM');
     confetti({ particleCount: 35, spread: 50, origin: { y: 0.7 } });
+
+    const payload = {
+      nodeId: "ECO-01",
+      incidentDetected: true,
+      incidentDetails: `USSD Citizen Alert [Ticket #${ticketId}]: ${reportText.trim()}`,
+      drainageChokeDetected: true,
+      waterLevelMeters: 2.85,
+      wasteFillPercentage: 94
+    };
+
+    // 1. Dispatch real HTTP POST to /api/telemetry/ingest
+    fetch('/api/telemetry/ingest', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Sensor-Token': 'afri-pulse-live-2026'
+      },
+      body: JSON.stringify(payload)
+    }).catch(() => {});
+
+    // 2. Direct callback into App state for instantaneous citywide reaction
+    if (onReportIncident) {
+      onReportIncident(payload);
+    }
+
     setTimeout(() => {
       setReportText('');
     }, 4000);
@@ -302,14 +331,30 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
               )}
 
               {ussdStep === 'REPORT_CONFIRM' && (
-                <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <div style={{ textAlign: 'center', padding: '12px 0' }}>
                   <div style={{ color: '#6ee7b7', fontWeight: '700', marginBottom: '6px' }}>
-                    {lang === 'EN' ? '✓ REPORT LOGGED' : '✓ YƐAGYE WO AMANNEƐBƆ'}
+                    {lang === 'EN' ? '✓ REPORT LOGGED & BROADCAST' : '✓ YƐAGYE WO AMANNEƐBƆ'}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#34d399' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#34d399', lineHeight: '1.4', marginBottom: '10px' }}>
                     {lang === 'EN' 
-                      ? 'Ticket #AMA-8492 dispatched to Waste Management Taskforce.' 
-                      : 'Krataa #AMA-8492 kɔma Asɔremma no ntɛm ara.'}
+                      ? `Ticket #${lastTicketId || 'AMA-8492'} ingested to GAMA Digital Twin. Rapid Taskforce alerted.` 
+                      : `Krataa #${lastTicketId || 'AMA-8492'} akɔ GAMA Digital Twin no mu ntɛm ara.`}
+                  </div>
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.65)',
+                    border: '1px dashed #10b981',
+                    borderRadius: '8px',
+                    padding: '8px 10px',
+                    textAlign: 'left',
+                    fontSize: '0.66rem',
+                    color: '#e2e8f0',
+                    lineHeight: '1.3'
+                  }}>
+                    <div style={{ color: '#fbbf24', fontWeight: '700', marginBottom: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>💬 INCOMING SMS: AMA-ALERT</span>
+                      <span style={{ fontSize: '0.58rem', color: '#94a3b8' }}>Just Now</span>
+                    </div>
+                    "Your report for Odaw Basin (Ref: {lastTicketId || 'AMA-8492'}) has triggered automated sluice gate winch & MTTD unit alert. Medaase pa ara!"
                   </div>
                 </div>
               )}

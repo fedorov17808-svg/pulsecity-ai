@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { analyzeTrafficVision } from '../services/geminiService';
 import CctvTrafficCanvas from './CctvTrafficCanvas';
+import circleCctvImg from '../assets/cctv_circle_interchange.jpg';
+import motorwayCctvImg from '../assets/cctv_tema_motorway.jpg';
 import confetti from 'canvas-confetti';
 
 const SAMPLE_PREVIEWS = {
@@ -35,6 +37,7 @@ export default function TrafficVisionModal({
 
   // Stream mode: 'cctv_preset', 'webcam', 'uploaded_media'
   const [streamMode, setStreamMode] = useState('cctv_preset');
+  const [cctvRenderMode, setCctvRenderMode] = useState('photorealistic'); // 'photorealistic' | 'canvas_sim'
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [showKeyInput, setShowKeyInput] = useState(false);
@@ -508,6 +511,57 @@ export default function TrafficVisionModal({
           </div>
         )}
 
+        {/* Photorealistic vs Synthetic Testbed Switcher */}
+        {streamMode === 'cctv_preset' && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setCctvRenderMode('photorealistic')}
+                style={{
+                  background: cctvRenderMode === 'photorealistic' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                  border: cctvRenderMode === 'photorealistic' ? '1px solid #10b981' : '1px solid var(--border-subtle)',
+                  color: cctvRenderMode === 'photorealistic' ? '#34d399' : 'var(--text-secondary)',
+                  padding: '4px 11px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                <Eye size={12} />
+                <span>📷 Real Accra 4K CCTV (Photorealistic)</span>
+              </button>
+
+              <button
+                onClick={() => setCctvRenderMode('canvas_sim')}
+                style={{
+                  background: cctvRenderMode === 'canvas_sim' ? 'rgba(0, 242, 254, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                  border: cctvRenderMode === 'canvas_sim' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
+                  color: cctvRenderMode === 'canvas_sim' ? '#00f2fe' : 'var(--text-secondary)',
+                  padding: '4px 11px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                <Cpu size={12} />
+                <span>🎮 Edge Synthetic Testbed (2D Canvas)</span>
+              </button>
+            </div>
+
+            <div style={{ fontSize: '0.68rem', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
+              EDGE INFERENCE: 30 FPS INT8 // 14ms LATENCY
+            </div>
+          </div>
+        )}
+
         {/* Viewport and Inference Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: '20px' }}>
           {/* Main Visual Stream Viewport */}
@@ -555,13 +609,50 @@ export default function TrafficVisionModal({
               />
             )}
 
-            {/* 3. Live 30 FPS Animated Computer Vision Stream in Preset Mode */}
+            {/* 3. Live 30 FPS Photorealistic or Synthetic Preset */}
             {streamMode === 'cctv_preset' && (
-              <CctvTrafficCanvas
-                cameraName={activeCameraNode.name}
-                lightState={activeCameraNode.lightState || 'GREEN'}
-                isIncident={activeCameraNode.incidentActive || false}
-              />
+              cctvRenderMode === 'photorealistic' ? (
+                <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+                  <img
+                    src={activeCameraNode.id === 'TR-02' ? motorwayCctvImg : circleCctvImg}
+                    alt={`Accra CCTV ${activeCameraNode.name}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                  {/* Tactical Optical HUD */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '10px',
+                    background: 'rgba(2, 6, 23, 0.85)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(0, 242, 254, 0.4)',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.68rem',
+                    color: '#00f2fe',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    zIndex: 5
+                  }}>
+                    <span className="pulse-indicator" style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px #ef4444' }} />
+                    <span style={{ fontWeight: '700' }}>CCTV: {activeCameraNode.id}</span>
+                    <span style={{ color: '#94a3b8' }}>• {activeCameraNode.name.toUpperCase()}</span>
+                    <span style={{ color: '#10b981' }}>• 30 FPS YOLOv8 INT8</span>
+                  </div>
+                </div>
+              ) : (
+                <CctvTrafficCanvas
+                  cameraName={activeCameraNode.name}
+                  lightState={activeCameraNode.lightState || 'GREEN'}
+                  isIncident={activeCameraNode.incidentActive || false}
+                />
+              )
             )}
 
             {/* 4. Uploaded Static Image */}

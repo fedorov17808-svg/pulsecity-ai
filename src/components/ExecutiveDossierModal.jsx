@@ -110,6 +110,13 @@ export default function ExecutiveDossierModal({ isOpen, onClose }) {
                   Complies with AMA Urban Drainage Bylaw 2018. Ultrasonic HC-SR04 telemetry on bridge decks feeds automated sluice gate opening triggers before storm surge reaches Korle Lagoon.
                 </p>
               </div>
+
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(0, 242, 254, 0.3)', borderRadius: '10px', padding: '14px' }}>
+                <div style={{ fontWeight: '700', color: 'var(--accent-cyan)', marginBottom: '4px' }}>Field Telemetry Gateway (/api/v1/telemetry/ingest)</div>
+                <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                  Open standard HTTP/REST and MQTT-SN ingest bridge authenticated via token hash. Sub-15ms serverless latency supporting 120 packets/min per gateway.
+                </p>
+              </div>
             </div>
           </div>
 

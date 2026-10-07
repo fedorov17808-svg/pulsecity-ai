@@ -166,19 +166,19 @@ function getSimulatedVisionAnalysis(cameraName, situationNotes) {
       congestionScore: 92,
       vehicleCount: 84,
       hazardDetected: true,
-      hazardDescription: "Broken-down heavy articulated truck occupying Lane 2. Fuel seepage detected.",
-      ambulanceDetected: true,
+      hazardDescription: "Broken-down heavy articulated container truck occupying Lane 2 with safety warning triangles. Severe highway throttling.",
+      ambulanceDetected: false,
       recommendedAction: "Activate Webster Phase Split: grant 82s green wave for bypass corridor. Shift trotro traffic to outer shoulder.",
       greenLightDurationSeconds: webster.phases[0]?.effectiveGreenSeconds || 65,
       estimatedDelaySavedMinutes: 24.5,
-      confidenceScore: 0.96,
+      confidenceScore: 0.98,
       websterOptimization: webster,
       detectedObjects: [
-        { box_2d: [350, 180, 520, 360], label: "Heavy Truck (Stalled)", confidence: 0.98, isHazard: true },
-        { box_2d: [480, 420, 610, 580], label: "Ambulance AMB-04", confidence: 0.97, isAmbulance: true },
-        { box_2d: [550, 80, 680, 220], label: "Trotro Minibus #08", confidence: 0.93 },
-        { box_2d: [620, 600, 750, 780], label: "Passenger Sedan", confidence: 0.91 },
-        { box_2d: [420, 650, 520, 740], label: "Delivery Van", confidence: 0.88 }
+        { box_2d: [410, 175, 770, 350], label: "HAZARD: Stalled Articulated Haulage Truck", confidence: 0.99, isHazard: true },
+        { box_2d: [840, 145, 920, 320], label: "Reflective Hazard Cones & Triangle", confidence: 0.97, isHazard: true },
+        { box_2d: [590, 570, 825, 695], label: "Trotro Bus [TEMA-ACCRA] (PCU: 2.5)", confidence: 0.98 },
+        { box_2d: [615, 720, 860, 875], label: "Sprinter Minibus [TEMA-ACCRA] (PCU: 2.5)", confidence: 0.97 },
+        { box_2d: [310, 475, 505, 560], label: "Freight Container Rig (PCU: 3.0)", confidence: 0.96 }
       ],
       simulated: true
     };
@@ -201,13 +201,14 @@ function getSimulatedVisionAnalysis(cameraName, situationNotes) {
       recommendedAction: "Split phase cycle: allocate 65s green for slip-road clearance. Dispatch digital signal to metro marshals.",
       greenLightDurationSeconds: webster.phases[0]?.effectiveGreenSeconds || 50,
       estimatedDelaySavedMinutes: 14.2,
-      confidenceScore: 0.94,
+      confidenceScore: 0.97,
       websterOptimization: webster,
       detectedObjects: [
-        { box_2d: [280, 220, 420, 390], label: "Trotro Minibus #14", confidence: 0.96 },
-        { box_2d: [380, 440, 500, 580], label: "Trotro Minibus #21", confidence: 0.94 },
-        { box_2d: [520, 150, 640, 310], label: "Sedan Taxi", confidence: 0.92 },
-        { box_2d: [600, 480, 720, 620], label: "Light Commercial Truck", confidence: 0.89 }
+        { box_2d: [670, 630, 885, 765], label: "Trotro Minibus #14 (PCU: 2.5)", confidence: 0.98 },
+        { box_2d: [340, 558, 485, 635], label: "Freight Container Truck (PCU: 3.0)", confidence: 0.99 },
+        { box_2d: [685, 340, 835, 430], label: "Trotro Minibus #21 (PCU: 2.5)", confidence: 0.96 },
+        { box_2d: [590, 220, 660, 285], label: "Accra Yellow Cab", confidence: 0.94 },
+        { box_2d: [865, 260, 985, 370], label: "Passenger Sedan Taxi", confidence: 0.92 }
       ],
       simulated: true
     };

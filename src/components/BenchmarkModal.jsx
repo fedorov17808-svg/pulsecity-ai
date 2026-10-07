@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Check, X, Shield, Cpu, Radio, DollarSign, Zap, Download } from 'lucide-react';
+import { Trophy, Check, X, Shield, Cpu, Radio, DollarSign, Zap, Download, BookOpen, Calculator } from 'lucide-react';
 
 export default function BenchmarkModal({ isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState('sim'); // 'sim', 'comparison', 'lorawan', 'roi'
@@ -18,6 +18,13 @@ export default function BenchmarkModal({ isOpen, onClose }) {
 
   const delaySavedPct = Math.round(((scatsDelayMin - pulseDelayMin) / scatsDelayMin) * 100);
   const fuelSavedPct = Math.round(((scatsFuelLossUsd - pulseFuelLossUsd) / scatsFuelLossUsd) * 100);
+
+  // Dynamic Webster & HCM derivation parameters
+  const lostTimeL = 12; // seconds
+  const saturationFlow = 1800 * 3; // 3 lanes = 5,400 veh/hr
+  const criticalFlowY = Math.min(0.92, Number((trafficDemand / saturationFlow).toFixed(3)));
+  const optimalCycleC0 = Math.min(180, Math.max(45, Math.round((1.5 * lostTimeL + 5) / (1 - criticalFlowY))));
+  const volumeToCapacityX = Number((trafficDemand / (saturationFlow * 0.82)).toFixed(2));
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="benchmark-modal-title">
@@ -253,17 +260,70 @@ export default function BenchmarkModal({ isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* Highway Capacity Manual Scientific Note */}
+              {/* Highway Capacity Manual (HCM 2020) & Webster Traffic Engineering Mathematical Derivations */}
               <div style={{
-                background: 'rgba(8, 14, 24, 0.7)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '12px',
-                padding: '14px 18px',
-                fontSize: '0.74rem',
-                color: '#94a3b8',
-                lineHeight: '1.6'
+                background: 'rgba(8, 14, 24, 0.85)',
+                border: '1px solid rgba(0, 242, 254, 0.25)',
+                borderRadius: '14px',
+                padding: '18px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px'
               }}>
-                <strong style={{ color: '#fff' }}>Scientific Formulation & Rigor:</strong> Modeled using the Highway Capacity Manual (HCM) Equation 19-15 and Webster Minimum Delay Theorem [Co = (1.5L + 5) / (1 - Y)]. PulseCity dynamically solves optimal phase duration (gi) per approach based on real-time computer vision queue depth rather than static 90-second cyclical presets.
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <BookOpen size={16} color="var(--accent-cyan)" />
+                    <span style={{ fontSize: '0.86rem', fontWeight: '700', color: '#fff' }}>
+                      HCM 2020 & Webster Minimum Delay Formulation
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ color: '#94a3b8' }}>Critical Flow Ratio (Y): <strong style={{ color: '#38bdf8' }}>{criticalFlowY}</strong></span>
+                    <span style={{ color: '#94a3b8' }}>Optimal Cycle (C₀): <strong style={{ color: '#34d399' }}>{optimalCycleC0}s</strong></span>
+                    <span style={{ color: '#94a3b8' }}>v/c Ratio (X): <strong style={{ color: volumeToCapacityX > 1 ? '#f87171' : '#fbbf24' }}>{volumeToCapacityX}</strong></span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+                  {/* Webster Theorem Box */}
+                  <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--accent-cyan)', marginBottom: '4px' }}>
+                      1. Webster Minimum Delay Theorem (1958)
+                    </div>
+                    <code style={{ display: 'block', background: 'rgba(0, 242, 254, 0.08)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.74rem', color: '#a5f3fc', fontFamily: 'var(--font-mono)', marginBottom: '6px' }}>
+                      C₀ = (1.5 · L + 5) / (1 - Y)
+                    </code>
+                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0, lineHeight: '1.4' }}>
+                      Calculates cycle length C₀ minimizing aggregate vehicle delays. L = total lost time (12s), Y = Σ(qi / si) across critical approaches.
+                    </p>
+                  </div>
+
+                  {/* HCM 2020 Uniform Delay Box */}
+                  <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '0.74rem', fontWeight: '700', color: '#34d399', marginBottom: '4px' }}>
+                      2. HCM 2020 Chapter 19 Delay Model
+                    </div>
+                    <code style={{ display: 'block', background: 'rgba(16, 185, 129, 0.08)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.74rem', color: '#6ee7b7', fontFamily: 'var(--font-mono)', marginBottom: '6px' }}>
+                      d₁ = 0.5 · C · (1 - g/C)² / [1 - min(1, X) · (g/C)]
+                    </code>
+                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0, lineHeight: '1.4' }}>
+                      Uniform vehicle delay d₁ (seconds/veh). g/C = effective green split ratio, X = degree of saturation (volume-to-capacity).
+                    </p>
+                  </div>
+
+                  {/* Informal Transit Trotro Factor Box */}
+                  <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '0.74rem', fontWeight: '700', color: '#fbbf24', marginBottom: '4px' }}>
+                      3. Accra Trotro Heterogeneous PCU Weighting
+                    </div>
+                    <code style={{ display: 'block', background: 'rgba(245, 158, 11, 0.08)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.74rem', color: '#fde68a', fontFamily: 'var(--font-mono)', marginBottom: '6px' }}>
+                      q_effective = N_cars · 1.0 + N_trotros · 2.5 + N_motos · 0.5
+                    </code>
+                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0, lineHeight: '1.4' }}>
+                      Trotro minibus curb-dwelling and acceleration lag requires PCU factor 2.5. Western systems lacking this calibration trigger false gridlock.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
