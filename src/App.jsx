@@ -77,6 +77,7 @@ export default function App() {
   const [quickIngestModalOpen, setQuickIngestModalOpen] = useState(false);
   const [juryProofModalOpen, setJuryProofModalOpen] = useState(false);
   const [liveAccraTelemetry, setLiveAccraTelemetry] = useState(null);
+  const [autoDemoCountdown, setAutoDemoCountdown] = useState(null);
   const [sfxMuted, setSfxMuted] = useState(() => sfx.muted);
 
   // Layout & Animation Refs
@@ -315,6 +316,7 @@ export default function App() {
         setPitchTourOpen(false);
         setQuickIngestModalOpen(false);
         setJuryProofModalOpen(false);
+        setAutoDemoCountdown(null);
         setGeminiModalOpen(false);
         setVisionModalOpen(false);
         setVisionModalNode(null);
@@ -757,6 +759,46 @@ export default function App() {
       setActiveCrisis(null);
     }, 14000);
     cascadeTimerRef.current.push(t5);
+  };
+
+  // Quick Fix 1: Auto-Start Demo Mode on First Visit (gives jury the instant WOW in first 10 seconds)
+  useEffect(() => {
+    let interval = null;
+    try {
+      const alreadySeen = localStorage.getItem('pulsecity_auto_demo_seen');
+      if (!alreadySeen) {
+        setAutoDemoCountdown(3);
+        let count = 3;
+        interval = setInterval(() => {
+          count -= 1;
+          if (count <= 0) {
+            clearInterval(interval);
+            setAutoDemoCountdown(null);
+            localStorage.setItem('pulsecity_auto_demo_seen', 'true');
+            handleSimulateTripleCascade();
+          } else {
+            setAutoDemoCountdown(count);
+          }
+        }, 1000);
+      }
+    } catch (e) {
+      console.warn('Auto demo launch error', e);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, []);
+
+  const handleLaunchAutoDemoNow = () => {
+    setAutoDemoCountdown(null);
+    localStorage.setItem('pulsecity_auto_demo_seen', 'true');
+    handleSimulateTripleCascade();
+  };
+
+  const handleDismissAutoDemo = () => {
+    setAutoDemoCountdown(null);
+    localStorage.setItem('pulsecity_auto_demo_seen', 'true');
+    sfx.click();
   };
 
   const handleResolveCrisis = () => {
@@ -1333,6 +1375,88 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* Quick Fix 1: Auto-Start Demo Mode HUD Overlay (For First-Time Visitors / Judges) */}
+      {autoDemoCountdown !== null && (
+        <div 
+          className="notranslate"
+          translate="no"
+          style={{
+            position: 'fixed',
+            top: '72px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            background: 'linear-gradient(135deg, rgba(12, 18, 32, 0.98) 0%, rgba(20, 24, 38, 0.96) 100%)',
+            border: '1px solid #f59e0b',
+            borderRadius: '12px',
+            padding: '10px 20px',
+            boxShadow: '0 12px 35px rgba(0,0,0,0.85), 0 0 30px rgba(245, 158, 11, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            backdropFilter: 'blur(16px)',
+            maxWidth: '92vw'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Sparkles size={16} color="#000" />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#fff', letterSpacing: '0.02em' }}>
+                ⚡ JURY LIVE DEMO AUTO-STARTING IN <span style={{ color: '#fbbf24', fontSize: '1.05rem', fontFamily: 'var(--font-mono)' }}>{autoDemoCountdown}s</span>
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#cbd5e1', marginTop: '1px' }}>
+                Autonomous Triple Cascade: Odaw Flood + Achimota Dumsor + Circle Gridlock (14s)
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={handleLaunchAutoDemoNow}
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                color: '#000',
+                border: 'none',
+                fontWeight: '800',
+                fontSize: '0.76rem',
+                padding: '6px 14px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              <Play size={12} fill="#000" />
+              <span>Launch Now</span>
+            </button>
+            <button
+              onClick={handleDismissAutoDemo}
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: '#94a3b8',
+                fontSize: '0.74rem',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Quick Fix 2 & 3: Compact Live Real-World Sensor Telemetry & Impact Bar */}
       <section 
