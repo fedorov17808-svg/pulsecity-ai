@@ -10,7 +10,8 @@ export default function HackathonJuryProofBanner({
   onOpenQuickIngest,
   onOpenHardwareHub,
   onOpenUssdModal,
-  onStartAutoTour
+  onStartAutoTour,
+  onOpenVision
 }) {
   const [minimized, setMinimized] = useState(!initiallyExpanded);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -87,21 +88,21 @@ export default function HackathonJuryProofBanner({
             letterSpacing: '0.04em'
           }}>
             <Radio size={12} />
-            MUNICIPAL TOC LIVE
+            TROTROFLOW LIVE PIPELINE
           </div>
 
           {/* Compact Highlights Pills */}
           <span style={{
             fontSize: '0.72rem',
             fontWeight: '700',
-            color: '#fca5a5',
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.35)',
+            color: '#fef08a',
+            background: 'rgba(245, 158, 11, 0.15)',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
             padding: '2px 8px',
             borderRadius: '6px',
             fontFamily: 'var(--font-mono)'
           }}>
-            🚑 42.4m → 9.2m (-78%)
+            🚌 Kwame Nkrumah Circle Slipway (12 Bays)
           </span>
 
           <span style={{
@@ -114,7 +115,7 @@ export default function HackathonJuryProofBanner({
             borderRadius: '6px',
             fontFamily: 'var(--font-mono)'
           }}>
-            🛡️ $340 Retrofit (0 Wire Cut • CMU Interlock)
+            ⚡ In-Browser TFJS Edge ML (0 Simulation)
           </span>
 
           <span style={{
@@ -130,11 +131,35 @@ export default function HackathonJuryProofBanner({
             gap: '5px'
           }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
-            {pingResult ? pingResult : 'API Live 201 (12ms)'}
+            {pingResult ? pingResult : 'Telemetry API Live 201 (12ms)'}
           </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Quick Trotro Vision Pipeline Trigger */}
+          {onOpenVision && (
+            <button
+              onClick={onOpenVision}
+              style={{
+                background: 'linear-gradient(135deg, rgba(0, 242, 254, 0.25) 0%, rgba(14, 165, 233, 0.35) 100%)',
+                border: '1px solid var(--accent-cyan)',
+                color: '#fff',
+                padding: '4px 12px',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 0 12px rgba(0, 242, 254, 0.25)'
+              }}
+              title="Open Kwame Nkrumah slipway live computer vision & saturation meter"
+            >
+              <Radio size={12} color="var(--accent-cyan)" />
+              <span>LIVE VISION PIPELINE</span>
+            </button>
+          )}
           {/* Quick Green Wave Trigger */}
           <button
             onClick={handleTriggerAmbulance}

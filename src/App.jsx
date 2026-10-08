@@ -3,7 +3,7 @@ import {
   Activity, Car, Zap, Wind, Bot, Shield, Trophy, 
   Sparkles, Layers, Clock, Terminal,
   Phone, BarChart3, FileText, Volume2, VolumeX, AlertTriangle,
-  Copy, Play, Download, Cpu
+  Copy, Play
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
@@ -26,9 +26,8 @@ import GeminiConfigModal from './components/GeminiConfigModal';
 import CyberGridBackdrop from './components/CyberGridBackdrop';
 import GuidedPitchTour from './components/GuidedPitchTour';
 import QuickIngestModal from './components/QuickIngestModal';
-import HackathonJuryProofBanner from './components/HackathonJuryProofBanner';
+import IntersectionOptimizerPanel from './components/IntersectionOptimizerPanel';
 import JuryProofModal from './components/JuryProofModal';
-import PulseNodeWorkbench from './components/PulseNodeWorkbench';
 import { fetchLiveAccraTelemetry } from './utils/liveAccraService';
 import { calculateWebsterSignalTiming } from './utils/websterAlgorithm';
 import { recordTelemetryPacket } from './services/telemetryStore';
@@ -38,7 +37,7 @@ import gsap from 'gsap';
 export default function App() {
   // Navigation & View State
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'traffic', 'energy', 'eco', 'gateway', 'commander'
-  const [mapLayer, setMapLayer] = useState('all'); // 'all', 'traffic', 'energy', 'eco'
+  const [mapLayer, setMapLayer] = useState('traffic'); // 'traffic', 'all', 'energy', 'eco'
   
   // Real-time Interactive Node States with LocalStorage Persistence
   const [trafficNodes, setTrafficNodes] = useState(() => {
@@ -764,45 +763,10 @@ export default function App() {
     cascadeTimerRef.current.push(t5);
   };
 
-  // Quick Fix 1: Auto-Start Demo Mode on First Visit (gives jury the instant WOW in first 10 seconds)
+  // Clean startup without intrusive countdowns
   useEffect(() => {
-    let interval = null;
-    try {
-      const alreadySeen = localStorage.getItem('pulsecity_auto_demo_seen');
-      if (!alreadySeen) {
-        setAutoDemoCountdown(3);
-        let count = 3;
-        interval = setInterval(() => {
-          count -= 1;
-          if (count <= 0) {
-            clearInterval(interval);
-            setAutoDemoCountdown(null);
-            localStorage.setItem('pulsecity_auto_demo_seen', 'true');
-            handleSimulateTripleCascade();
-          } else {
-            setAutoDemoCountdown(count);
-          }
-        }, 1000);
-      }
-    } catch (e) {
-      console.warn('Auto demo launch error', e);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    // Grounded TOC mode ready
   }, []);
-
-  const handleLaunchAutoDemoNow = () => {
-    setAutoDemoCountdown(null);
-    localStorage.setItem('pulsecity_auto_demo_seen', 'true');
-    handleSimulateTripleCascade();
-  };
-
-  const handleDismissAutoDemo = () => {
-    setAutoDemoCountdown(null);
-    localStorage.setItem('pulsecity_auto_demo_seen', 'true');
-    sfx.click();
-  };
 
   const handleResolveCrisis = () => {
     if (!activeCrisis) return;
@@ -977,32 +941,17 @@ export default function App() {
                 </span>
                 <span className="badge badge-cyan" style={{ fontSize: '0.62rem', padding: '2px 8px', letterSpacing: '0.05em' }}>
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00f2fe', boxShadow: '0 0 8px #00f2fe' }}></span>
-                  GAMA MUNICIPAL OS
+                  TROTROFLOW // ACCRA
                 </span>
               </div>
               <div style={{ fontSize: '0.68rem', color: '#64748b', letterSpacing: '0.04em', fontFamily: 'var(--font-mono)' }}>
-                GREATER ACCRA METROPOLIS // 1,420 EDGE NODES ACTIVE
+                KWAME NKRUMAH INTERCHANGE // INFORMAL TRANSIT QUEUE OPTIMIZER
               </div>
             </div>
           </div>
 
           {/* Subsystem Navigation Pills */}
           <div className="tab-nav-container">
-            <button
-              onClick={() => { sfx.click(); setActiveTab('pulsenode'); }}
-              onMouseEnter={() => sfx.hover()}
-              className={`pill-tab ${activeTab === 'pulsenode' ? 'active' : ''}`}
-              style={{
-                borderColor: activeTab === 'pulsenode' ? 'var(--accent-cyan)' : 'rgba(0, 242, 254, 0.4)',
-                background: activeTab === 'pulsenode' ? 'rgba(0, 242, 254, 0.22)' : 'rgba(0, 242, 254, 0.08)',
-                color: activeTab === 'pulsenode' ? '#fff' : '#38bdf8',
-                fontWeight: '800'
-              }}
-            >
-              <Cpu size={14} color="#00f2fe" />
-              PulseNode-01 (Circle)
-            </button>
-
             <button
               onClick={() => { sfx.click(); setActiveTab('overview'); }}
               onMouseEnter={() => sfx.hover()}
@@ -1092,37 +1041,6 @@ export default function App() {
                 <span className={`audio-bar ${sfxMuted ? 'muted' : 'animating'}`}></span>
               </div>
             </button>
-
-            {/* Direct Download pulse_node.py Button */}
-            <a
-              href="/pulse_node.py"
-              download="pulse_node.py"
-              onClick={() => {
-                sfx.click();
-                confetti({ particleCount: 25, spread: 50, origin: { y: 0.6 } });
-              }}
-              style={{
-                background: 'linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(79, 172, 254, 0.2) 100%)',
-                border: '1px solid rgba(0, 242, 254, 0.55)',
-                color: '#38bdf8',
-                padding: '6px 12px',
-                borderRadius: '8px',
-                fontSize: '0.76rem',
-                fontFamily: 'var(--font-mono)',
-                fontWeight: '700',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                textDecoration: 'none',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 0 14px rgba(0, 242, 254, 0.18)'
-              }}
-              title="Download standalone edge controller Python script (pulse_node.py - 12.4 KB)"
-            >
-              <Download size={13} />
-              <span>pulse_node.py</span>
-            </a>
 
             {/* Public USSD Dialer Button */}
             <button
@@ -1425,88 +1343,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Quick Fix 1: Auto-Start Demo Mode HUD Overlay (For First-Time Visitors / Judges) */}
-      {autoDemoCountdown !== null && (
-        <div 
-          className="notranslate"
-          translate="no"
-          style={{
-            position: 'fixed',
-            top: '72px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 9999,
-            background: 'linear-gradient(135deg, rgba(12, 18, 32, 0.98) 0%, rgba(20, 24, 38, 0.96) 100%)',
-            border: '1px solid #f59e0b',
-            borderRadius: '12px',
-            padding: '10px 20px',
-            boxShadow: '0 12px 35px rgba(0,0,0,0.85), 0 0 30px rgba(245, 158, 11, 0.45)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            backdropFilter: 'blur(16px)',
-            maxWidth: '92vw'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Sparkles size={16} color="#000" />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#fff', letterSpacing: '0.02em' }}>
-                ⚡ JURY LIVE DEMO AUTO-STARTING IN <span style={{ color: '#fbbf24', fontSize: '1.05rem', fontFamily: 'var(--font-mono)' }}>{autoDemoCountdown}s</span>
-              </div>
-              <div style={{ fontSize: '0.7rem', color: '#cbd5e1', marginTop: '1px' }}>
-                Autonomous Triple Cascade: Odaw Flood + Achimota Dumsor + Circle Gridlock (14s)
-              </div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={handleLaunchAutoDemoNow}
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                color: '#000',
-                border: 'none',
-                fontWeight: '800',
-                fontSize: '0.76rem',
-                padding: '6px 14px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-            >
-              <Play size={12} fill="#000" />
-              <span>Launch Now</span>
-            </button>
-            <button
-              onClick={handleDismissAutoDemo}
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#94a3b8',
-                fontSize: '0.74rem',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Quick Fix 2 & 3: Compact Live Real-World Sensor Telemetry & Impact Bar */}
       <section 
         className="notranslate"
@@ -1566,20 +1402,14 @@ export default function App() {
 
       {/* Main Dynamic Workspace Area */}
       <main ref={workspaceRef} style={{ flex: 1, padding: '16px 20px', maxWidth: '1440px', margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
-        {/* Institutional Proof & TCO Verdict Strip */}
+        {/* TrotroFlow Live Engineering Pipeline Banner */}
         <HackathonJuryProofBanner
           initiallyExpanded={false}
-          onLaunchGreenWave={() => {
-            sfx.alarm();
-            handleExecuteAgentTool({
-              name: 'DISPATCH_GREEN_WAVE',
-              params: { origin: 'N-CIRCLE', dest: 'N-37MIL' }
-            });
-          }}
-          onOpenQuickIngest={() => { sfx.click(); setQuickIngestModalOpen(true); }}
-          onOpenHardwareHub={() => { sfx.click(); setHardwareModalOpen(true); }}
-          onOpenUssdModal={() => { sfx.click(); setUssdModalOpen(true); }}
-          onStartAutoTour={() => { sfx.click(); setPitchTourOpen(true); }}
+          onOpenVision={() => openVisionForNode(trafficNodes[0])}
+          onLaunchGreenWave={handleLaunchGreenWave}
+          onOpenQuickIngest={() => setQuickIngestModalOpen(true)}
+          onOpenHardwareHub={() => setHardwareModalOpen(true)}
+          onOpenUssdModal={() => setUssdModalOpen(true)}
         />
 
         {/* Active Crisis Command Banner */}
@@ -1725,14 +1555,6 @@ export default function App() {
               </button>
             </div>
           </div>
-        )}
-
-        {/* Tab 0: PulseNode-01 (Circle) Single Working Node Engineering Workbench */}
-        {activeTab === 'pulsenode' && (
-          <PulseNodeWorkbench
-            onOpenFieldHud={() => setFieldHudOpen(true)}
-            onOpenUssd={() => setUssdModalOpen(true)}
-          />
         )}
 
         {/* Tab 1: Overview & Digital Twin Map Layout */}

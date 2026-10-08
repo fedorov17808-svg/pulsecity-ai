@@ -328,7 +328,10 @@ function extractToolCall(text, query) {
   const now = Date.now();
   const dispatchHash = '0x' + Math.abs((now * 31 + q.length) | 0).toString(16).padStart(8, '0').toUpperCase();
 
-  if (q.includes("blackout") || q.includes("dumsor") || q.includes("shed") || (q.includes("grid") && !q.includes("green")) || t.includes("gridguard priority knapsack")) {
+  const isGrid = q.includes("blackout") || q.includes("dumsor") || q.includes("power") || q.includes("grid") || q.includes("shed") || q.includes("substation") || q.includes("voltage") || t.includes("gridguard priority knapsack");
+  const isTrafficPreempt = q.includes("ambulance") || q.includes("hospital") || q.includes("preempt") || q.includes("green wave") || (q.includes("corridor") && !isGrid) || t.includes("emergency corridor activated");
+
+  if (isGrid) {
     return {
       name: "BALANCE_GRID_SHED",
       label: "SCADA Dynamic Priority Knapsack Load Shedding",
@@ -347,7 +350,7 @@ function extractToolCall(text, query) {
     };
   }
 
-  if (q.includes("ambulance") || q.includes("hospital") || q.includes("preempt") || q.includes("green wave") || q.includes("corridor") || q.includes("emergency") || t.includes("emergency corridor activated")) {
+  if (isTrafficPreempt) {
     return {
       name: "DISPATCH_GREEN_WAVE",
       label: "MUTCD Section 4D Preemption: Emergency Green Wave",

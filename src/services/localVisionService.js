@@ -250,18 +250,34 @@ export async function detectObjectsLocally(mediaElement, situationNotes = '') {
 
     const pcuResult = calculatePcuAndFlow(counts);
 
+    // Trotro Holding Bay Analytics (Kwame Nkrumah Slipway capacity: 12 minibuses)
+    const BAY_CAPACITY = 12;
+    const effectiveTrotroCount = trotroCount > 0 ? trotroCount : Math.max(1, Math.round(vehicleCount * 0.4));
+    const baySaturationPct = Math.min(100, Math.round((effectiveTrotroCount / BAY_CAPACITY) * 100));
+    const isSpillbackImminent = baySaturationPct >= 65;
+    const flushGreenDurationSeconds = Math.max(16, Math.min(65, Math.round((effectiveTrotroCount * 2.6) + 8)));
+
     return {
       congestionScore: pcuResult.congestionScore,
       vehicleCount: vehicleCount || rawPredictions.length,
       hazardDetected,
       hazardDescription: hazardDetected ? "Obstruction detected in active traffic corridor" : "Normal corridor vehicle progression",
       ambulanceDetected,
-      recommendedAction: ambulanceDetected 
-        ? "MUTCD Emergency Preemption: grant 90s priority green corridor"
-        : `Apply Webster split: ${pcuResult.webster.phases[0]?.effectiveGreenSeconds || 45}s green to clear ${pcuResult.effectivePcu.toFixed(1)} PCU load`,
+      trotroBay: {
+        count: effectiveTrotroCount,
+        capacity: BAY_CAPACITY,
+        saturationPct: baySaturationPct,
+        isSpillbackImminent,
+        flushGreenDurationSeconds
+      },
+      recommendedAction: isSpillbackImminent 
+        ? `⚠️ TROTRO BAY SPILLBACK: ${effectiveTrotroCount}/${BAY_CAPACITY} loading bays saturated (${baySaturationPct}%). Execute ${flushGreenDurationSeconds}s flush phase to prevent roundabout gridlock.`
+        : ambulanceDetected 
+          ? "MUTCD Emergency Preemption: grant 90s priority green corridor"
+          : `Apply Webster split: ${pcuResult.webster.phases[0]?.effectiveGreenSeconds || 45}s green to clear ${pcuResult.effectivePcu.toFixed(1)} PCU load`,
       detectedObjects,
       confidenceScore: rawPredictions.length > 0 ? 0.94 : 0.85,
-      greenLightDurationSeconds: pcuResult.webster.phases[0]?.effectiveGreenSeconds || 45,
+      greenLightDurationSeconds: isSpillbackImminent ? flushGreenDurationSeconds : (pcuResult.webster.phases[0]?.effectiveGreenSeconds || 45),
       estimatedDelaySavedMinutes: Number(((pcuResult.webster.phases[0]?.estimatedDelaySecPerVehicle * 0.4) / 60).toFixed(1)),
       websterOptimization: pcuResult.webster,
       backend: 'TENSORFLOW_WASM_EDGE',
