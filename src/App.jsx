@@ -3,7 +3,7 @@ import {
   Activity, Car, Zap, Wind, Bot, Shield, Trophy, 
   Sparkles, Layers, Clock, Terminal,
   Phone, BarChart3, FileText, Volume2, VolumeX, AlertTriangle,
-  Copy, Play
+  Copy, Play, Siren
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
