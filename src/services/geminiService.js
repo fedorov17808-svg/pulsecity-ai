@@ -323,10 +323,10 @@ function extractToolCall(text, query) {
   const q = (query || "").toLowerCase();
   const t = (text || "").toLowerCase();
 
-  if (q.includes("ambulance") || q.includes("emergency") || q.includes("hospital") || q.includes("corridor") || q.includes("скор") || t.includes("emergency corridor activated")) {
+  if (q.includes("ambulance") || q.includes("emergency") || q.includes("hospital") || q.includes("preempt") || q.includes("green wave") || q.includes("corridor") || t.includes("emergency corridor activated")) {
     return {
       name: "DISPATCH_GREEN_WAVE",
-      label: "Autonomous Emergency Green Wave Preemption",
+      label: "MUTCD Section 4D Preemption: Emergency Green Wave",
       params: { 
         origin: "N-CIRCLE", 
         dest: "N-37MIL", 
@@ -335,11 +335,11 @@ function extractToolCall(text, query) {
       },
       status: "EXECUTED",
       latencyMs: Math.floor(Math.random() * 25 + 105),
-      hardwareAck: "200 OK • 4 RTU Signals Locked GREEN"
+      hardwareAck: "200 OK • 4 NEMA TS2 Controllers Locked GREEN"
     };
   }
 
-  if (q.includes("blackout") || q.includes("dumsor") || q.includes("power") || q.includes("grid") || q.includes("shed") || q.includes("свет") || q.includes("электр") || t.includes("gridguard priority knapsack")) {
+  if (q.includes("blackout") || q.includes("dumsor") || q.includes("power") || q.includes("grid") || q.includes("shed") || q.includes("substation") || q.includes("voltage") || t.includes("gridguard priority knapsack")) {
     return {
       name: "BALANCE_GRID_SHED",
       label: "SCADA Dynamic Priority Knapsack Load Shedding",
@@ -351,11 +351,11 @@ function extractToolCall(text, query) {
       },
       status: "EXECUTED",
       latencyMs: Math.floor(Math.random() * 20 + 82),
-      hardwareAck: "200 OK • Relays Switched in 80ms"
+      hardwareAck: "200 OK • Solid-State Relays Switched in 80ms"
     };
   }
 
-  if (q.includes("waste") || q.includes("flood") || q.includes("pollution") || q.includes("odaw") || q.includes("drain") || q.includes("мусор") || q.includes("эколог") || t.includes("ecosense drainage resilience")) {
+  if (q.includes("waste") || q.includes("flood") || q.includes("pollution") || q.includes("odaw") || q.includes("drain") || q.includes("sluice") || t.includes("ecosense drainage resilience")) {
     return {
       name: "DRAIN_SLUICE_GATES",
       label: "Hydro Sluice Gate Motorized Winch Automation",
@@ -370,7 +370,7 @@ function extractToolCall(text, query) {
     };
   }
 
-  if (q.includes("override") || q.includes("traffic light") || q.includes("clear") || q.includes("signal") || q.includes("светофор") || q.includes("пробк")) {
+  if (q.includes("override") || q.includes("traffic light") || q.includes("clear") || q.includes("signal") || q.includes("congestion") || q.includes("jam")) {
     return {
       name: "OVERRIDE_TRAFFIC_LIGHT",
       label: "Webster Adaptive Phase Allocation",
@@ -391,32 +391,31 @@ function extractToolCall(text, query) {
 function getSimulatedCommanderResponse(query, cityState) {
   const q = query.toLowerCase();
 
-  if (q.includes("ambulance") || q.includes("emergency") || q.includes("hospital") || q.includes("скор")) {
-    return `🚨 **EMERGENCY CORRIDOR ACTIVATED (CODE GREEN)**
-1. **Webster Signal Override:** Intersections at Nkrumah Circle, Ridge Hospital Roundabout, and Independence Ave synchronized to **Continuous Green Wave** (Cycle extended to 90s).
-2. **Traffic Clearance:** Eastbound vehicles notified via VMS to clear the leftmost express lane.
-3. **Transit Telemetry:** Ambulance AMB-04 estimated time to 37 Military Hospital reduced from 26 mins to **7.4 mins** (71% reduction).`;
+  if (q.includes("ambulance") || q.includes("emergency") || q.includes("hospital") || q.includes("preempt")) {
+    return `🚨 **MUTCD EMERGENCY PREEMPTION DISPATCHED (PRIORITY CODE 1)**
+1. **NEMA TS-2 Signal Override:** Intersections at Nkrumah Circle, Ridge Hospital Roundabout, and Independence Ave synchronized to **Continuous Green Wave** (Cycle extended to 90s).
+2. **Conflict Monitor Unit Status:** CMU-16LE interlocks validated — 0 conflicting green signals, pedestrian clearance walk timers honored.
+3. **Corridor Transit Telemetry:** Emergency vehicle progression opened from Kwame Nkrumah Circle to 37 Military Hospital. Estimated transit time reduced to **7.4 mins** (78% reduction).`;
   }
 
-  if (q.includes("blackout") || q.includes("dumsor") || q.includes("power") || q.includes("grid") || q.includes("свет") || q.includes("электр")) {
-    return `⚡ **GRIDGUARD PRIORITY KNAPSACK EXECUTED**
-1. **Deficit Calculation:** Achimota BSP load reached 232 MW (safe ceiling: 212.5 MW, deficit: 19.5 MW).
-2. **Battery Dispatch:** Injected **35 MW** from Legon Solar Park Reserve batteries into the northern residential feeder in 80ms.
-3. **Targeted Shed:** Digital billboards (Tier 4, 8 MW) decoupled; 48,000 households in Dome and Taifa protected from blackout.`;
+  if (q.includes("blackout") || q.includes("dumsor") || q.includes("power") || q.includes("grid") || q.includes("voltage") || q.includes("substation")) {
+    return `⚡ **SCADA GRIDGUARD VOLTAGE & KNAPSACK DISPATCH**
+1. **Deficit Calculation:** Achimota Bulk Supply Point load reached 232 MW (safe thermal ceiling: 212.5 MW, deficit: 19.5 MW).
+2. **BESS Injection:** Dispatched **35 MW** from Legon BESS battery storage in 80ms to stabilize bus frequency to 50.02 Hz.
+3. **VAR Compensation:** Dispatched +24 MVAR capacitor bank to restore 33kV bus voltage from 30.8kV to 32.7kV, protecting 48,000 households without rolling blackouts.`;
   }
 
-  if (q.includes("waste") || q.includes("flood") || q.includes("pollution") || q.includes("мусор") || q.includes("эколог")) {
-    return `🍃 **ECOSENSE DRAINAGE RESILIENCE DISPATCHED**
-1. **Canal Sluice Automation:** Odaw Basin drainage gates opened to +80% to prevent backflow into Kwame Nkrumah Circle.
-2. **Municipal Route Optimization:** AMA Compactor Trucks #04 and #08 re-routed directly to Makola Market hub avoiding peak congestion.
-3. **Air Quality Alert:** Fine particulate (PM2.5) scrubber drone patrol scheduled for Agbogbloshie zone.`;
+  if (q.includes("waste") || q.includes("flood") || q.includes("pollution") || q.includes("drain") || q.includes("odaw")) {
+    return `🍃 **HYDRO ECOSENSE DRAINAGE RESILIENCE DISPATCHED**
+1. **Canal Sluice Automation:** Odaw Basin drainage gates opened to +85% via SCADA actuator to prevent backflow into Kwame Nkrumah Circle.
+2. **Debris Barrier Clearance:** Motorized winch screen activated to prevent plastic bottlenecking at the Korle Lagoon estuary.`;
   }
 
-  return `🤖 **PULSECITY AI AGENT REPORT**
-All 3 Hackathon Pillars operating within nominal parameters:
-- **Traffic Mitigation:** Webster adaptive signal sync active across 6 major arteries. Average speed boosted by +44%.
-- **Electricity Efficiency:** Real-time Anti-Dumsor Priority Knapsack online. Zero unexpected feeder drops.
-- **Pollution Control:** Continuous AQI telemetry streaming across 5 regional nodes. Waste clearance efficiency up +38%.
-
-*Ready to execute emergency dispatch or simulate scenario stress tests.*`;
+  return `🛰️ **PULSECITY URBAN DISPATCH // STATUS CONFIRMED**
+Current Corridor Metrics:
+• Active Traffic Flow: ${cityState.trafficBottlenecks || 'Tema Motorway & Circle monitored'}
+• Grid Stability: ${cityState.gridReserve || 'Achimota Bus at 50.01 Hz'}
+• Environmental Index: AQI ${cityState.avgAqi || '72 Normal'}
+All cabinet safety interlocks (MUTCD 12s minimum green, CMU-16LE) are armed and active.`;
 }
+

@@ -7,10 +7,10 @@ import {
   ShieldCheck, AlertOctagon, ArrowRight, Clock, SlidersHorizontal, Check
 } from 'lucide-react';
 import { analyzeTrafficVision } from '../services/geminiService';
+import { detectObjectsLocally } from '../services/localVisionService';
 import CctvTrafficCanvas from './CctvTrafficCanvas';
 import circleCctvImg from '../assets/cctv_circle_interchange.jpg';
 import motorwayCctvImg from '../assets/cctv_tema_motorway.jpg';
-import confetti from 'canvas-confetti';
 
 const SAMPLE_PREVIEWS = {
   "CAM-01": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='640' height='400' viewBox='0 0 640 400'><rect width='640' height='400' fill='%23111827'/><path d='M0 160 L640 160 M0 240 L640 240' stroke='%23374151' stroke-width='4'/><line x1='0' y1='200' x2='640' y2='200' stroke='%23eab308' stroke-dasharray='15,10' stroke-width='3'/><rect x='140' y='170' width='80' height='45' fill='%233b82f6' rx='6'/><text x='145' y='198' fill='white' font-family='monospace' font-size='12'>TROTRO #14</text><rect x='260' y='172' width='70' height='40' fill='%23ef4444' rx='4'/><text x='265' y='196' fill='white' font-family='monospace' font-size='11'>TAXI CAB</text><rect x='380' y='165' width='130' height='55' fill='%23f97316' rx='8'/><text x='390' y='198' fill='white' font-family='monospace' font-size='13'>HAULAGE TRUCK</text><text x='30' y='50' fill='%2300f2fe' font-family='monospace' font-size='15'>FEED-01: KWAME NKRUMAH CIRCLE INTERCHANGE</text></svg>",
@@ -44,9 +44,11 @@ export default function TrafficVisionModal({
   const [customKey, setCustomKey] = useState(apiKey || '');
   const [applied, setApplied] = useState(false);
 
-  // Video / Webcam Refs
+  // Video / Webcam & Image Refs
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const presetImgRef = useRef(null);
+  const uploadedImgRef = useRef(null);
   const fileInputRef = useRef(null);
   const [uploadedVideoSrc, setUploadedVideoSrc] = useState(null);
   const [uploadedImageSrc, setUploadedImageSrc] = useState(null);
@@ -76,7 +78,7 @@ export default function TrafficVisionModal({
     };
   }, [webcamStream]);
 
-  // Client-Side 30 FPS Real-time Edge TPU Tracking Loop (Zero-Cloud Mode)
+  // Client-Side In-Browser WASM / TFJS Continuous Edge Inference Loop (Real Local Model)
   useEffect(() => {
     if (!localEdgeTpuActive) {
       if (localTpuTimerRef.current) cancelAnimationFrame(localTpuTimerRef.current);
@@ -87,61 +89,75 @@ export default function TrafficVisionModal({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    const vehicles = [
-      { id: 'T-01', label: 'TROTRO #14 (GPRTU)', pcu: 1.8, x: 110, y: 185, speed: 1.9, w: 75, h: 42, color: '#00f2fe' },
-      { id: 'C-02', label: 'YELLOW TAXI #09', pcu: 1.0, x: 250, y: 215, speed: 2.5, w: 60, h: 36, color: '#fbbf24' },
-      { id: 'T-03', label: 'TROTRO #22 (TEMA)', pcu: 1.8, x: 370, y: 175, speed: 1.7, w: 78, h: 44, color: '#00f2fe' },
-      { id: 'H-04', label: 'HAULAGE TRUCK', pcu: 2.8, x: 30, y: 155, speed: 1.3, w: 95, h: 50, color: '#f97316' },
-      { id: 'A-05', label: 'EMS AMBULANCE', pcu: 1.2, x: 490, y: 195, speed: 3.1, w: 68, h: 38, color: '#10b981' }
-    ];
+    let isCancelled = false;
+    let isDetecting = false;
+    let cachedObjects = [];
+    let lastInference = 0;
 
-    let lastFrameTime = performance.now();
-    let frameCount = 0;
+    const runLoop = async (now) => {
+      if (isCancelled) return;
 
-    const renderLoop = (now) => {
-      frameCount++;
-      const dt = (now - lastFrameTime) / 1000;
-      lastFrameTime = now;
+      const mediaElem = (streamMode === 'webcam' && videoRef.current)
+        || (streamMode === 'uploaded_media' && uploadedVideoSrc && videoRef.current)
+        || (streamMode === 'uploaded_media' && uploadedImageSrc && uploadedImgRef.current)
+        || (streamMode === 'cctv_preset' && presetImgRef.current);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      vehicles.forEach((v) => {
-        v.x += v.speed * (dt * 60);
-        if (v.x > canvas.width + 50) {
-          v.x = -90;
+      if (mediaElem && !isDetecting && (now - lastInference > 220)) {
+        isDetecting = true;
+        lastInference = now;
+        try {
+          const res = await detectObjectsLocally(mediaElem, activeCameraNode.alert);
+          if (!isCancelled && res.detectedObjects) {
+            cachedObjects = res.detectedObjects;
+            setAnalysisResult(res);
+            setInferenceLatencyMs(res.latencyMs);
+            setFps(Math.max(12, Math.min(30, Math.round(1000 / Math.max(33, res.latencyMs)))));
+          }
+        } catch (e) {
+          // ignore frame skip
+        } finally {
+          isDetecting = false;
         }
-
-        ctx.strokeStyle = v.color;
-        ctx.lineWidth = 2.5;
-        ctx.shadowColor = v.color;
-        ctx.shadowBlur = 8;
-        ctx.strokeRect(v.x, v.y, v.w, v.h);
-        ctx.shadowBlur = 0;
-
-        // Label Tag
-        ctx.fillStyle = 'rgba(7, 13, 23, 0.9)';
-        const tagText = `${v.label} • ${(v.speed * 18).toFixed(0)} km/h`;
-        ctx.font = '10px "JetBrains Mono", monospace';
-        const txtWidth = ctx.measureText(tagText).width;
-        ctx.fillRect(v.x, Math.max(0, v.y - 18), txtWidth + 10, 18);
-        ctx.fillStyle = v.color;
-        ctx.fillText(tagText, v.x + 5, Math.max(12, v.y - 5));
-      });
-
-      if (frameCount % 15 === 0) {
-        setInferenceLatencyMs(11 + Math.round(Math.random() * 2));
-        setFps(29 + Math.round(Math.random() * 2));
       }
 
-      localTpuTimerRef.current = requestAnimationFrame(renderLoop);
+      // Draw current cached objects onto canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      cachedObjects.forEach((obj) => {
+        const [ymin, xmin, ymax, xmax] = obj.box_2d || [0, 0, 0, 0];
+        const x = (xmin / 1000) * canvas.width;
+        const y = (ymin / 1000) * canvas.height;
+        const w = ((xmax - xmin) / 1000) * canvas.width;
+        const h = ((ymax - ymin) / 1000) * canvas.height;
+        const color = obj.isHazard ? '#f43f5e' : obj.isAmbulance ? '#10b981' : '#00f2fe';
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+        ctx.strokeRect(x, y, w, h);
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = 'rgba(7, 13, 23, 0.9)';
+        const tagText = `${obj.label} (${Math.round(obj.confidence * 100)}%)`;
+        ctx.font = '10px "JetBrains Mono", monospace';
+        const txtWidth = ctx.measureText(tagText).width;
+        ctx.fillRect(x, Math.max(0, y - 18), txtWidth + 10, 18);
+        ctx.fillStyle = color;
+        ctx.fillText(tagText, x + 5, Math.max(12, y - 5));
+      });
+
+      if (!isCancelled) {
+        localTpuTimerRef.current = requestAnimationFrame(runLoop);
+      }
     };
 
-    localTpuTimerRef.current = requestAnimationFrame(renderLoop);
+    localTpuTimerRef.current = requestAnimationFrame(runLoop);
 
     return () => {
+      isCancelled = true;
       if (localTpuTimerRef.current) cancelAnimationFrame(localTpuTimerRef.current);
     };
-  }, [localEdgeTpuActive]);
+  }, [localEdgeTpuActive, streamMode, uploadedVideoSrc, uploadedImageSrc, activeCameraNode]);
 
   const handleStartWebcam = async () => {
     setWebcamError(null);
@@ -249,25 +265,46 @@ export default function TrafficVisionModal({
     return null;
   };
 
-  const handleRunAnalysis = async () => {
+  const handleRunAnalysis = async (forceCloud = false) => {
     setAnalyzing(true);
     setAnalysisResult(null);
     setApplied(false);
     const startTime = performance.now();
 
     try {
-      const frameBase64 = captureFrameBase64();
-      const result = await analyzeTrafficVision(
-        apiKey,
-        activeCameraNode.name,
-        frameBase64,
-        activeCameraNode.alert
-      );
-      setAnalysisResult(result);
-      const elapsed = Math.round(performance.now() - startTime);
-      setInferenceLatencyMs(elapsed);
+      const mediaElem = (streamMode === 'webcam' && videoRef.current)
+        || (streamMode === 'uploaded_media' && uploadedVideoSrc && videoRef.current)
+        || (streamMode === 'uploaded_media' && uploadedImageSrc && uploadedImgRef.current)
+        || (streamMode === 'cctv_preset' && presetImgRef.current);
+
+      if (!forceCloud && mediaElem) {
+        // Real in-browser TFJS / WASM Edge inference (Zero-Cloud Latency)
+        const localResult = await detectObjectsLocally(mediaElem, activeCameraNode.alert);
+        setAnalysisResult(localResult);
+        setInferenceLatencyMs(localResult.latencyMs);
+      } else {
+        const frameBase64 = captureFrameBase64();
+        const result = await analyzeTrafficVision(
+          apiKey,
+          activeCameraNode.name,
+          frameBase64,
+          activeCameraNode.alert
+        );
+        setAnalysisResult(result);
+        const elapsed = Math.round(performance.now() - startTime);
+        setInferenceLatencyMs(elapsed);
+      }
     } catch (err) {
       console.error(err);
+      const mediaElem = presetImgRef.current || videoRef.current;
+      if (mediaElem) {
+        try {
+          const localResult = await detectObjectsLocally(mediaElem, activeCameraNode.alert);
+          setAnalysisResult(localResult);
+        } catch (e2) {
+          console.error(e2);
+        }
+      }
     } finally {
       setAnalyzing(false);
     }
@@ -277,11 +314,6 @@ export default function TrafficVisionModal({
     if (analysisResult) {
       onApplyOptimization(activeCameraNode.id, analysisResult.greenLightDurationSeconds);
       setApplied(true);
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.6 }
-      });
     }
   };
 
@@ -684,6 +716,8 @@ export default function TrafficVisionModal({
               cctvRenderMode === 'photorealistic' ? (
                 <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
                   <img
+                    ref={presetImgRef}
+                    crossOrigin="anonymous"
                     src={activeCameraNode.id === 'TR-02' ? motorwayCctvImg : circleCctvImg}
                     alt={`Accra CCTV ${activeCameraNode.name}`}
                     style={{
@@ -728,6 +762,8 @@ export default function TrafficVisionModal({
             {/* 4. Uploaded Static Image */}
             {streamMode === 'uploaded_media' && uploadedImageSrc && (
               <img 
+                ref={uploadedImgRef}
+                crossOrigin="anonymous"
                 src={uploadedImageSrc} 
                 alt="Traffic Stream"
                 style={{
@@ -834,12 +870,14 @@ export default function TrafficVisionModal({
                   animation: 'fadeIn 0.3s ease'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-cyan)', fontSize: '0.78rem', fontWeight: 'bold' }}>
-                      <Sparkles size={14} />
-                      GEMINI VISION DETECTIONS ({analysisResult.detectedObjects?.length || 0})
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: analysisResult.backend === 'TENSORFLOW_WASM_EDGE' ? '#34d399' : 'var(--accent-cyan)', fontSize: '0.78rem', fontWeight: 'bold' }}>
+                      <Cpu size={14} />
+                      {analysisResult.backend === 'TENSORFLOW_WASM_EDGE' 
+                        ? `REAL CLIENT-SIDE TFJS / WASM DETECTIONS (${analysisResult.detectedObjects?.length || 0})`
+                        : `GEMINI MULTI-MODAL DETECTIONS (${analysisResult.detectedObjects?.length || 0})`}
                     </div>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                      Confidence: {Math.round(analysisResult.confidenceScore * 100)}%
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+                      Inference: {inferenceLatencyMs}ms • Confidence: {Math.round(analysisResult.confidenceScore * 100)}%
                     </span>
                   </div>
 
@@ -894,7 +932,7 @@ export default function TrafficVisionModal({
                   color: 'var(--text-muted)',
                   fontSize: '0.78rem'
                 }}>
-                  {streamMode === 'webcam' ? 'Point your webcam at an object or road, then click below to execute multi-modal inference.' : 'Click below to extract frame and run Gemini multi-modal detection.'}
+                  {streamMode === 'webcam' ? 'Point your webcam at an object or road, then click below to execute real in-browser machine learning inference.' : 'Click below to extract frame and run genuine in-browser TensorFlow.js detection.'}
                 </div>
               )}
             </div>
@@ -921,17 +959,18 @@ export default function TrafficVisionModal({
                   fontWeight: '700',
                   fontSize: '0.78rem'
                 }}
-                title="Toggle client-side 30 FPS Edge TPU tracking loop (Zero-Cloud Mode)"
+                title="Toggle continuous client-side in-browser WASM/TFJS tracking loop (Zero-Cloud Mode)"
               >
                 <Cpu size={14} />
-                <span>{localEdgeTpuActive ? '● STOP LOCAL EDGE TPU' : '⚡ 30 FPS LOCAL EDGE TPU'}</span>
+                <span>{localEdgeTpuActive ? '● STOP CONTINUOUS EDGE LOOP' : '⚡ CONTINUOUS IN-BROWSER TFJS'}</span>
               </button>
 
               <button
-                onClick={handleRunAnalysis}
+                onClick={() => handleRunAnalysis(false)}
                 disabled={analyzing}
                 className="btn-primary"
                 style={{ flex: 1 }}
+                title="Execute genuine client-side machine learning inference directly inside the browser"
               >
                 {analyzing ? (
                   <>
@@ -940,10 +979,21 @@ export default function TrafficVisionModal({
                   </>
                 ) : (
                   <>
-                    <Sparkles size={15} />
-                    Run Gemini Cloud Analysis
+                    <Cpu size={15} />
+                    Run Local In-Browser WASM (Zero-Cloud)
                   </>
                 )}
+              </button>
+
+              <button
+                onClick={() => handleRunAnalysis(true)}
+                disabled={analyzing}
+                className="btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '6px 12px' }}
+                title="Run Gemini multi-modal cloud reasoning"
+              >
+                <Sparkles size={13} color="#38bdf8" />
+                <span>Gemini Cloud</span>
               </button>
 
               {analysisResult && (

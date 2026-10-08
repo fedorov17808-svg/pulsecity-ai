@@ -10,6 +10,10 @@
       "destination": "/api/telemetry/ingest"
     },
     {
+      "source": "/api/telemetry/live-weather",
+      "destination": "/api/telemetry/live-weather"
+    },
+    {
       "source": "/api/health",
       "destination": "/api/health"
     },

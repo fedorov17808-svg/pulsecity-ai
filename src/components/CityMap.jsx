@@ -420,7 +420,7 @@ export default function CityMap({
     <div style={{
       position: 'relative',
       width: '100%',
-      height: 'clamp(460px, 58vh, 560px)',
+      height: 'clamp(560px, 70vh, 780px)',
       borderRadius: 'var(--radius-lg)',
       border: '1px solid var(--border-subtle)',
       overflow: 'hidden',
@@ -738,6 +738,25 @@ export default function CityMap({
               <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                 {selectedNode.recommendation}
               </div>
+
+              {selectedNode.liveSource && (
+                <div style={{
+                  marginTop: '10px',
+                  padding: '6px 8px',
+                  borderRadius: '6px',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  fontSize: '0.68rem',
+                  color: '#34d399',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontFamily: 'var(--font-mono)'
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
+                  <span><strong>LIVE FEED:</strong> {selectedNode.liveSource}</span>
+                </div>
+              )}
             </div>
           )}
         </div>

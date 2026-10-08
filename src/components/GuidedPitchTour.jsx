@@ -158,7 +158,7 @@ export default function GuidedPitchTour({
               borderRadius: '6px',
               textTransform: 'uppercase'
             }}>
-              Jury Pitch Walkthrough • Step {currentStep.step} of 5
+              System Architecture Walkthrough • Step {currentStep.step} of 5
             </span>
             <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
               {currentStep.actionLabel}

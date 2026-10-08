@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { 
-  Trophy, Siren, Shield, Zap, Radio, Phone, ArrowRight, CheckCircle2, 
+  Radio, Siren, Shield, Zap, Phone, ArrowRight, CheckCircle2, 
   Clock, DollarSign, Activity, AlertTriangle, Sparkles, ChevronDown, ChevronUp, Copy, Check
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 export default function HackathonJuryProofBanner({
+  initiallyExpanded = false,
   onLaunchGreenWave,
   onOpenQuickIngest,
   onOpenHardwareHub,
   onOpenUssdModal,
   onStartAutoTour
 }) {
-  const [minimized, setMinimized] = useState(true);
+  const [minimized, setMinimized] = useState(!initiallyExpanded);
   const [copiedLink, setCopiedLink] = useState(false);
   const [pingLoading, setPingLoading] = useState(false);
   const [pingResult, setPingResult] = useState(null);
@@ -31,13 +31,12 @@ export default function HackathonJuryProofBanner({
           nodeId: 'TR-01',
           congestionPercentage: 92,
           incidentDetected: true,
-          incidentDetails: 'Judge verification ping: Kwame Nkrumah Circle live ingest'
+          incidentDetails: 'Diagnostic telemetry probe: Kwame Nkrumah Circle live ingest'
         })
       });
       const data = await res.json();
       const latency = Math.round(performance.now() - start);
-      setPingResult(`HTTP ${res.status} OK • Latency: ${latency}ms • Node TR-01 Updated`);
-      confetti({ particleCount: 35, spread: 50, origin: { y: 0.6 } });
+      setPingResult(`HTTP ${res.status} OK • Latency: ${latency}ms • Node TR-01 Synced`);
     } catch (e) {
       setPingResult('HTTP 201 Sim OK • Latency: 11ms • Packet Acknowledged');
     } finally {
@@ -47,13 +46,6 @@ export default function HackathonJuryProofBanner({
 
   const handleTriggerAmbulance = () => {
     if (onLaunchGreenWave) onLaunchGreenWave();
-    try {
-      confetti({
-        particleCount: 45,
-        spread: 60,
-        origin: { y: 0.55 }
-      });
-    } catch {}
   };
 
   const handleCopyJuryLink = () => {
@@ -69,10 +61,10 @@ export default function HackathonJuryProofBanner({
       style={{
         marginBottom: '16px',
         background: 'linear-gradient(135deg, rgba(8, 14, 26, 0.96) 0%, rgba(13, 22, 40, 0.94) 100%)',
-        border: '1px solid rgba(245, 158, 11, 0.55)',
+        border: '1px solid rgba(0, 242, 254, 0.45)',
         borderRadius: '14px',
         padding: minimized ? '8px 16px' : '16px 20px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.65), 0 0 20px rgba(245, 158, 11, 0.12)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.65), 0 0 20px rgba(0, 242, 254, 0.08)',
         backdropFilter: 'blur(16px)',
         position: 'relative',
         transition: 'all 0.25s ease'
@@ -82,8 +74,8 @@ export default function HackathonJuryProofBanner({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <div style={{
-            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-            color: '#000',
+            background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+            color: '#fff',
             padding: '3px 8px',
             borderRadius: '6px',
             fontSize: '0.68rem',
@@ -94,8 +86,8 @@ export default function HackathonJuryProofBanner({
             gap: '5px',
             letterSpacing: '0.04em'
           }}>
-            <Trophy size={12} />
-            JURY PROOF
+            <Radio size={12} />
+            MUNICIPAL TOC LIVE
           </div>
 
           {/* Compact Highlights Pills */}
@@ -446,11 +438,11 @@ export default function HackathonJuryProofBanner({
             flexWrap: 'wrap'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#f59e0b', fontFamily: 'var(--font-mono)' }}>
-                ⭐ INTERACTIVE JURY VALIDATION:
+              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#00f2fe', fontFamily: 'var(--font-mono)' }}>
+                CORRIDOR TELEMETRY & ACTUATION:
               </span>
               <span style={{ fontSize: '0.72rem', color: '#cbd5e1' }}>
-                Test the live engine right now with 1 click:
+                Live field controller dispatch triggers:
               </span>
             </div>
 

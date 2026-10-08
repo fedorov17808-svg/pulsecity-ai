@@ -86,7 +86,7 @@ export default function IncidentCommanderChat({
   energyNodes,
   ecoNodes
 }) {
-  // Mode: 'autonomous' (default for high-impact instant jury impression) vs 'chat'
+  // Mode: 'autonomous' (Level 2 Supervisory SCADA Stream) vs 'chat' (Operator Tactical Console)
   const [activeMode, setActiveMode] = useState('autonomous');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   
