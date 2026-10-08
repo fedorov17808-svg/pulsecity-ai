@@ -116,6 +116,14 @@ export default function TrafficVisionModal({
     };
   }, [webcamStream]);
 
+  // Auto-run initial in-browser inference on mount (eliminates cold-start lag)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleRunAnalysis(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Client-Side In-Browser WASM / TFJS Continuous Edge Inference Loop (Real Local Model)
   useEffect(() => {
     if (!localEdgeTpuActive) {
