@@ -80,7 +80,7 @@ export default function SensorIngestGateway({
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', height: '620px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', height: 'clamp(460px, 58vh, 560px)' }}>
       {/* Left: Interactive Ingest Editor */}
       <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

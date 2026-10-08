@@ -420,7 +420,7 @@ export default function CityMap({
     <div style={{
       position: 'relative',
       width: '100%',
-      height: '620px',
+      height: 'clamp(460px, 58vh, 560px)',
       borderRadius: 'var(--radius-lg)',
       border: '1px solid var(--border-subtle)',
       overflow: 'hidden',

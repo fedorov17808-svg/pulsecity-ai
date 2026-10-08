@@ -1259,7 +1259,7 @@ export default function App() {
       </section>
 
       {/* Main Dynamic Workspace Area */}
-      <main ref={workspaceRef} style={{ flex: 1, padding: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
+      <main ref={workspaceRef} style={{ flex: 1, padding: '16px 20px', maxWidth: '1440px', margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
         {/* Active Crisis Command Banner */}
         {activeCrisis && (
           <div
@@ -1439,7 +1439,7 @@ export default function App() {
             </div>
 
             {/* Right Side Tactical Panel */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '620px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: 'clamp(460px, 58vh, 560px)' }}>
               <div style={{ flex: 1 }}>
                 <IncidentCommanderChat
                   apiKey={apiKey}
