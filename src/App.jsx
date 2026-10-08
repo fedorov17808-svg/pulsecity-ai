@@ -28,6 +28,7 @@ import GuidedPitchTour from './components/GuidedPitchTour';
 import QuickIngestModal from './components/QuickIngestModal';
 import IntersectionOptimizerPanel from './components/IntersectionOptimizerPanel';
 import JuryProofModal from './components/JuryProofModal';
+import TrotroFlowHeroWidget from './components/TrotroFlowHeroWidget';
 import { fetchLiveAccraTelemetry } from './utils/liveAccraService';
 import { calculateWebsterSignalTiming } from './utils/websterAlgorithm';
 import { recordTelemetryPacket } from './services/telemetryStore';
@@ -1226,6 +1227,13 @@ export default function App() {
 
       {/* Main Dynamic Workspace Area */}
       <main ref={workspaceRef} style={{ flex: 1, padding: '16px 20px', maxWidth: '1600px', margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
+        {/* PRIMARY FOCAL PRODUCT: TrotroFlow Live Slipway Sentinel & Closed-Loop SCADA Queue Clearance */}
+        <TrotroFlowHeroWidget
+          onOpenFullVisionModal={() => openVisionForNode(trafficNodes[0])}
+          onApplyOptimization={handleApplyTrafficOptimization}
+          activeTrafficNode={trafficNodes[0]}
+        />
+
         {/* Active Crisis Command Banner */}
         {activeCrisis && (
           <div

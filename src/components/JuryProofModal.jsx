@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trophy, X } from 'lucide-react';
+import { Trophy, Shield, X } from 'lucide-react';
 import HackathonJuryProofBanner from './HackathonJuryProofBanner';
 
 export default function JuryProofModal({
