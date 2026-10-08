@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { 
   Terminal, Send, CheckCircle2, Copy, Radio, 
-  Wifi, Cpu, Code2, Sparkles, RefreshCw 
+  Wifi, Cpu, Code2, Sparkles, RefreshCw, Download, FileSpreadsheet
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { downloadTelemetryCsv } from '../services/telemetryStore';
 
 export default function SensorIngestGateway({
   trafficNodes,
@@ -252,16 +253,27 @@ export default function SensorIngestGateway({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f59e0b', fontSize: '0.82rem', fontWeight: 'bold' }}>
               <Code2 size={16} />
-              PRODUCTION REST API INTEGRATION
+              PRODUCTION REST API & CLI BENCH
             </div>
-            <button
-              onClick={handleCopyCurl}
-              className="btn-secondary"
-              style={{ padding: '4px 10px', fontSize: '0.72rem' }}
-            >
-              {copiedCurl ? <CheckCircle2 size={13} color="#10b981" /> : <Copy size={13} />}
-              {copiedCurl ? 'Copied!' : 'Copy cURL'}
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => downloadTelemetryCsv()}
+                className="btn-secondary"
+                style={{ padding: '4px 10px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                title="Download full ingested telemetry dataset as CSV"
+              >
+                <Download size={13} color="#34d399" />
+                Export CSV
+              </button>
+              <button
+                onClick={handleCopyCurl}
+                className="btn-secondary"
+                style={{ padding: '4px 10px', fontSize: '0.72rem' }}
+              >
+                {copiedCurl ? <CheckCircle2 size={13} color="#10b981" /> : <Copy size={13} />}
+                {copiedCurl ? 'Copied!' : 'Copy cURL'}
+              </button>
+            </div>
           </div>
           <pre style={{
             background: 'rgba(0,0,0,0.5)',
@@ -276,13 +288,35 @@ export default function SensorIngestGateway({
           }}>
             {curlSnippet}
           </pre>
+          <div style={{ marginTop: '8px', fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+            💻 Test from terminal: <span style={{ color: '#38bdf8' }}>python3 hardware/simulate_esp32_node.py --node TR-01 --interval 3</span>
+          </div>
         </div>
 
         {/* Live Ingestion Logs */}
         <div className="glass-panel" style={{ flex: 1, padding: '20px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <Wifi size={16} color="var(--accent-cyan)" />
-            <h4 style={{ fontSize: '0.92rem', color: '#fff' }}>Gateway Ingestion Event Log</h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Wifi size={16} color="var(--accent-cyan)" />
+              <h4 style={{ fontSize: '0.92rem', color: '#fff' }}>Gateway Ingestion Event Log (Persistent)</h4>
+            </div>
+            <button 
+              onClick={() => downloadTelemetryCsv()}
+              style={{
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                color: '#34d399',
+                borderRadius: '6px',
+                padding: '2px 8px',
+                fontSize: '0.68rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <FileSpreadsheet size={11} /> Audit CSV
+            </button>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>

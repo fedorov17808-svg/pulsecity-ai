@@ -482,14 +482,15 @@ export default function HackathonJuryProofBanner({
                 style={{
                   fontSize: '0.75rem',
                   padding: '6px 12px',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  borderColor: 'rgba(16, 185, 129, 0.4)',
-                  color: '#34d399'
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  borderColor: 'rgba(16, 185, 129, 0.55)',
+                  color: '#34d399',
+                  fontWeight: '700'
                 }}
-                title="Inspect $340 BOM, non-invasive optical CT clamps, and CMU fail-safe circuit"
+                title="Inspect real physical hardware photos, ESP32 test rig, $340 BOM, and CMU fail-safe circuit"
               >
-                <Shield size={14} />
-                <span>3. View $340 Hardware & CMU</span>
+                <Cpu size={14} />
+                <span>3. 📸 Physical Bench & Hardware</span>
               </button>
 
               {/* Action 4: USSD */}

@@ -3,7 +3,7 @@ import {
   Activity, Car, Zap, Wind, Bot, Shield, Trophy, 
   Sparkles, Layers, Clock, Terminal,
   Phone, BarChart3, FileText, Volume2, VolumeX, AlertTriangle,
-  Copy, Play
+  Copy, Play, Download, Cpu
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
@@ -28,8 +28,10 @@ import GuidedPitchTour from './components/GuidedPitchTour';
 import QuickIngestModal from './components/QuickIngestModal';
 import HackathonJuryProofBanner from './components/HackathonJuryProofBanner';
 import JuryProofModal from './components/JuryProofModal';
+import PulseNodeWorkbench from './components/PulseNodeWorkbench';
 import { fetchLiveAccraTelemetry } from './utils/liveAccraService';
 import { calculateWebsterSignalTiming } from './utils/websterAlgorithm';
+import { recordTelemetryPacket } from './services/telemetryStore';
 import { sfx } from './utils/soundEffects';
 import gsap from 'gsap';
 
@@ -455,6 +457,7 @@ export default function App() {
   const handleIngestTelemetry = (payload) => {
     const { nodeId } = payload;
     if (!nodeId) return;
+    recordTelemetryPacket(payload);
     sfx.scan();
 
     if (nodeId.startsWith('TR')) {
@@ -986,6 +989,21 @@ export default function App() {
           {/* Subsystem Navigation Pills */}
           <div className="tab-nav-container">
             <button
+              onClick={() => { sfx.click(); setActiveTab('pulsenode'); }}
+              onMouseEnter={() => sfx.hover()}
+              className={`pill-tab ${activeTab === 'pulsenode' ? 'active' : ''}`}
+              style={{
+                borderColor: activeTab === 'pulsenode' ? 'var(--accent-cyan)' : 'rgba(0, 242, 254, 0.4)',
+                background: activeTab === 'pulsenode' ? 'rgba(0, 242, 254, 0.22)' : 'rgba(0, 242, 254, 0.08)',
+                color: activeTab === 'pulsenode' ? '#fff' : '#38bdf8',
+                fontWeight: '800'
+              }}
+            >
+              <Cpu size={14} color="#00f2fe" />
+              PulseNode-01 (Circle)
+            </button>
+
+            <button
               onClick={() => { sfx.click(); setActiveTab('overview'); }}
               onMouseEnter={() => sfx.hover()}
               className={`pill-tab ${activeTab === 'overview' ? 'active' : ''}`}
@@ -1074,6 +1092,37 @@ export default function App() {
                 <span className={`audio-bar ${sfxMuted ? 'muted' : 'animating'}`}></span>
               </div>
             </button>
+
+            {/* Direct Download pulse_node.py Button */}
+            <a
+              href="/pulse_node.py"
+              download="pulse_node.py"
+              onClick={() => {
+                sfx.click();
+                confetti({ particleCount: 25, spread: 50, origin: { y: 0.6 } });
+              }}
+              style={{
+                background: 'linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(79, 172, 254, 0.2) 100%)',
+                border: '1px solid rgba(0, 242, 254, 0.55)',
+                color: '#38bdf8',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '0.76rem',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 0 14px rgba(0, 242, 254, 0.18)'
+              }}
+              title="Download standalone edge controller Python script (pulse_node.py - 12.4 KB)"
+            >
+              <Download size={13} />
+              <span>pulse_node.py</span>
+            </a>
 
             {/* Public USSD Dialer Button */}
             <button
@@ -1517,6 +1566,22 @@ export default function App() {
 
       {/* Main Dynamic Workspace Area */}
       <main ref={workspaceRef} style={{ flex: 1, padding: '16px 20px', maxWidth: '1440px', margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
+        {/* Institutional Proof & TCO Verdict Strip */}
+        <HackathonJuryProofBanner
+          initiallyExpanded={false}
+          onLaunchGreenWave={() => {
+            sfx.alarm();
+            handleExecuteAgentTool({
+              name: 'DISPATCH_GREEN_WAVE',
+              params: { origin: 'N-CIRCLE', dest: 'N-37MIL' }
+            });
+          }}
+          onOpenQuickIngest={() => { sfx.click(); setQuickIngestModalOpen(true); }}
+          onOpenHardwareHub={() => { sfx.click(); setHardwareModalOpen(true); }}
+          onOpenUssdModal={() => { sfx.click(); setUssdModalOpen(true); }}
+          onStartAutoTour={() => { sfx.click(); setPitchTourOpen(true); }}
+        />
+
         {/* Active Crisis Command Banner */}
         {activeCrisis && (
           <div
@@ -1660,6 +1725,14 @@ export default function App() {
               </button>
             </div>
           </div>
+        )}
+
+        {/* Tab 0: PulseNode-01 (Circle) Single Working Node Engineering Workbench */}
+        {activeTab === 'pulsenode' && (
+          <PulseNodeWorkbench
+            onOpenFieldHud={() => setFieldHudOpen(true)}
+            onOpenUssd={() => setUssdModalOpen(true)}
+          />
         )}
 
         {/* Tab 1: Overview & Digital Twin Map Layout */}
