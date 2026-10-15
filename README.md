@@ -214,3 +214,6 @@ Visit `http://localhost:5174/` to view the Accra Digital Twin.
 - `src/assets/kwame_nkrumah_circle.jpg` — "Kwame Nkrumah Circle, Accra, Ghana 2" by Oluniyi Ajao,
   [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kwame_Nkrumah_Circle,_Accra,_Ghana_2.jpg),
   licensed [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/). Unmodified; a still photo, not a live feed.
+- `src/assets/tema_motorway_toll.jpg` — "Tema - Accra Motorway toolbooth" by Enock4seth,
+  [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Tema_-_Accra_Motorway_toolbooth.jpeg),
+  licensed [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Unmodified (resized to 1280 px); a still photo, not a live feed.

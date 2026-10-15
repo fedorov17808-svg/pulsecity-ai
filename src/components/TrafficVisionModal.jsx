@@ -12,7 +12,7 @@ import { detectObjectsLocally } from '../services/localVisionService';
 import CctvTrafficCanvas from './CctvTrafficCanvas';
 import DelayComparison from './DelayComparison';
 import circleCctvImg from '../assets/kwame_nkrumah_circle.jpg';
-import motorwayCctvImg from '../assets/cctv_tema_motorway.jpg';
+import motorwayCctvImg from '../assets/tema_motorway_toll.jpg';
 
 const SAMPLE_PREVIEWS = {
   "CAM-01": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='640' height='400' viewBox='0 0 640 400'><rect width='640' height='400' fill='%23111827'/><path d='M0 160 L640 160 M0 240 L640 240' stroke='%23374151' stroke-width='4'/><line x1='0' y1='200' x2='640' y2='200' stroke='%23eab308' stroke-dasharray='15,10' stroke-width='3'/><rect x='140' y='170' width='80' height='45' fill='%233b82f6' rx='6'/><text x='145' y='198' fill='white' font-family='monospace' font-size='12'>TROTRO #14</text><rect x='260' y='172' width='70' height='40' fill='%23ef4444' rx='4'/><text x='265' y='196' fill='white' font-family='monospace' font-size='11'>TAXI CAB</text><rect x='380' y='165' width='130' height='55' fill='%23f97316' rx='8'/><text x='390' y='198' fill='white' font-family='monospace' font-size='13'>HAULAGE TRUCK</text><text x='30' y='50' fill='%2300f2fe' font-family='monospace' font-size='15'>FEED-01: KWAME NKRUMAH CIRCLE INTERCHANGE</text></svg>",
