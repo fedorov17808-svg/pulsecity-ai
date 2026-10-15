@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { findOptimalEmergencyRoute, ACCRA_ROAD_GRAPH } from '../utils/roadGraphRouting';
 import { playEmergencySirenSound } from '../utils/soundEffects';
-import confetti from 'canvas-confetti';
 import circleCctvImg from '../assets/cctv_circle_interchange.jpg';
 
 export default function CityMap({
@@ -206,11 +205,6 @@ export default function CityMap({
 
       if (step >= totalSteps) {
         clearInterval(ambulanceIntervalRef.current);
-        confetti({
-          particleCount: 60,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
         setTimeout(() => {
           setEmergencyActive(false);
           corridor.clearLayers();

@@ -37,7 +37,7 @@ export default function TrotroFlowHeroWidget({
   const canvasRef = useRef(null);
   const countdownIntervalRef = useRef(null);
 
-  // Initial Auto-Inference on Mount (Zero Cold-Start Lag for Judges)
+  // Run one inference on mount so the widget never starts empty
   useEffect(() => {
     let timer = setTimeout(() => {
       runInference();

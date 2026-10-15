@@ -1206,10 +1206,9 @@ export default function TrafficVisionModal({
                   <h4 style={{ fontSize: '1rem', color: '#fff', fontWeight: '700' }}>
                     Production-Grade Two-Tier Edge-to-Cloud AI Architecture
                   </h4>
-                  <span className="badge badge-cyan" style={{ fontSize: '0.65rem' }}>Enterprise Validated</span>
                 </div>
                 <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '780px', lineHeight: '1.4' }}>
-                  Judges & Municipal engineers ask: <em>"Why not stream 30 FPS CCTV directly to Gemini API?"</em> Because 120 Accra intersections at 30 FPS generates <strong>3,600 req/sec</strong>, costing <strong>$46,000+/month</strong> with a fatal <strong>1.4-second cellular delay</strong>. PulseCity separates millisecond real-time vehicle counting at the edge from macro multi-modal spatial reasoning in the cloud.
+                  A common question: <em>"Why not stream 30 FPS CCTV directly to Gemini API?"</em> Because 120 Accra intersections at 30 FPS generates <strong>3,600 req/sec</strong>, costing <strong>$46,000+/month</strong> with a fatal <strong>1.4-second cellular delay</strong>. PulseCity separates millisecond real-time vehicle counting at the edge from macro multi-modal spatial reasoning in the cloud.
                 </p>
               </div>
               <div style={{
@@ -1495,7 +1494,6 @@ export default function TrafficVisionModal({
                     setTimeout(() => setEscalationStep(3), 1500);
                     setTimeout(() => {
                       setEscalationStep(4);
-                      confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
                     }, 2400);
                   }}
                   className="btn-primary"

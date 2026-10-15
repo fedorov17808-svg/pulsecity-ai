@@ -3,7 +3,6 @@ import {
   Terminal, Send, CheckCircle2, Copy, Radio, 
   Wifi, Cpu, Code2, Sparkles, RefreshCw, Download, FileSpreadsheet
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { downloadTelemetryCsv } from '../services/telemetryStore';
 
 export default function SensorIngestGateway({
@@ -62,11 +61,6 @@ export default function SensorIngestGateway({
       };
 
       setIngestLogs((prev) => [newLog, ...prev.slice(0, 8)]);
-      confetti({
-        particleCount: 30,
-        spread: 40,
-        origin: { y: 0.6 }
-      });
     } catch (err) {
       alert("Ingest Error: " + err.message);
     }

@@ -3,7 +3,6 @@ import {
   Sparkles, Key, CheckCircle2, AlertTriangle, ShieldCheck, 
   ExternalLink, Trash2, RefreshCw, Cpu, Activity 
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 export default function GeminiConfigModal({ isOpen, onClose, apiKey, setApiKey }) {
   const [inputKey, setInputKey] = useState(apiKey || '');
@@ -26,11 +25,6 @@ export default function GeminiConfigModal({ isOpen, onClose, apiKey, setApiKey }
       console.error('Failed to save to localStorage', e);
     }
 
-    confetti({
-      particleCount: 40,
-      spread: 60,
-      origin: { y: 0.6 }
-    });
 
     setTestResult({
       success: true,

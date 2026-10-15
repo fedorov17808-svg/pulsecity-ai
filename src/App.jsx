@@ -1,26 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Activity, Car, Cpu, Bot, Shield, Trophy, 
+  Activity, Car, Cpu, Bot, Shield, 
   Sparkles, Layers, Clock, Terminal,
   Phone, BarChart3, FileText, Volume2, VolumeX, AlertTriangle,
   Copy, Play, Siren
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { TRAFFIC_NODES, PRESET_CRISES } from './data/mockCityData';
 import CityMap from './components/CityMap';
 import TrafficVisionModal from './components/TrafficVisionModal';
-import HackathonPitchModal from './components/HackathonPitchModal';
 import SensorIngestGateway from './components/SensorIngestGateway';
 import HardwareHubModal from './components/HardwareHubModal';
 import FieldOfficerHUD from './components/FieldOfficerHUD';
-import BenchmarkModal from './components/BenchmarkModal';
-import ExecutiveDossierModal from './components/ExecutiveDossierModal';
 import GeminiConfigModal from './components/GeminiConfigModal';
 import CyberGridBackdrop from './components/CyberGridBackdrop';
-import GuidedPitchTour from './components/GuidedPitchTour';
 import QuickIngestModal from './components/QuickIngestModal';
 import IntersectionOptimizerPanel from './components/IntersectionOptimizerPanel';
-import JuryProofModal from './components/JuryProofModal';
 import TrotroFlowHeroWidget from './components/TrotroFlowHeroWidget';
 import { calculateWebsterSignalTiming } from './utils/websterAlgorithm';
 import { recordTelemetryPacket } from './services/telemetryStore';
@@ -45,16 +39,11 @@ export default function App() {
   // Modals
   const [visionModalOpen, setVisionModalOpen] = useState(false);
   const [visionModalNode, setVisionModalNode] = useState(null);
-  const [pitchModalOpen, setPitchModalOpen] = useState(false);
   const [hardwareModalOpen, setHardwareModalOpen] = useState(false);
   const [fieldHudOpen, setFieldHudOpen] = useState(false);
-  const [benchmarkModalOpen, setBenchmarkModalOpen] = useState(false);
-  const [dossierModalOpen, setDossierModalOpen] = useState(false);
   const [geminiModalOpen, setGeminiModalOpen] = useState(false);
   const [opsMenuOpen, setOpsMenuOpen] = useState(false);
-  const [pitchTourOpen, setPitchTourOpen] = useState(false);
   const [quickIngestModalOpen, setQuickIngestModalOpen] = useState(false);
-  const [juryProofModalOpen, setJuryProofModalOpen] = useState(false);
   const [sfxMuted, setSfxMuted] = useState(() => sfx.muted);
 
   // Layout & Animation Refs
@@ -109,7 +98,6 @@ export default function App() {
 
       if (res.ok) {
         handleIngestTelemetry(payload);
-        confetti({ particleCount: 32, spread: 55, origin: { y: 0.6 } });
       }
     } catch (e) {
       console.error('Terminal ping error:', e);
@@ -263,12 +251,7 @@ export default function App() {
         setOpsMenuOpen(false);
         setHardwareModalOpen(false);
         setFieldHudOpen(false);
-        setBenchmarkModalOpen(false);
-        setDossierModalOpen(false);
-        setPitchModalOpen(false);
-        setPitchTourOpen(false);
         setQuickIngestModalOpen(false);
-        setJuryProofModalOpen(false);
         setGeminiModalOpen(false);
         setVisionModalOpen(false);
         setVisionModalNode(null);
@@ -458,39 +441,6 @@ export default function App() {
     setVisionModalOpen(true);
   };
 
-  // 90-Second Guided Pitch Tour Step Handler
-  const handleTourStepChange = (stepObj) => {
-    if (!stepObj) return;
-    sfx.click();
-    if (stepObj.tab) {
-      setActiveTab(stepObj.tab);
-    }
-    if (stepObj.layer) {
-      setMapLayer(stepObj.layer);
-    }
-    if (stepObj.openVision) {
-      openVisionForNode(trafficNodes[0]);
-    } else {
-      setVisionModalOpen(false);
-    }
-    if (stepObj.openHardware) {
-      setHardwareModalOpen(true);
-    } else {
-      setHardwareModalOpen(false);
-    }
-    if (stepObj.triggerWave) {
-      handleExecuteAgentTool({
-        name: 'DISPATCH_GREEN_WAVE',
-        params: { origin: 'N-CIRCLE', dest: 'N-37MIL' }
-      });
-    }
-    if (stepObj.openBenchmark) {
-      setBenchmarkModalOpen(true);
-    } else {
-      setBenchmarkModalOpen(false);
-    }
-  };
-
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       {/* Sci-Fi Global Interactive Grid Backdrop */}
@@ -627,39 +577,6 @@ export default function App() {
                     <div>
                       <div style={{ fontWeight: '600', color: '#fff' }}>Physical Hardware & Wiring</div>
                       <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>ESP32 C++ firmware, DHT22 & $13.05 BOM</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => { sfx.click(); setBenchmarkModalOpen(true); setOpsMenuOpen(false); }}
-                    className="btn-secondary"
-                    style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.76rem', background: 'transparent', border: 'none', color: '#e2e8f0', textAlign: 'left' }}
-                  >
-                    <BarChart3 size={14} color="#fbbf24" />
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#fff' }}>TCO & Siemens Benchmark</div>
-                      <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>$340 retrofit vs $85,000 legacy matrix</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => { sfx.click(); setJuryProofModalOpen(true); setOpsMenuOpen(false); }}
-                    className="btn-secondary"
-                    style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.76rem', background: 'transparent', border: 'none', color: '#e2e8f0', textAlign: 'left' }}
-                  >
-                    <Shield size={14} color="#34d399" />
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#fff' }}>Engineering Rigor Specs</div>
-                      <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>MUTCD, CMU-16LE & Webster proofs</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => { sfx.click(); setDossierModalOpen(true); setOpsMenuOpen(false); }}
-                    className="btn-secondary"
-                    style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.76rem', background: 'transparent', border: 'none', color: '#e2e8f0', textAlign: 'left' }}
-                  >
-                    <FileText size={14} color="#a855f7" />
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#fff' }}>Accra Executive Dossier</div>
-                      <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>Official ministerial brief & export</div>
                     </div>
                   </button>
                 </div>
@@ -912,16 +829,6 @@ export default function App() {
 
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               {/* Quick Engineering Rigor Suite button */}
-              <button
-                onClick={() => { sfx.click(); setJuryProofModalOpen(true); }}
-                onMouseEnter={() => sfx.hover()}
-                className="btn-secondary"
-                style={{ fontSize: '0.78rem', padding: '6px 12px', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.4)' }}
-                title="Open Municipal Technical Rigor & Cabinet Interlock Suite"
-              >
-                <Shield size={13} color="#38bdf8" />
-                Engineering Rigor Suite
-              </button>
 
               {/* Quick CCTV button */}
               <button
@@ -1088,11 +995,6 @@ export default function App() {
         />
       )}
 
-      {/* Hackathon Pitch Modal */}
-      {pitchModalOpen && (
-        <HackathonPitchModal onClose={() => setPitchModalOpen(false)} />
-      )}
-
       {/* IoT Hardware & Firmware Suite Modal */}
       <HardwareHubModal
         isOpen={hardwareModalOpen}
@@ -1110,18 +1012,6 @@ export default function App() {
             );
           }
         }}
-      />
-
-      {/* Competitive Benchmark & TCO Matrix */}
-      <BenchmarkModal
-        isOpen={benchmarkModalOpen}
-        onClose={() => setBenchmarkModalOpen(false)}
-      />
-
-      {/* Official Accra Municipal Assembly Executive Dossier */}
-      <ExecutiveDossierModal
-        isOpen={dossierModalOpen}
-        onClose={() => setDossierModalOpen(false)}
       />
 
       {/* Gemini Neural Engine Hub */}
@@ -1179,13 +1069,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 90-Second Interactive Guided Pitch Tour for Hackathon Judges */}
-      <GuidedPitchTour
-        isOpen={pitchTourOpen}
-        onClose={() => setPitchTourOpen(false)}
-        onStepChange={handleTourStepChange}
-      />
-
       {/* Quick IoT Ingestion & Terminal cURL Modal */}
       <QuickIngestModal
         isOpen={quickIngestModalOpen}
@@ -1194,30 +1077,6 @@ export default function App() {
         ingestPacketCount={ingestPacketCount}
       />
 
-      {/* 1st-Place Hackathon Executive Jury Proof Modal */}
-      <JuryProofModal
-        isOpen={juryProofModalOpen}
-        onClose={() => setJuryProofModalOpen(false)}
-        onLaunchGreenWave={() => {
-          sfx.alarm();
-          handleExecuteAgentTool({
-            name: 'DISPATCH_GREEN_WAVE',
-            params: { origin: 'N-CIRCLE', dest: 'N-37MIL' }
-          });
-        }}
-        onOpenQuickIngest={() => {
-          sfx.click();
-          setQuickIngestModalOpen(true);
-        }}
-        onOpenHardwareHub={() => {
-          sfx.click();
-          setHardwareModalOpen(true);
-        }}
-        onStartAutoTour={() => {
-          sfx.click();
-          setPitchTourOpen(true);
-        }}
-      />
     </div>
   );
 }

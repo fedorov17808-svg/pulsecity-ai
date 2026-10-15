@@ -1,5 +1,4 @@
 # 🏆 PulseCity AI — Autonomous Urban Nervous System
-> **Official 1st Place Submission for DoraHacks Smart City Hackathon 2026**  
 > **Production Live URL:** 🌐 [https://pulsecity-ai.vercel.app](https://pulsecity-ai.vercel.app)  
 > **Live IoT Ingest Gateway (cURL Bridge):** 📡 [https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest](https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest)  
 > **Target Region:** Greater Accra Metropolitan Area (Ghana) & Global South Megacities  
@@ -30,7 +29,7 @@ Conventional Western smart-city software suites (e.g., Siemens Sitraffic, SCATS,
 
 ---
 
-## ⚡ 30-Second Live Jury Verification (Test from Your Terminal)
+## Live verification (from your terminal)
 
 Any hackathon judge or engineer can inject real-time telemetry straight from their terminal into the live digital twin:
 
@@ -204,7 +203,6 @@ Visit `http://localhost:5174/` to view the Accra Digital Twin.
 - [x] **Agentic Actuators:** Real tool execution in Commander Kofi chat.
 - [x] **External Telemetry Ingestion:** Live cURL / REST API endpoint (`/api/v1/telemetry/ingest`).
 - [x] **Scientific Proof:** Interactive A/B Highway Capacity Manual simulation tab.
-- [x] **Jury Guided Tour:** 90-second 5-step automated walkthrough controller.
 - [x] **Hardware Blueprint:** Complete C++ ESP32 firmware & Python RPi code with $13.05 BOM.
 - [x] **Citizen Inclusivity:** Dual English / Akan Twi GSM USSD portal (`*920*26#`).
 - [x] **Test Coverage:** 11 passing Vitest unit tests.

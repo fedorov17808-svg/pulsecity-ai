@@ -426,10 +426,10 @@ export default function HardwareSchematicViewer() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
             <Cpu size={14} color="#c084fc" />
-            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#d8b4fe' }}>4. $340 vs $85k Siemens</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#d8b4fe' }}>4. Retrofit, not replacement</span>
           </div>
           <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0, lineHeight: '1.4' }}>
-            Installed inside existing junction cabinets in 18 minutes by standard roadside municipal electricians. Saves millions in municipal CAPEX.
+            Designed to sit beside an existing junction controller instead of replacing it. Installation time and cost are untested estimates.
           </p>
         </div>
       </div>

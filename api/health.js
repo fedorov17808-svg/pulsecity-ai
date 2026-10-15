@@ -15,7 +15,6 @@ export default function handler(req, res) {
     status: "HEALTHY_AND_ONLINE",
     service: "PulseCity AI Urban Nervous System API",
     region: "Greater Accra Metropolitan Area (Ghana)",
-    challenge: "Tech Hub Africa Hackathon 2026 ($1,000 Challenge)",
     uptimeSeconds: uptime,
     environment: process.env.NODE_ENV || "production",
     timestamp: new Date().toISOString(),

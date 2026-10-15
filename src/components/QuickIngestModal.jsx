@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Terminal, Send, CheckCircle2, Copy, Radio, Wifi, Code2, Sparkles, X, ChevronRight, Play } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 export default function QuickIngestModal({
   isOpen,
@@ -135,7 +134,6 @@ http.end();`
         onIngestTelemetry(currentPayload);
       }
 
-      confetti({ particleCount: 28, spread: 45, origin: { y: 0.6 } });
     } catch (err) {
       setProbeResult({
         success: false,

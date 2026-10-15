@@ -103,7 +103,7 @@ export function clearTelemetryHistory() {
 }
 
 /**
- * Returns statistical summaries for technical judges
+ * Returns statistical summaries of the recorded packets
  */
 export function getTelemetryMetrics() {
   const history = loadStorage();
