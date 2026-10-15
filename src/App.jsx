@@ -80,52 +80,21 @@ export default function App() {
   const [externalWaveTrigger, setExternalWaveTrigger] = useState(null);
   const [lastExternalIngestToast, setLastExternalIngestToast] = useState(null);
   const [ingestPacketCount, setIngestPacketCount] = useState(0);
-  const [ingestLiveConnected, setIngestLiveConnected] = useState(true);
-  const [copiedCurlStrip, setCopiedCurlStrip] = useState(false);
 
-  // Send live telemetry probe via REST API from the Dashboard Quick Strip
-  const handleSendTestTerminalPing = async () => {
-    sfx.click();
-    try {
-      const payload = {
-        nodeId: 'TR-01',
-        flowRateVehiclesPerHour: 4920,
-        congestionPercentage: 94,
-        incidentDetected: true,
-        incidentDetails: 'Hardware sensor burst injected via Terminal Quick Strip',
-        protocol: 'MQTT_V5_EDGE'
-      };
-
-      const res = await fetch('/api/v1/telemetry/ingest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Sensor-Token': 'afri-pulse-live-2026'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        handleIngestTelemetry(payload);
-      }
-    } catch (e) {
-      console.error('Terminal ping error:', e);
-    }
-  };
-
-  // Live Event-Driven Stream Synchronization (SSE with automatic delta-polling fallback)
+  // Telemetry sync: process events stored by /api/telemetry/ingest
   useEffect(() => {
     let isMounted = true;
     let eventSource = null;
 
-    const processPacket = (newest) => {
+    const processPacket = (newest, silent = false) => {
       if (!newest) return;
       const key = newest.id || `${newest.receivedAt}_${newest.nodeId}`;
       if (processedPktIdsRef.current.has(key)) return;
       processedPktIdsRef.current.add(key);
 
-      // Check for multi-client global tactical action broadcasts
+      // Shared actions (e.g. a green wave started in another browser); old ones are not replayed
       if (newest.nodeId === 'GLOBAL_ACTION' && newest.actionType) {
+        if (silent) return;
         if (newest.actionType === 'DISPATCH_GREEN_WAVE') {
           setExternalWaveTrigger({
             origin: newest.actionPayload?.origin || 'N-CIRCLE',
@@ -140,6 +109,7 @@ export default function App() {
       }
 
       handleIngestTelemetry(newest);
+      if (silent) return;
       setIngestPacketCount((c) => c + 1);
       sfx.alert();
       setLastExternalIngestToast({
@@ -153,55 +123,26 @@ export default function App() {
       }, 6000);
     };
 
-    if (typeof EventSource !== 'undefined') {
-      try {
-        eventSource = new EventSource('/api/telemetry/ingest?stream=true');
-        eventSource.onopen = () => {
-          if (isMounted) setIngestLiveConnected(true);
-        };
-        eventSource.onmessage = (e) => {
-          if (!isMounted) return;
-          try {
-            const data = JSON.parse(e.data);
-            if (data.type === 'SYNC_SNAPSHOT' && data.recentEvents) {
-              data.recentEvents.forEach(processPacket);
-            } else if (data.type === 'TELEMETRY_PACKET' && data.packet) {
-              processPacket(data.packet);
-            }
-          } catch (err) {
-            console.error('SSE packet parse error', err);
-          }
-        };
-        eventSource.onerror = () => {
-          // If SSE connection closes or throttles, keep polling
-          if (isMounted) setIngestLiveConnected(true);
-        };
-      } catch (e) {
-        console.warn('SSE unsupported, relying on delta polling');
-      }
-    }
-
-    const checkExternalIngest = async () => {
+    // Poll the latest stored events every 3 s. Events already in the database when
+    // the page opens update the map silently; only new ones count as "received".
+    let isFirstPoll = true;
+    const pollTelemetry = async () => {
       try {
         const res = await fetch('/api/telemetry/ingest');
         if (!res.ok) return;
-        if (isMounted) setIngestLiveConnected(true);
         const data = await res.json();
-        
-        if (data.recentEvents && data.recentEvents.length > 0) {
-          data.recentEvents.forEach(processPacket);
-        }
-      } catch (err) {
-        // network latency
+        (data.recentEvents || []).forEach((evt) => processPacket(evt, isFirstPoll));
+        isFirstPoll = false;
+      } catch {
+        // offline or storage not configured; try again on the next tick
       }
     };
 
-    checkExternalIngest();
-    const interval = setInterval(checkExternalIngest, 2500);
+    pollTelemetry();
+    const interval = setInterval(pollTelemetry, 3000);
 
     return () => {
       isMounted = false;
-      if (eventSource) eventSource.close();
       clearInterval(interval);
     };
   }, []);

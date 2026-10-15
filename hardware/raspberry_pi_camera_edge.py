@@ -37,7 +37,7 @@ logging.basicConfig(
 logger = logging.getLogger("PulseCityEdge")
 
 DEFAULT_GATEWAY_URL = os.getenv("PULSECITY_GATEWAY", "https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest")
-DEFAULT_TOKEN = os.getenv("SENSOR_TOKEN", "afri-pulse-live-2026")
+DEFAULT_TOKEN = os.getenv("PULSECITY_SENSOR_TOKEN", "")  # never hard-code the token
 DEFAULT_NODE_ID = os.getenv("NODE_ID", "TR-01")
 DB_CACHE_PATH = "/var/log/pulsecity_edge_cache.db" if os.name != "nt" else "pulsecity_cache.db"
 

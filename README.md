@@ -37,7 +37,7 @@ Any hackathon judge or engineer can inject real-time telemetry straight from the
 # 1. Trigger an emergency clearance at Kwame Nkrumah Circle
 curl -X POST "https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest" \
   -H "Content-Type: application/json" \
-  -H "X-Sensor-Token: afri-pulse-live-2026" \
+  -H "X-Sensor-Token: $PULSECITY_SENSOR_TOKEN" \
   -d '{
     "nodeId": "TR-01",
     "flowRateVehiclesPerHour": 4850,
@@ -50,7 +50,7 @@ curl -X POST "https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest" \
 # 2. Trigger an Achimota Substation Grid SCADA Load Warning
 curl -X POST "https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest" \
   -H "Content-Type: application/json" \
-  -H "X-Sensor-Token: afri-pulse-live-2026" \
+  -H "X-Sensor-Token: $PULSECITY_SENSOR_TOKEN" \
   -d '{
     "nodeId": "EN-01",
     "protocol": "IEC_60870_5_104",

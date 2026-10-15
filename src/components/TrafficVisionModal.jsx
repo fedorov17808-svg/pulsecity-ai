@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { postTelemetry } from '../services/ingestClient';
 import { 
   Eye, Zap, AlertTriangle, CheckCircle, ShieldAlert, 
   Sparkles, RefreshCw, Sliders, Activity, Video, Key, 
@@ -370,24 +371,17 @@ export default function TrafficVisionModal({
     if (!analysisResult) return;
     setDispatchingFlush(true);
     const flushSec = analysisResult.trotroBay?.flushGreenDurationSeconds || analysisResult.greenLightDurationSeconds || 32;
-    const count = analysisResult.trotroBay?.count || 8;
-    const satPct = analysisResult.trotroBay?.saturationPct || 70;
+    const count = analysisResult.trotroBay?.count ?? 0;
+    const satPct = analysisResult.trotroBay?.saturationPct ?? 0;
     try {
-      const res = await fetch('/api/v1/telemetry/ingest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Sensor-Token': 'afri-pulse-live-2026'
-        },
-        body: JSON.stringify({
+      const res = await postTelemetry({
           nodeId: activeCameraNode.id || 'TR-01',
           congestionPercentage: satPct,
           incidentDetected: analysisResult.trotroBay?.isSpillbackImminent || false,
           incidentDetails: `TrotroFlow Actuation: Flushing ${count} minibuses with ${flushSec}s green split to prevent Circle roundabout gridlock`,
           command: 'EXECUTE_QUEUE_FLUSH',
           greenLightDurationSeconds: flushSec
-        })
-      });
+        });
       setFlushDispatchStatus({
         status: res.status,
         ok: res.ok,

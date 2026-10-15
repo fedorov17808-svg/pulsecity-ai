@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { postTelemetry } from '../services/ingestClient';
 import { 
   Car, Activity, Zap, Radio, CheckCircle2, AlertTriangle, 
   RotateCcw, Sliders, ExternalLink, Video, Camera, Clock,
@@ -182,22 +183,14 @@ export default function TrotroFlowHeroWidget({
 
     try {
       // 1. Send real HTTP telemetry packet to serverless endpoint
-      const res = await fetch('/api/v1/telemetry/ingest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Sensor-Token': 'afri-pulse-live-2026'
-        },
-        body: JSON.stringify({
+      const res = await postTelemetry({
           nodeId: 'TR-01',
           congestionPercentage: saturationPct,
           incidentDetected: isSpillbackImminent,
           incidentDetails: `TrotroFlow Actuation: Flushing ${initialTrotros} minibuses on slipway with ${duration}s green split to prevent Circle roundabout gridlock`,
           command: 'EXECUTE_QUEUE_FLUSH',
           greenLightDurationSeconds: duration
-        })
-      });
-      const data = await res.json();
+        });
       setServerAudit({
         status: res.status,
         latencyMs: Math.round(performance.now() - startedAt),
@@ -640,7 +633,7 @@ export default function TrotroFlowHeroWidget({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '0.65rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
               <span>ENDPOINT: /api/v1/telemetry/ingest</span>
               <span style={{ color: serverAudit ? '#34d399' : '#94a3b8' }}>
-                {serverAudit ? `HTTP ${serverAudit.status} • ${serverAudit.latencyMs}ms latency • Acknowledged` : 'HTTP 201 Standby'}
+                {serverAudit ? `HTTP ${serverAudit.status} • ${serverAudit.latencyMs}ms round trip` : 'No event sent yet'}
               </span>
             </div>
           </div>

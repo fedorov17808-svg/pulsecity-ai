@@ -32,3 +32,12 @@ CLAUDE_TASK.md
 # Local task notes
 CLAUDE.md
 tasks/
+
+# Environment files (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Firmware secrets
+hardware/secrets.h
+__pycache__/

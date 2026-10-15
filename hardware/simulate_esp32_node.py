@@ -5,11 +5,12 @@ Streams realistic physical sensor packets from the terminal into the PulseCity I
 Allows technical judges and engineers to test live HTTP POST ingestion without physical breadboards.
 
 Usage:
-  python3 hardware/simulate_esp32_node.py --node ECO-01 --once
+  PULSECITY_SENSOR_TOKEN=... python3 hardware/simulate_esp32_node.py --node TR-01 --once
   python3 hardware/simulate_esp32_node.py --node TR-01 --interval 3
-  python3 hardware/simulate_esp32_node.py --node EN-01 --gateway http://localhost:5173/api/v1/telemetry/ingest
+  python3 hardware/simulate_esp32_node.py --node TR-02 --gateway http://localhost:5173/api/v1/telemetry/ingest
 """
 
+import os
 import sys
 import time
 import json
@@ -19,7 +20,7 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
 DEFAULT_GATEWAY = "http://localhost:5173/api/v1/telemetry/ingest"
-DEFAULT_TOKEN = "afri-pulse-live-2026"
+DEFAULT_TOKEN = os.environ.get("PULSECITY_SENSOR_TOKEN", "")  # never hard-code the token
 
 def generate_telemetry_payload(node_id: str) -> dict:
     now_ms = int(time.time() * 1000)
@@ -114,12 +115,14 @@ def send_packet(gateway_url: str, token: str, payload: dict) -> bool:
 
 def main():
     parser = argparse.ArgumentParser(description="PulseCity AI Hardware Field Node Simulator")
-    parser.add_argument("--node", default="ECO-01", help="Node ID (e.g. ECO-01, TR-01, EN-01)")
+    parser.add_argument("--node", default="TR-01", help="Traffic node ID (TR-01 … TR-99)")
     parser.add_argument("--gateway", default=DEFAULT_GATEWAY, help="Cloud or local ingestion URL")
-    parser.add_argument("--token", default=DEFAULT_TOKEN, help="X-Sensor-Token header")
+    parser.add_argument("--token", default=DEFAULT_TOKEN, help="X-Sensor-Token header (default: $PULSECITY_SENSOR_TOKEN)")
     parser.add_argument("--interval", type=float, default=5.0, help="Transmit interval in seconds")
     parser.add_argument("--once", action="store_true", help="Send a single packet and exit")
     args = parser.parse_args()
+    if not args.token:
+        sys.exit("Set PULSECITY_SENSOR_TOKEN (or pass --token); it must match the server's value.")
 
     print("=================================================================")
     print("  PulseCity AI — Hardware Field Node Simulator (IEEE Bench)")

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { postTelemetry } from '../services/ingestClient';
 import { Terminal, Send, CheckCircle2, Copy, Radio, Wifi, Code2, Sparkles, X, ChevronRight, Play } from 'lucide-react';
 
 export default function QuickIngestModal({
@@ -39,14 +40,15 @@ export default function QuickIngestModal({
   const snippets = {
     curl: `curl -X POST "${hostUrl}/api/v1/telemetry/ingest" \\
   -H "Content-Type: application/json" \\
-  -H "X-Sensor-Token: afri-pulse-live-2026" \\
+  -H "X-Sensor-Token: $PULSECITY_SENSOR_TOKEN" \\
   -d '${minifiedJson}'`,
-    python: `import requests
+    python: `import os
+import requests
 
 url = "${hostUrl}/api/v1/telemetry/ingest"
 headers = {
     "Content-Type": "application/json",
-    "X-Sensor-Token": "afri-pulse-live-2026"
+    "X-Sensor-Token": os.environ["PULSECITY_SENSOR_TOKEN"]
 }
 payload = ${jsonString}
 
@@ -56,7 +58,7 @@ print("Status:", res.status_code, res.json())`,
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "X-Sensor-Token": "afri-pulse-live-2026"
+    "X-Sensor-Token": process.env.PULSECITY_SENSOR_TOKEN
   },
   body: JSON.stringify(${jsonString})
 });
@@ -66,7 +68,7 @@ console.log("Telemetry ACKs:", data);`,
 HTTPClient http;
 http.begin("${hostUrl}/api/v1/telemetry/ingest");
 http.addHeader("Content-Type", "application/json");
-http.addHeader("X-Sensor-Token", "afri-pulse-live-2026");
+http.addHeader("X-Sensor-Token", SENSOR_TOKEN); // from secrets.h
 int code = http.POST("${minifiedJson.replace(/"/g, '\\"')}");
 Serial.printf("Server Response: %d\\n", code);
 http.end();`
@@ -84,25 +86,16 @@ http.end();`
     const start = performance.now();
 
     try {
-      const res = await fetch('/api/v1/telemetry/ingest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Sensor-Token': 'afri-pulse-live-2026'
-        },
-        body: JSON.stringify(currentPayload)
-      });
-
-      const data = await res.json();
+      const { ok, status, data } = await postTelemetry(currentPayload);
       const elapsed = Math.round(performance.now() - start);
 
-      if (!res.ok) {
-        throw new Error(data.message || `HTTP ${res.status}`);
+      if (!ok) {
+        throw new Error(data.message || data.error || `HTTP ${status}`);
       }
 
       setProbeResult({
         success: true,
-        status: res.status,
+        status,
         latencyMs: elapsed,
         data
       });

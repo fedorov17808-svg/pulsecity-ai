@@ -4,6 +4,7 @@ import {
   Wifi, Cpu, Code2, Sparkles, RefreshCw, Download, FileSpreadsheet
 } from 'lucide-react';
 import { downloadTelemetryCsv } from '../services/telemetryStore';
+import { getSensorToken, setSensorToken, postTelemetry } from '../services/ingestClient';
 
 export default function SensorIngestGateway({
   trafficNodes,
@@ -19,34 +20,24 @@ export default function SensorIngestGateway({
   "emergencyTransitActive": false
 }`);
   const [ingestLogs, setIngestLogs] = useState([]);
+  const [sensorToken, setSensorTokenInput] = useState(getSensorToken);
   const [copiedCurl, setCopiedCurl] = useState(false);
 
   const hostUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pulsecity-ai.vercel.app';
   const curlSnippet = `curl -X POST ${hostUrl}/api/v1/telemetry/ingest \\
   -H "Content-Type: application/json" \\
-  -H "X-Sensor-Token: afri-pulse-live-2026" \\
+  -H "X-Sensor-Token: $PULSECITY_SENSOR_TOKEN" \\
   -d '${payloadJson.replace(/\n/g, '').replace(/\s+/g, ' ')}'`;
 
   const handleSendPayload = async () => {
     try {
       const parsed = JSON.parse(payloadJson);
 
-      // 1. Real HTTP POST to the backend API endpoint (round-trip time measured here)
-      const startedAt = performance.now();
-      const response = await fetch('/api/v1/telemetry/ingest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Sensor-Token': 'afri-pulse-live-2026'
-        },
-        body: payloadJson
-      });
+      // 1. Real HTTP POST to the backend API endpoint (round-trip time measured in postTelemetry)
+      const { ok, status, data: responseData, roundTripMs } = await postTelemetry(payloadJson);
 
-      const responseData = await response.json();
-      const roundTripMs = Math.round(performance.now() - startedAt);
-
-      if (!response.ok) {
-        throw new Error(responseData.message || `HTTP ${response.status}`);
+      if (!ok) {
+        throw new Error(responseData.message || responseData.error || `HTTP ${status}`);
       }
 
       // 2. Synchronize with React Application State
@@ -55,7 +46,7 @@ export default function SensorIngestGateway({
       const newLog = {
         id: Date.now(),
         time: new Date().toLocaleTimeString(),
-        status: `${response.status} CREATED`,
+        status: `${status} CREATED`,
         msg: `HTTP POST /api/v1/telemetry/ingest [${parsed.nodeId}] accepted (round trip ${roundTripMs} ms)`
       };
 
@@ -160,6 +151,16 @@ export default function SensorIngestGateway({
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: '4px' }}>
             PAYLOAD_BODY (JSON)
           </div>
+          <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            X-Sensor-Token
+            <input
+              type="password"
+              value={sensorToken}
+              onChange={(e) => { setSensorTokenInput(e.target.value); setSensorToken(e.target.value.trim()); }}
+              placeholder="paste PULSECITY_SENSOR_TOKEN (kept in this browser only)"
+              style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: '#fff', padding: '4px 8px', fontFamily: 'var(--font-mono)', fontSize: '0.74rem' }}
+            />
+          </label>
           <textarea
             value={payloadJson}
             onChange={(e) => setPayloadJson(e.target.value)}

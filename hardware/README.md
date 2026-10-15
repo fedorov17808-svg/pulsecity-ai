@@ -104,7 +104,7 @@ cd pulsecity-ai/hardware
 
 # 2. Set environment variables
 export PULSECITY_GATEWAY="https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest"
-export SENSOR_TOKEN="afri-pulse-live-2026"
+export PULSECITY_SENSOR_TOKEN="<your token>"
 export NODE_ID="TR-01"
 
 # 3. Run daemon service
@@ -115,7 +115,7 @@ python3 raspberry_pi_camera_edge.py --node-id TR-01 --interval 5
 
 ## 5. Security & Authentication Guardrails
 
-1. **Bearer Token Handshake**: Every packet requires header `X-Sensor-Token: afri-pulse-live-2026`. Packets without this token are dropped with HTTP 401.
+1. **Bearer Token Handshake**: Every packet requires header `X-Sensor-Token: $PULSECITY_SENSOR_TOKEN`. Packets without this token are dropped with HTTP 401.
 2. **Schema Sanitization**: Node IDs are validated against strict regex: `^(TR|EN|ECO)-\d{2}$`.
 3. **Replay & Out-of-Bounds Protection**: Values outside physical ranges (e.g., negative queue lengths, river levels above 10m, or frequency outside 45-55 Hz) trigger automatic gateway validation errors.
 4. **TLS 1.3 Encryption**: All edge-to-cloud packets traverse HTTPS over TLS 1.3, ensuring traffic cannot be spoofed on unencrypted public Wi-Fi or cellular towers.
