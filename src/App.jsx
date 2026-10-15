@@ -1,25 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Activity, Car, Zap, Wind, Bot, Shield, Trophy, 
+  Activity, Car, Cpu, Bot, Shield, Trophy, 
   Sparkles, Layers, Clock, Terminal,
   Phone, BarChart3, FileText, Volume2, VolumeX, AlertTriangle,
   Copy, Play, Siren
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { 
-  TRAFFIC_NODES, ENERGY_NODES, 
-  ECO_NODES, PRESET_CRISES 
-} from './data/mockCityData';
+import { TRAFFIC_NODES, PRESET_CRISES } from './data/mockCityData';
 import CityMap from './components/CityMap';
 import TrafficVisionModal from './components/TrafficVisionModal';
-import GridGuardOptimizer from './components/GridGuardOptimizer';
-import EcoSenseMonitor from './components/EcoSenseMonitor';
-import IncidentCommanderChat from './components/IncidentCommanderChat';
 import HackathonPitchModal from './components/HackathonPitchModal';
 import SensorIngestGateway from './components/SensorIngestGateway';
 import HardwareHubModal from './components/HardwareHubModal';
 import FieldOfficerHUD from './components/FieldOfficerHUD';
-import CitizenUssdModal from './components/CitizenUssdModal';
 import BenchmarkModal from './components/BenchmarkModal';
 import ExecutiveDossierModal from './components/ExecutiveDossierModal';
 import GeminiConfigModal from './components/GeminiConfigModal';
@@ -29,7 +22,6 @@ import QuickIngestModal from './components/QuickIngestModal';
 import IntersectionOptimizerPanel from './components/IntersectionOptimizerPanel';
 import JuryProofModal from './components/JuryProofModal';
 import TrotroFlowHeroWidget from './components/TrotroFlowHeroWidget';
-import { fetchLiveAccraTelemetry } from './utils/liveAccraService';
 import { calculateWebsterSignalTiming } from './utils/websterAlgorithm';
 import { recordTelemetryPacket } from './services/telemetryStore';
 import { sfx } from './utils/soundEffects';
@@ -37,8 +29,8 @@ import gsap from 'gsap';
 
 export default function App() {
   // Navigation & View State
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'traffic', 'energy', 'eco', 'gateway', 'commander'
-  const [mapLayer, setMapLayer] = useState('traffic'); // 'traffic', 'all', 'energy', 'eco'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'traffic' | 'gateway'
+  const [mapLayer, setMapLayer] = useState('traffic'); // 'traffic' | 'all'
   
   // Real-time Interactive Node States with LocalStorage Persistence
   const [trafficNodes, setTrafficNodes] = useState(() => {
@@ -46,20 +38,6 @@ export default function App() {
       const saved = localStorage.getItem('pulsecity_traffic_nodes');
       return saved ? JSON.parse(saved) : TRAFFIC_NODES;
     } catch { return TRAFFIC_NODES; }
-  });
-
-  const [energyNodes, setEnergyNodes] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pulsecity_energy_nodes');
-      return saved ? JSON.parse(saved) : ENERGY_NODES;
-    } catch { return ENERGY_NODES; }
-  });
-
-  const [ecoNodes, setEcoNodes] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pulsecity_eco_nodes');
-      return saved ? JSON.parse(saved) : ECO_NODES;
-    } catch { return ECO_NODES; }
   });
 
   const [selectedNode, setSelectedNode] = useState(null);
@@ -70,7 +48,6 @@ export default function App() {
   const [pitchModalOpen, setPitchModalOpen] = useState(false);
   const [hardwareModalOpen, setHardwareModalOpen] = useState(false);
   const [fieldHudOpen, setFieldHudOpen] = useState(false);
-  const [ussdModalOpen, setUssdModalOpen] = useState(false);
   const [benchmarkModalOpen, setBenchmarkModalOpen] = useState(false);
   const [dossierModalOpen, setDossierModalOpen] = useState(false);
   const [geminiModalOpen, setGeminiModalOpen] = useState(false);
@@ -78,24 +55,12 @@ export default function App() {
   const [pitchTourOpen, setPitchTourOpen] = useState(false);
   const [quickIngestModalOpen, setQuickIngestModalOpen] = useState(false);
   const [juryProofModalOpen, setJuryProofModalOpen] = useState(false);
-  const [liveAccraTelemetry, setLiveAccraTelemetry] = useState(null);
   const [sfxMuted, setSfxMuted] = useState(() => sfx.muted);
 
   // Layout & Animation Refs
   const workspaceRef = useRef(null);
   const crisisBannerRef = useRef(null);
   const processedPktIdsRef = useRef(new Set());
-  const cascadeTimerRef = useRef([]);
-
-  // Triple-Cascade Crisis State
-  const [tripleCascadeState, setTripleCascadeState] = useState({
-    active: false,
-    step: 0,
-    stepTitle: '',
-    stepDesc: '',
-    progress: 0,
-    metrics: null
-  });
 
   const toggleAudio = () => {
     const nextMuted = sfx.toggleMute();
@@ -276,18 +241,6 @@ export default function App() {
     } catch (e) { console.error('Failed to sync trafficNodes to localStorage', e); }
   }, [trafficNodes]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('pulsecity_energy_nodes', JSON.stringify(energyNodes));
-    } catch (e) { console.error('Failed to sync energyNodes to localStorage', e); }
-  }, [energyNodes]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('pulsecity_eco_nodes', JSON.stringify(ecoNodes));
-    } catch (e) { console.error('Failed to sync ecoNodes to localStorage', e); }
-  }, [ecoNodes]);
-
   // Ops Menu ref for click-outside dismissal
   const opsMenuRef = useRef(null);
 
@@ -310,7 +263,6 @@ export default function App() {
         setOpsMenuOpen(false);
         setHardwareModalOpen(false);
         setFieldHudOpen(false);
-        setUssdModalOpen(false);
         setBenchmarkModalOpen(false);
         setDossierModalOpen(false);
         setPitchModalOpen(false);
@@ -336,62 +288,6 @@ export default function App() {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Quick Fix 2: Genuine Real-Time Atmospheric & Sensor Telemetry for Greater Accra
-  useEffect(() => {
-    let isMounted = true;
-    const syncLiveTelemetry = async () => {
-      try {
-        const data = await fetchLiveAccraTelemetry();
-        if (!isMounted || !data) return;
-        setLiveAccraTelemetry(data);
-
-        // Dynamically calibrate Eco nodes with verified external readings
-        setEcoNodes((prev) =>
-          prev.map((node) => {
-            if (node.id === 'ECO-01') {
-              return {
-                ...node,
-                aqi: data.usAqi,
-                pm25: data.pm25,
-                liveSource: `WMO #65472 • ${data.temperatureC}°C, AQI ${data.usAqi} (${data.aqiCategory})`,
-                liveTemp: data.temperatureC,
-                livePrecip: data.precipitationMm
-              };
-            }
-            if (node.id === 'ECO-02') {
-              return {
-                ...node,
-                liveSource: `Odaw Basin Gauge • Rain: ${data.precipitationMm}mm • ${data.odawBasinFloodRisk}`,
-                liveTemp: data.temperatureC,
-                livePrecip: data.precipitationMm
-              };
-            }
-            if (node.id === 'ECO-04') {
-              return {
-                ...node,
-                aqi: data.usAqi,
-                pm25: data.pm25,
-                liveSource: `Kotoka Intl Station #65472 • Wind: ${data.windSpeedKmh}km/h`,
-                liveTemp: data.temperatureC,
-                livePrecip: data.precipitationMm
-              };
-            }
-            return node;
-          })
-        );
-      } catch (err) {
-        console.warn('Live Accra telemetry sync warning:', err);
-      }
-    };
-
-    syncLiveTelemetry();
-    const interval = setInterval(syncLiveTelemetry, 60000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
   }, []);
 
   // Webster-Synchronized Real-Time Traffic Light Cycle
@@ -474,36 +370,6 @@ export default function App() {
           return n;
         })
       );
-    } else if (nodeId.startsWith('EN')) {
-      setEnergyNodes((prev) =>
-        prev.map((n) => {
-          if (n.id === nodeId) {
-            return {
-              ...n,
-              currentLoadMw: payload.currentLoadMw ?? n.currentLoadMw,
-              dumsorRisk: payload.dumsorRiskScore ?? n.dumsorRisk,
-              solarInputMw: payload.solarInputMw ?? n.solarInputMw,
-              status: (payload.dumsorRiskScore > 75 || payload.currentLoadMw > 230) ? 'CRITICAL' : 'NOMINAL'
-            };
-          }
-          return n;
-        })
-      );
-    } else if (nodeId.startsWith('ECO')) {
-      setEcoNodes((prev) =>
-        prev.map((n) => {
-          if (n.id === nodeId) {
-            return {
-              ...n,
-              aqi: payload.aqiScore ?? n.aqi,
-              pm25: payload.pm25UgM3 ?? n.pm25,
-              wasteLevelPct: payload.wasteFillPercentage ?? n.wasteLevelPct,
-              status: payload.drainageChokeDetected ? 'CRITICAL' : n.status
-            };
-          }
-          return n;
-        })
-      );
     }
   };
 
@@ -528,64 +394,6 @@ export default function App() {
     );
   };
 
-  const handleBalanceGrid = () => {
-    sfx.success();
-    setEnergyNodes((prev) =>
-      prev.map((n) => {
-        if (n.id === 'EN-01') {
-          return {
-            ...n,
-            currentLoadMw: 188,
-            status: 'NOMINAL',
-            dumsorRisk: 14,
-            batteryReservePct: 82
-          };
-        }
-        if (n.id === 'EN-03') {
-          return {
-            ...n,
-            currentLoadMw: 162,
-            status: 'NOMINAL',
-            dumsorRisk: 16
-          };
-        }
-        return n;
-      })
-    );
-  };
-
-  const handleDispatchWasteTruck = (nodeId) => {
-    sfx.success();
-    setEcoNodes((prev) =>
-      prev.map((n) => {
-        if (n.id === nodeId) {
-          return {
-            ...n,
-            wasteLevelPct: 15,
-            aqi: Math.max(30, n.aqi - 35),
-            status: 'GOOD',
-            recommendation: 'Compactor clearance complete. Drainage grating verified unobstructed.'
-          };
-        }
-        return n;
-      })
-    );
-  };
-
-  const handleUssdIncidentReport = (payload) => {
-    sfx.alarm();
-    handleIngestTelemetry(payload);
-    setActiveCrisis({
-      id: "crisis-ussd-flood",
-      title: "CITIZEN USSD FLASH ALERT (*920*26#)",
-      location: "Odaw Basin / Circle Sluice Gate (ECO-01)",
-      description: payload.incidentDetails,
-      severity: "CRITICAL",
-      impact: "Blocked drainage grating threatens low-lying Circle market under torrential rain."
-    });
-    setMapLayer('eco');
-  };
-
   const handleTriggerScenario = (scenarioId) => {
     const crisis = PRESET_CRISES.find((c) => c.id === scenarioId);
     if (!crisis) return;
@@ -597,169 +405,7 @@ export default function App() {
         prev.map((n) => n.id === 'TR-02' ? { ...n, congestion: 98, speedKmh: 4, incidentActive: true } : n)
       );
       setMapLayer('traffic');
-    } else if (scenarioId === 'crisis-achimota-dumsor') {
-      setEnergyNodes((prev) =>
-        prev.map((n) => n.id === 'EN-01' ? { ...n, currentLoadMw: 242, dumsorRisk: 96, status: 'CRITICAL' } : n)
-      );
-      setMapLayer('energy');
-    } else if (scenarioId === 'crisis-makola-waste-flood') {
-      setEcoNodes((prev) =>
-        prev.map((n) => n.id === 'ECO-03' ? { ...n, wasteLevelPct: 98, aqi: 142, status: 'CRITICAL' } : n)
-      );
-      setMapLayer('eco');
     }
-  };
-
-  // Cleanup cascade timers on unmount
-  useEffect(() => {
-    return () => {
-      cascadeTimerRef.current.forEach((t) => clearTimeout(t));
-    };
-  }, []);
-
-  const handleStopTripleCascade = () => {
-    cascadeTimerRef.current.forEach((t) => clearTimeout(t));
-    cascadeTimerRef.current = [];
-    setTripleCascadeState({
-      active: false,
-      step: 0,
-      stepTitle: '',
-      stepDesc: '',
-      progress: 0,
-      metrics: null
-    });
-    setActiveCrisis(null);
-    sfx.click();
-  };
-
-  const handleSimulateTripleCascade = () => {
-    sfx.alarm();
-    setActiveTab('overview');
-    cascadeTimerRef.current.forEach((t) => clearTimeout(t));
-    cascadeTimerRef.current = [];
-
-    // Phase 1 (t = 0s): Odaw Flash Flood
-    setTripleCascadeState({
-      active: true,
-      step: 1,
-      stepTitle: 'PHASE 1/4: ODAW RIVER BASIN FLASH FLOOD',
-      stepDesc: 'Torrential downpour causes Odaw canal gauge to surge to 3.42m (+1.8m/hr). Sluice intake clogged with plastic debris.',
-      progress: 20,
-      metrics: { odawLevel: '3.42m', gridFreq: '50.01Hz', circleCongestion: '82%' }
-    });
-    setActiveCrisis({
-      id: 'crisis-triple-cascade',
-      title: 'ACCRA TRIPLE CASCADE: FLOOD + DUMSOR + CIRCLE GRIDLOCK',
-      location: 'Odaw Basin → Achimota Substation → Kwame Nkrumah Circle',
-      desc: 'Simultaneous flash flood, high-voltage frequency drop, and arterial gridlock across Greater Accra.',
-      severity: 'CATASTROPHIC (SEV-1)',
-      impact: 'Potential $4.2M economic disruption, transformer burnout, and road drowning.'
-    });
-    setEcoNodes((prev) =>
-      prev.map((n) => (n.id === 'ECO-01' ? { ...n, wasteLevelPct: 98, aqi: 185, status: 'CRITICAL' } : n))
-    );
-    setMapLayer('eco');
-
-    // Phase 2 (t = 3.5s): Achimota Grid Surge & Frequency Dip
-    const t2 = setTimeout(() => {
-      sfx.alarm();
-      setTripleCascadeState({
-        active: true,
-        step: 2,
-        stepTitle: 'PHASE 2/4: ACHIMOTA BULK GRID COLLAPSE THREAT',
-        stepDesc: 'Surging storm load drops grid frequency to 49.18Hz (trip threshold: 49.50Hz). Dumsor cascade imminent.',
-        progress: 45,
-        metrics: { odawLevel: '3.50m', gridFreq: '49.18Hz', circleCongestion: '88%' }
-      });
-      setEnergyNodes((prev) =>
-        prev.map((n) => (n.id === 'EN-01' ? { ...n, currentLoadMw: 248, dumsorRisk: 98, status: 'CRITICAL' } : n))
-      );
-      setMapLayer('energy');
-    }, 3500);
-    cascadeTimerRef.current.push(t2);
-
-    // Phase 3 (t = 7s): Circle Gridlock & Trapped Ambulance
-    const t3 = setTimeout(() => {
-      sfx.alarm();
-      setTripleCascadeState({
-        active: true,
-        step: 3,
-        stepTitle: 'PHASE 3/4: CIRCLE ARTERIAL GRIDLOCK & AMBULANCE TRAPPED',
-        stepDesc: 'Kwame Nkrumah Circle locks at 99% congestion. Ambulance #EMS-04 from Ridge Hospital trapped with critical trauma patient.',
-        progress: 70,
-        metrics: { odawLevel: '3.52m', gridFreq: '49.16Hz', circleCongestion: '99%' }
-      });
-      setTrafficNodes((prev) =>
-        prev.map((n) =>
-          n.id === 'TR-01'
-            ? { ...n, congestion: 99, speedKmh: 2, incidentActive: true, alert: 'CRITICAL GRIDLOCK: 84 Trotros blocked at Circle Overpass' }
-            : n
-        )
-      );
-      setMapLayer('traffic');
-    }, 7000);
-    cascadeTimerRef.current.push(t3);
-
-    // Phase 4 (t = 10.5s): Autonomous Multi-Agent Intervention
-    const t4 = setTimeout(() => {
-      sfx.success();
-      setTripleCascadeState({
-        active: true,
-        step: 4,
-        stepTitle: 'PHASE 4/4: AUTONOMOUS URBAN NERVOUS SYSTEM INTERVENTION',
-        stepDesc: 'Cross-pillar actuators firing: Korle sluice opened 75%, SCADA soft-sheds Feeder 4 (10% inrush safe), Green Wave corridor engaged.',
-        progress: 90,
-        metrics: { odawLevel: '1.45m', gridFreq: '50.02Hz', circleCongestion: '28%' }
-      });
-      // 1. Eco Actuation
-      setEcoNodes((prev) =>
-        prev.map((n) =>
-          n.id === 'ECO-01'
-            ? { ...n, wasteLevelPct: 22, aqi: 48, status: 'GOOD', recommendation: 'Automated sluice flush complete. Odaw gauge safe at 1.45m.' }
-            : n
-        )
-      );
-      // 2. Grid Actuation
-      setEnergyNodes((prev) =>
-        prev.map((n) =>
-          n.id === 'EN-01' ? { ...n, currentLoadMw: 174, dumsorRisk: 12, status: 'NOMINAL', batteryReservePct: 88 } : n
-        )
-      );
-      // 3. Traffic Actuation & Preemption Corridor
-      setTrafficNodes((prev) =>
-        prev.map((n) =>
-          n.id === 'TR-01'
-            ? {
-                ...n,
-                congestion: 28,
-                speedKmh: 46,
-                incidentActive: false,
-                lightState: 'GREEN',
-                cycleRemainingSec: 85,
-                alert: 'Green Wave Active: Emergency corridor cleared'
-              }
-            : n
-        )
-      );
-      setExternalWaveTrigger({ origin: 'N-CIRCLE', dest: 'N-37MIL', id: Date.now() });
-      setMapLayer('all');
-    }, 10500);
-    cascadeTimerRef.current.push(t4);
-
-    // Phase 5 (t = 14s): Complete Resolution
-    const t5 = setTimeout(() => {
-      sfx.success();
-      setTripleCascadeState({
-        active: false,
-        step: 5,
-        stepTitle: 'STABILIZED: TRIPLE CASCADE MITIGATED AUTONOMOUSLY',
-        stepDesc: '14.2s autonomous multi-agent response saved $250k transformer, averted canal inundation, and delivered ambulance with 0 stops.',
-        progress: 100,
-        metrics: { odawLevel: '1.38m', gridFreq: '50.02Hz', circleCongestion: '24%' }
-      });
-      setActiveCrisis(null);
-    }, 14000);
-    cascadeTimerRef.current.push(t5);
   };
 
   // Clean startup without intrusive countdowns
@@ -770,56 +416,8 @@ export default function App() {
   const handleResolveCrisis = () => {
     if (!activeCrisis) return;
     sfx.success();
-    if (activeCrisis.id === 'crisis-triple-cascade') {
-      cascadeTimerRef.current.forEach((t) => clearTimeout(t));
-      cascadeTimerRef.current = [];
-      setEcoNodes((prev) =>
-        prev.map((n) =>
-          n.id === 'ECO-01'
-            ? { ...n, wasteLevelPct: 22, aqi: 48, status: 'GOOD', recommendation: 'Automated sluice flush complete. Odaw gauge safe at 1.45m.' }
-            : n
-        )
-      );
-      setEnergyNodes((prev) =>
-        prev.map((n) =>
-          n.id === 'EN-01' ? { ...n, currentLoadMw: 174, dumsorRisk: 12, status: 'NOMINAL', batteryReservePct: 88 } : n
-        )
-      );
-      setTrafficNodes((prev) =>
-        prev.map((n) =>
-          n.id === 'TR-01'
-            ? {
-                ...n,
-                congestion: 28,
-                speedKmh: 46,
-                incidentActive: false,
-                lightState: 'GREEN',
-                cycleRemainingSec: 85,
-                alert: 'Green Wave Active: Emergency corridor cleared'
-              }
-            : n
-        )
-      );
-      setExternalWaveTrigger({ origin: 'N-CIRCLE', dest: 'N-37MIL', id: Date.now() });
-      setMapLayer('all');
-      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-      setTripleCascadeState({
-        active: false,
-        step: 5,
-        stepTitle: 'VICTORY: TRIPLE CASCADE AVERTED AUTONOMOUSLY',
-        stepDesc: '14.2s autonomous multi-agent response saved $250k transformer, averted canal inundation, and delivered ambulance with 0 stops.',
-        progress: 100,
-        metrics: { odawLevel: '1.38m', gridFreq: '50.02Hz', circleCongestion: '24%' }
-      });
-      setActiveCrisis(null);
-      return;
-    }
     if (activeCrisis.id === 'crisis-motorway-pileup') {
       handleApplyTrafficOptimization('TR-02', 65);
-    } else if (activeCrisis.id === 'crisis-achimota-dumsor') {
-      handleBalanceGrid();
-    } else if (activeCrisis.id === 'crisis-makola-waste-flood') {
-      handleDispatchWasteTruck('ECO-03');
     }
     setActiveCrisis(null);
   };
@@ -840,10 +438,6 @@ export default function App() {
     } else if (toolCall.name === 'OVERRIDE_TRAFFIC_LIGHT') {
       const targetId = toolCall.params?.nodeId || 'TR-01';
       handleApplyTrafficOptimization(targetId, toolCall.params?.durationSec || 75);
-    } else if (toolCall.name === 'BALANCE_GRID_SHED') {
-      handleBalanceGrid();
-    } else if (toolCall.name === 'DRAIN_SLUICE_GATES') {
-      handleDispatchWasteTruck('ECO-01');
     }
   };
 
@@ -889,11 +483,6 @@ export default function App() {
         name: 'DISPATCH_GREEN_WAVE',
         params: { origin: 'N-CIRCLE', dest: 'N-37MIL' }
       });
-    }
-    if (stepObj.openUssd) {
-      setUssdModalOpen(true);
-    } else {
-      setUssdModalOpen(false);
     }
     if (stepObj.openBenchmark) {
       setBenchmarkModalOpen(true);
@@ -991,14 +580,6 @@ export default function App() {
               IoT Gateway & Bench
             </button>
 
-            <button
-              onClick={() => { sfx.click(); setActiveTab('commander'); }}
-              onMouseEnter={() => sfx.hover()}
-              className={`pill-tab ${activeTab === 'commander' ? 'active' : ''}`}
-            >
-              <Bot size={14} />
-              Tactical Dispatcher AI
-            </button>
 
             {/* Municipal Expansion Modules Dropdown */}
             <div ref={opsMenuRef} style={{ position: 'relative' }}>
@@ -1037,39 +618,6 @@ export default function App() {
                   <div style={{ padding: '4px 8px', fontSize: '0.66rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Municipal Expansion Tracks
                   </div>
-                  <button
-                    onClick={() => { sfx.click(); setActiveTab('energy'); setMapLayer('energy'); setOpsMenuOpen(false); }}
-                    className="btn-secondary"
-                    style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.76rem', background: 'transparent', border: 'none', color: '#e2e8f0', textAlign: 'left' }}
-                  >
-                    <Zap size={14} color="#c084fc" />
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#fff' }}>GridGuard (Anti-Dumsor)</div>
-                      <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>Achimota substation peak load balancing</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => { sfx.click(); setActiveTab('eco'); setMapLayer('eco'); setOpsMenuOpen(false); }}
-                    className="btn-secondary"
-                    style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.76rem', background: 'transparent', border: 'none', color: '#e2e8f0', textAlign: 'left' }}
-                  >
-                    <Wind size={14} color="#34d399" />
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#fff' }}>EcoSense Basin</div>
-                      <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>Odaw flood sluices & WMO #65472 meteo</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => { sfx.click(); setUssdModalOpen(true); setOpsMenuOpen(false); }}
-                    className="btn-secondary"
-                    style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.76rem', background: 'transparent', border: 'none', color: '#e2e8f0', textAlign: 'left' }}
-                  >
-                    <Phone size={14} color="#f59e0b" />
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#fff' }}>Citizen USSD (*920*26#)</div>
-                      <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>Offline 2G feature phone incident reporting</div>
-                    </div>
-                  </button>
                   <button
                     onClick={() => { sfx.click(); setHardwareModalOpen(true); setOpsMenuOpen(false); }}
                     className="btn-secondary"
@@ -1396,8 +944,6 @@ export default function App() {
               <CityMap
                 activeLayer={mapLayer}
                 trafficNodes={trafficNodes}
-                energyNodes={energyNodes}
-                ecoNodes={ecoNodes}
                 selectedNode={selectedNode}
                 onSelectNode={setSelectedNode}
                 onOpenVisionModal={openVisionForNode}
@@ -1429,8 +975,6 @@ export default function App() {
             <CityMap
               activeLayer="traffic"
               trafficNodes={trafficNodes}
-              energyNodes={energyNodes}
-              ecoNodes={ecoNodes}
               selectedNode={selectedNode}
               onSelectNode={setSelectedNode}
               onOpenVisionModal={openVisionForNode}
@@ -1490,83 +1034,14 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab 3: GridGuard (Anti-Dumsor) */}
-        {activeTab === 'energy' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px' }}>
-            <CityMap
-              activeLayer="energy"
-              trafficNodes={trafficNodes}
-              energyNodes={energyNodes}
-              ecoNodes={ecoNodes}
-              selectedNode={selectedNode}
-              onSelectNode={setSelectedNode}
-              onOpenVisionModal={openVisionForNode}
-              activeCrisis={activeCrisis}
-              onResolveCrisis={handleResolveCrisis}
-            />
-            <GridGuardOptimizer
-              energyNodes={energyNodes}
-              onBalanceGrid={handleBalanceGrid}
-            />
-          </div>
-        )}
-
-        {/* Tab 4: EcoSense */}
-        {activeTab === 'eco' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px' }}>
-            <CityMap
-              activeLayer="eco"
-              trafficNodes={trafficNodes}
-              energyNodes={energyNodes}
-              ecoNodes={ecoNodes}
-              selectedNode={selectedNode}
-              onSelectNode={setSelectedNode}
-              onOpenVisionModal={openVisionForNode}
-              activeCrisis={activeCrisis}
-              onResolveCrisis={handleResolveCrisis}
-            />
-            <EcoSenseMonitor
-              ecoNodes={ecoNodes}
-              onDispatchWasteTruck={handleDispatchWasteTruck}
-            />
-          </div>
-        )}
-
         {/* Tab 5: Sensor Ingestion API Gateway */}
         {activeTab === 'gateway' && (
           <SensorIngestGateway
             trafficNodes={trafficNodes}
-            energyNodes={energyNodes}
-            ecoNodes={ecoNodes}
             onIngestTelemetry={handleIngestTelemetry}
           />
         )}
 
-        {/* Tab 6: Incident Commander Full Terminal */}
-        {activeTab === 'commander' && (
-          <div style={{ height: '700px' }}>
-            <IncidentCommanderChat
-              apiKey={apiKey}
-              cityState={{
-                trafficBottlenecks: trafficNodes.filter(n => n.congestion > 70).map(n => n.name).join(', '),
-                gridReserve: '68% (Achimota Substation monitored)',
-                avgAqi: '72 Moderate',
-                activeEmergencies: activeCrisis ? activeCrisis.title : 'None active'
-              }}
-              onTriggerScenario={handleTriggerScenario}
-              onExecuteAgentTool={handleExecuteAgentTool}
-              onSimulateTripleCascade={handleSimulateTripleCascade}
-              tripleCascadeState={tripleCascadeState}
-              onStopTripleCascade={handleStopTripleCascade}
-              onOpenVisionModal={openVisionForNode}
-              onOpenUssdModal={() => setUssdModalOpen(true)}
-              onOpenHardwareModal={() => setHardwareModalOpen(true)}
-              trafficNodes={trafficNodes}
-              energyNodes={energyNodes}
-              ecoNodes={ecoNodes}
-            />
-          </div>
-        )}
       </main>
 
       {/* Institutional Compliance & Standards Strip */}
@@ -1635,21 +1110,6 @@ export default function App() {
             );
           }
         }}
-        onBreakerToggle={(circuitId) => {
-          setEnergyNodes((prev) =>
-            prev.map((n) => (n.id === (circuitId || 'EN-01')) ? { ...n, currentLoadMw: Math.max(140, n.currentLoadMw - 25), dumsorRisk: 12 } : n)
-          );
-        }}
-      />
-
-      {/* Citizen USSD Simulator (*920*26#) */}
-      <CitizenUssdModal
-        isOpen={ussdModalOpen}
-        onClose={() => setUssdModalOpen(false)}
-        trafficNodes={trafficNodes}
-        energyNodes={energyNodes}
-        ecoNodes={ecoNodes}
-        onReportIncident={handleUssdIncidentReport}
       />
 
       {/* Competitive Benchmark & TCO Matrix */}
@@ -1752,10 +1212,6 @@ export default function App() {
         onOpenHardwareHub={() => {
           sfx.click();
           setHardwareModalOpen(true);
-        }}
-        onOpenUssdModal={() => {
-          sfx.click();
-          setUssdModalOpen(true);
         }}
         onStartAutoTour={() => {
           sfx.click();

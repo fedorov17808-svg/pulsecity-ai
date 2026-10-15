@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { 
-  Car, Zap, Wind, Eye, Flame, Radio, Navigation, Activity, Siren, CheckCircle2 
+  Car, Eye, Flame, Radio, Navigation, Activity, Siren, CheckCircle2 
 } from 'lucide-react';
 import { findOptimalEmergencyRoute, ACCRA_ROAD_GRAPH } from '../utils/roadGraphRouting';
 import { playEmergencySirenSound } from '../utils/soundEffects';
@@ -9,10 +9,8 @@ import confetti from 'canvas-confetti';
 import circleCctvImg from '../assets/cctv_circle_interchange.jpg';
 
 export default function CityMap({
-  activeLayer, // 'all', 'traffic', 'energy', 'eco'
+  activeLayer, // 'all' | 'traffic'
   trafficNodes,
-  energyNodes,
-  ecoNodes,
   selectedNode,
   onSelectNode,
   onOpenVisionModal,
@@ -25,8 +23,6 @@ export default function CityMap({
   const mapInstanceRef = useRef(null);
   const layerGroupsRef = useRef({
     traffic: null,
-    energy: null,
-    eco: null,
     lines: null,
     corridor: null,
     ambulance: null
@@ -64,8 +60,6 @@ export default function CityMap({
     // Layer groups for dynamic visibility
     layerGroupsRef.current.lines = L.layerGroup().addTo(map);
     layerGroupsRef.current.traffic = L.layerGroup().addTo(map);
-    layerGroupsRef.current.energy = L.layerGroup().addTo(map);
-    layerGroupsRef.current.eco = L.layerGroup().addTo(map);
     layerGroupsRef.current.corridor = L.layerGroup().addTo(map);
     layerGroupsRef.current.ambulance = L.layerGroup().addTo(map);
 
@@ -235,31 +229,9 @@ export default function CityMap({
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    const { traffic, energy, eco, lines } = layerGroupsRef.current;
+    const { traffic, lines } = layerGroupsRef.current;
     lines.clearLayers();
     traffic.clearLayers();
-    energy.clearLayers();
-    eco.clearLayers();
-
-    // 1. Render Transmission Lines (Energy Grid)
-    if (activeLayer === 'all' || activeLayer === 'energy') {
-      const transmissionPaths = [
-        [[5.6120, -0.2310], [5.5780, -0.2850]], // Achimota -> Mallam
-        [[5.6120, -0.2310], [5.5450, -0.2080]], // Achimota -> Accra Central
-        [[5.6120, -0.2310], [5.6500, -0.1850]], // Achimota -> Legon Solar
-        [[5.6500, -0.1850], [5.6680, 0.0080]],  // Legon Solar -> Tema Free Zone
-        [[5.5450, -0.2080], [5.6680, 0.0080]]   // Accra Central -> Tema Free Zone
-      ];
-
-      transmissionPaths.forEach((path) => {
-        L.polyline(path, {
-          color: '#a855f7',
-          weight: 2.5,
-          opacity: 0.65,
-          dashArray: '6, 8'
-        }).addTo(lines);
-      });
-    }
 
     // 2. Render Traffic Arterial Corridors
     if (activeLayer === 'all' || activeLayer === 'traffic') {
@@ -342,79 +314,7 @@ export default function CityMap({
       });
     }
 
-    // 4. Render Energy Substation Markers
-    if (activeLayer === 'all' || activeLayer === 'energy') {
-      energyNodes.forEach((node) => {
-        const isCritical = node.dumsorRisk > 70;
-        const color = isCritical ? '#f43f5e' : node.dumsorRisk > 40 ? '#f59e0b' : '#a855f7';
-
-        const customHtml = `
-          <div style="
-            width: 28px;
-            height: 28px;
-            background: #0d1117;
-            border: 2px solid ${color};
-            box-shadow: 0 0 16px ${color}99;
-            transform: rotate(45deg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-          ">
-            <div style="width: 8px; height: 8px; background: #fff; border-radius: 50%;"></div>
-          </div>
-        `;
-
-        const icon = L.divIcon({
-          className: 'custom-energy-marker',
-          html: customHtml,
-          iconSize: [28, 28],
-          iconAnchor: [14, 14]
-        });
-
-        const marker = L.marker([node.lat, node.lng], { icon });
-        marker.on('click', () => onSelectNode({ ...node, category: 'energy' }));
-        marker.addTo(energy);
-      });
-    }
-
-    // 5. Render EcoSense Markers
-    if (activeLayer === 'all' || activeLayer === 'eco') {
-      ecoNodes.forEach((node) => {
-        const isBad = node.aqi > 100;
-        const color = isBad ? '#f43f5e' : node.aqi > 50 ? '#f59e0b' : '#10b981';
-
-        const customHtml = `
-          <div style="
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            background: #061a14;
-            border: 2px solid ${color};
-            box-shadow: 0 0 12px ${color}88;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-          ">
-            <div style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></div>
-          </div>
-        `;
-
-        const icon = L.divIcon({
-          className: 'custom-eco-marker',
-          html: customHtml,
-          iconSize: [26, 26],
-          iconAnchor: [13, 13]
-        });
-
-        const marker = L.marker([node.lat, node.lng], { icon });
-        marker.on('click', () => onSelectNode({ ...node, category: 'eco' }));
-        marker.addTo(eco);
-      });
-    }
-
-  }, [activeLayer, trafficNodes, energyNodes, ecoNodes]);
+  }, [activeLayer, trafficNodes]);
 
   return (
     <div style={{
@@ -692,73 +592,6 @@ export default function CityMap({
             </div>
           )}
 
-          {selectedNode.category === 'energy' && (
-            <div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                <div style={{ background: 'rgba(255,255,255,0.04)', padding: '8px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Current Load</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 'bold', color: '#a855f7' }}>
-                    {selectedNode.currentLoadMw} MW
-                  </div>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.04)', padding: '8px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Dumsor Risk</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 'bold', color: selectedNode.dumsorRisk > 60 ? '#f43f5e' : '#10b981' }}>
-                    {selectedNode.dumsorRisk}%
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                Capacity: {Math.round((selectedNode.currentLoadMw / selectedNode.capacityMw) * 100)}% • Solar: +{selectedNode.solarInputMw} MW
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Feeds: {selectedNode.connectedDistricts?.join(', ')}
-              </div>
-            </div>
-          )}
-
-          {selectedNode.category === 'eco' && (
-            <div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                <div style={{ background: 'rgba(255,255,255,0.04)', padding: '8px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Air Quality</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 'bold', color: selectedNode.aqi > 100 ? '#f43f5e' : '#10b981' }}>
-                    AQI {selectedNode.aqi}
-                  </div>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.04)', padding: '8px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Waste Overflow</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 'bold', color: selectedNode.wasteLevelPct > 70 ? '#f59e0b' : '#38bdf8' }}>
-                    {selectedNode.wasteLevelPct}%
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                {selectedNode.recommendation}
-              </div>
-
-              {selectedNode.liveSource && (
-                <div style={{
-                  marginTop: '10px',
-                  padding: '6px 8px',
-                  borderRadius: '6px',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  border: '1px solid rgba(16, 185, 129, 0.35)',
-                  fontSize: '0.68rem',
-                  color: '#34d399',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontFamily: 'var(--font-mono)'
-                }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
-                  <span><strong>LIVE FEED:</strong> {selectedNode.liveSource}</span>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
 

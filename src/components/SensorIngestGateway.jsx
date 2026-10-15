@@ -8,8 +8,6 @@ import { downloadTelemetryCsv } from '../services/telemetryStore';
 
 export default function SensorIngestGateway({
   trafficNodes,
-  energyNodes,
-  ecoNodes,
   onIngestTelemetry
 }) {
   const [selectedTarget, setSelectedTarget] = useState('TR-01');
@@ -141,52 +139,12 @@ export default function SensorIngestGateway({
             >
               <option value="TR-01">TR-01: Kwame Nkrumah Circle (Traffic Vision)</option>
               <option value="TR-02">TR-02: Tema Motorway (Traffic Vision)</option>
-              <option value="EN-01">EN-01: Achimota Bulk Supply Point (SCADA Grid)</option>
-              <option value="EN-03">EN-03: Accra Central Substation (SCADA Grid)</option>
-              <option value="ECO-01">ECO-01: Agbogbloshie Odaw Basin (LoRaWAN Flood)</option>
-              <option value="ECO-03">ECO-03: Makola Market Drain (LoRaWAN Drain)</option>
             </select>
           </div>
 
           {/* Quick Industrial Protocol Payload Presets */}
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', alignSelf: 'center' }}>Presets:</span>
-            <button
-              onClick={() => {
-                setSelectedTarget('EN-01');
-                setPayloadJson(`{\n  "nodeId": "EN-01",\n  "protocol": "IEC_60870_5_104",\n  "asduType": 30,\n  "commonAddress": 1,\n  "ioa": 101,\n  "currentLoadMw": 232,\n  "gridFrequencyHz": 49.88,\n  "qualityDescriptor": "VALID",\n  "timestamp": "${new Date().toISOString()}"\n}`);
-              }}
-              style={{
-                background: 'rgba(56, 189, 248, 0.15)',
-                border: '1px solid rgba(56, 189, 248, 0.35)',
-                color: '#38bdf8',
-                padding: '3px 8px',
-                borderRadius: '4px',
-                fontSize: '0.68rem',
-                fontFamily: 'var(--font-mono)',
-                cursor: 'pointer'
-              }}
-            >
-              ⚡ IEC-104 SCADA
-            </button>
-            <button
-              onClick={() => {
-                setSelectedTarget('ECO-01');
-                setPayloadJson(`{\n  "nodeId": "ECO-01",\n  "protocol": "LORAWAN_868MHZ",\n  "devEui": "70B3D57ED005A12C",\n  "fPort": 10,\n  "fCnt": 24,\n  "waterLevelMeters": 2.44,\n  "aqiScore": 68,\n  "batteryVolts": 3.28,\n  "snrDb": 8.4,\n  "rssiDbm": -74\n}`);
-              }}
-              style={{
-                background: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
-                color: '#34d399',
-                padding: '3px 8px',
-                borderRadius: '4px',
-                fontSize: '0.68rem',
-                fontFamily: 'var(--font-mono)',
-                cursor: 'pointer'
-              }}
-            >
-              📡 LoRaWAN 868MHz
-            </button>
             <button
               onClick={() => {
                 setSelectedTarget('TR-01');

@@ -4,7 +4,7 @@ import {
   Sparkles, RefreshCw, Sliders, Activity, Video, Key, 
   Upload, Camera, Calculator, Play, Pause, Disc, Gauge,
   Cpu, Cloud, Server, DollarSign, TrendingDown, Layers,
-  ShieldCheck, AlertOctagon, ArrowRight, Clock, SlidersHorizontal, Check
+  ShieldCheck, AlertOctagon, ArrowRight, Clock, SlidersHorizontal, Check, Car
 } from 'lucide-react';
 import { analyzeTrafficVision } from '../services/geminiService';
 import { detectObjectsLocally } from '../services/localVisionService';

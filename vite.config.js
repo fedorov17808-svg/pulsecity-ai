@@ -1,5 +1,6 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import { configDefaults } from 'vitest/config';
 
 // Dev middleware plugin so /api/... routes work in local development identically to Vercel
 function devApiPlugin() {
@@ -111,6 +112,10 @@ function devApiPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), devApiPlugin()],
+  test: {
+    // Archived (non-submission) modules are kept for reference only.
+    exclude: [...configDefaults.exclude, 'src/_archive/**']
+  },
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {

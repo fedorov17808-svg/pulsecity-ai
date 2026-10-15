@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Cpu, Terminal, Copy, Check, Shield, Layers, DollarSign,
-  Radio, Activity, Send, CheckCircle2, ShieldAlert, Zap, Lock, Eye
+  Radio, Activity, Send, CheckCircle2, ShieldAlert, Zap, Lock, Eye, ShieldCheck, RefreshCw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import HardwareSchematicViewer from './HardwareSchematicViewer';

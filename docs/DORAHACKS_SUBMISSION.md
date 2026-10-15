@@ -1,89 +1,44 @@
-# DoraHacks Hackathon 2026 Project Submission
+# DoraHacks Submission — PulseCity AI
 
-## Project Overview
-- **Project Name:** PulseCity AI
-- **Tagline:** Autonomous Urban Nervous System for Emerging Megacities
-- **Target Category:** AI & Smart City / IoT Challenge 2026
-- **Tracks Addressed:**
-  1. **Traffic Mitigation & Emergency Transit** (Webster Adaptive Formulation + Computer Vision + A* Green Wave)
-  2. **Electricity Efficiency & Grid Stability** (Anti-Dumsor Priority Knapsack Linear Program + SCADA Breaker Control)
-  3. **Pollution Control & Hydrological Flood Defense** (Odaw River Basin Ultrasonic Telemetry + Waste Dispatch)
-- **Live Production URL:** [https://pulsecity-ai.vercel.app](https://pulsecity-ai.vercel.app)
-- **Health Endpoint:** [https://pulsecity-ai.vercel.app/api/health](https://pulsecity-ai.vercel.app/api/health)
-- **Telemetry Ingestion Endpoint:** `POST https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest`
-- **GitHub Repository:** [https://github.com/fedorov17808-svg/pulsecity-ai](https://github.com/fedorov17808-svg/pulsecity-ai)
+## Project overview
+- **Project name:** PulseCity AI
+- **Hackathon:** Tech Hub Africa Hackathon 2026 (DoraHacks)
+- **Track:** Traffic Mitigation (single track)
+- **One-liner:** Camera-based vehicle counting in the browser feeds a Webster signal-timing
+  calculation for Accra intersections, with an emergency "green wave" planner for ambulances.
+- **Live app:** https://pulsecity-ai.vercel.app
+- **Health endpoint:** https://pulsecity-ai.vercel.app/api/health
+- **Repository:** https://github.com/fedorov17808-svg/pulsecity-ai
+- **Demo video:** VIDEO_URL_HERE
 
----
+## Problem
+Most signalised junctions in Greater Accra run fixed-time plans. A fixed plan cannot react to the
+actual mix of traffic at a junction — in particular the large share of trotro minibuses that load
+and unload near intersections — so green time is wasted on empty approaches while queues build on
+busy ones. Emergency vehicles have no priority mechanism and get stuck in the same queues.
 
-## 1. Problem Statement & Ground Truth Validation
-In rapidly expanding global south megacities like the Greater Accra Metropolitan Area (GAMA), urban infrastructure suffers from three compounding systemic failures:
-1. **Traffic Gridlock:** Commuters lose 2 to 3.5 hours daily due to fixed-timer traffic signals unsuited for informal transit (*trotros*). Emergency ambulances frequently get trapped.
-2. **Rolling Power Outages ("Dumsor"):** Grid frequency instability forces crude, manual blackout shedding, cutting power to critical hospitals and water pumping facilities.
-3. **Severe Flash Flooding & Waste Choking:** Torrential seasonal rains cause the Odaw River and Korle Lagoon to breach banks, while uncollected municipal waste blocks key drainage culverts.
+## What we built (one end-to-end chain)
+1. **Detection** — COCO-SSD (TensorFlow.js) runs in the browser on a camera or video frame of a
+   junction and returns vehicle bounding boxes (car, bus, truck, motorcycle).
+2. **PCU count** — detections are converted to Passenger Car Units (trotro/bus, truck, car,
+   motorcycle weights) to estimate approach flow.
+3. **Webster cycle** — F.V. Webster's formula computes the optimum cycle
+   `C0 = (1.5·L + 5) / (1 − Y)` and the green split `g_i = (y_i / Y)·(C0 − L)`, plus the expected
+   average delay per vehicle.
+4. **Signal plan + green wave** — the plan is shown on a Leaflet map of Accra; an ambulance corridor
+   is routed with Dijkstra over a small Accra road graph and all junctions on the path are set green.
+5. **Telemetry log** — edge nodes (or the included node simulator) POST counts to a serverless
+   ingest endpoint; events are stored for the dashboard.
 
-Traditional Western smart city vendor solutions (costing $50k+ per junction) fail in this environment due to high equipment cost, vulnerability to power cuts, and lack of resilient local mesh networking.
+## What is real vs simulated
+See the "What is real vs simulated" table in the README. In short: detection, PCU maths, Webster
+timing and routing are real computations; the traffic controllers themselves are simulated, because
+we have no access to Accra's signal hardware.
 
----
-
-## 2. Technical Architecture & Innovation
-
-PulseCity AI transforms urban infrastructure into a self-healing, multi-modal autonomous nervous system:
-
-### A. Track 1: Traffic Mitigation & Emergency Transit
-- **Mathematical Webster Equation:** Implements F.V. Webster's optimal signal timing formulation:
-  $$C_0 = \frac{1.5L + 5}{1 - Y}$$
-  Dynamically calculates optimum cycle lengths and phase green-splits ($g_i = \frac{y_i}{Y}(C_0 - L)$) based on live vehicle saturation flow rates.
-- **Computer Vision Sentinel:** Runs low-latency vehicle contour tracking with MOG2 background subtractors and Gemini Vision multi-modal frame analysis.
-- **A* Emergency Green Wave:** Preempts signals along the shortest path from Ridge Regional Hospital to central Accra, guaranteeing an uninterrupted green corridor for ambulances.
-
-### B. Track 2: Electricity Efficiency & Anti-Dumsor Resilience
-- **Priority Knapsack Linear Programming:** Mathematically optimizes power allocation during generation shortfalls. Guarantees Tier 1 life support (Ridge Hospital, Weija Waterworks) remains 100% powered while shedding non-essential circuits.
-- **SCADA Circuit Actuators:** Controls high-voltage substation circuit breakers with sub-second feedback and 50.00 Hz frequency tracking compliant with IEC 60034 and ECG Grid Code 2020.
-
-### C. Track 3: Environmental Sentinel & Hydrological Flood Defense
-- **Odaw River Catchment Telemetry:** Monitors real-time water elevation via ultrasonic distance sensors under arterial bridge decks.
-- **Automated Sluice Gate Control:** Automatically actuates stormwater sluice gates when river depth exceeds critical safety thresholds (3.5m).
-- **Municipal Waste Dispatch:** Directs compactor truck crews to cleared drainage choke points in Makola Market and Agbogbloshie.
-
----
-
-## 3. Real Embedded IoT Hardware ($13.05 Bill of Materials)
-
-Unlike hackathon entries relying exclusively on mock data, PulseCity AI features fully functional production firmware and hardware blueprints:
-- **ESP32-WROOM-32D Firmware (`hardware/esp32_firmware.ino`):**
-  - C++ Arduino codebase transmitting over TLS 1.3 to Vercel Serverless Gateway.
-  - Interfaced with MQ-135 analog gas sensor and JSN-SR04T waterproof ultrasonic river sonar.
-  - Powered by 5V solar panel with 18650 LiFePO4 battery buffer (36-hour resilience during total grid blackouts).
-- **Raspberry Pi Edge Vision (`hardware/raspberry_pi_camera_edge.py`):**
-  - Python OpenCV edge service computing vehicle density and queue length locally on ARM64.
-  - Offline-first SQLite buffer that stores packets locally during cellular backhaul drops and flushes upon reconnection.
-- **Ultra-Low CapEx:** Total node unit cost is **$13.05 USD**, making citywide deployment financially feasible for municipal assemblies across Africa.
-
----
-
-## 4. Mobile Field Tactical HUD
-Designed for the frontline officers keeping cities safe:
-- **Ghana Police MTTD (Motor Traffic and Transport Directorate):** 1-tap emergency signal lockdown ("Force All-Red"), manual phase extension (+25s), and VIP / ambulance corridor preemption.
-- **ECG Grid Technicians:** Tactile breaker trip controls and substation frequency alerts directly on ruggedized smartphones.
-
----
-
-## 5. Security & Zero-Trust Verification
-- **Token Handshake:** Edge requests require cryptographic header `X-Sensor-Token: afri-pulse-live-2026`.
-- **Schema Sanitization:** Strict regex node ID validation `^(TR|EN|ECO)-\d{2}$` and bounds verification prevent payload tampering.
-- **Key Isolation:** Gemini API proxy handles Google AI requests server-side, preventing API key exposure in client bundles.
-
----
-
-## 6. How to Verify & Test Live
-1. Open [https://pulsecity-ai.vercel.app](https://pulsecity-ai.vercel.app) in any modern browser.
-2. Click **"Hardware & Edge"** to inspect production C++ and Python code with BOM breakdown.
-3. Click **"Field Officer HUD"** to test 1-tap tactical police and grid engineer controls.
-4. Test live ingestion via terminal:
-   ```bash
-   curl -X POST https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest \
-     -H "Content-Type: application/json" \
-     -H "X-Sensor-Token: afri-pulse-live-2026" \
-     -d '{"nodeId":"TR-01","type":"TRAFFIC","queueLength":28,"avgSpeedKmh":18.5,"congestionLevel":"MODERATE"}'
-   ```
-   *Expected response: HTTP 201 Created with JSON confirmation.*
+## How to verify
+1. Open the live app and load the junction video in the vision panel; detections are computed
+   locally in your browser.
+2. Watch the Webster cycle and the "How we calculate" card update from those counts.
+3. Dispatch a green wave on the map.
+4. Run the node simulator (`python3 hardware/simulate_esp32_node.py --node TR-01 --once`) against
+   the ingest endpoint and see the event appear on the dashboard.

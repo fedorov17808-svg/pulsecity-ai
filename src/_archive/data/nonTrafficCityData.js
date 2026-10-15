@@ -1,0 +1,170 @@
+// Archived from src/data/mockCityData.js — GridGuard / EcoSense tracks (not part of the Traffic Mitigation submission).
+export const ENERGY_NODES = [
+  {
+    id: "EN-01",
+    name: "Achimota Bulk Supply Point (BSP)",
+    type: "substation",
+    lat: 5.6120,
+    lng: -0.2310,
+    capacityMw: 250,
+    currentLoadMw: 232, // 92.8% - critical
+    status: "STRAINED",
+    dumsorRisk: 86,
+    solarInputMw: 18,
+    batteryReservePct: 45,
+    connectedDistricts: ["Achimota", "Dome", "Taifa", "West Legon"],
+  },
+  {
+    id: "EN-02",
+    name: "Mallam Grid Substation",
+    type: "substation",
+    lat: 5.5780,
+    lng: -0.2850,
+    capacityMw: 180,
+    currentLoadMw: 124,
+    status: "NOMINAL",
+    dumsorRisk: 22,
+    solarInputMw: 8,
+    batteryReservePct: 78,
+    connectedDistricts: ["Mallam", "Gbawe", "Weija", "Kasoa North"],
+  },
+  {
+    id: "EN-03",
+    name: "Accra Central Commercial Substation",
+    type: "substation",
+    lat: 5.5450,
+    lng: -0.2080,
+    capacityMw: 220,
+    currentLoadMw: 188,
+    status: "STRAINED",
+    dumsorRisk: 68,
+    solarInputMw: 14,
+    batteryReservePct: 62,
+    connectedDistricts: ["Ministries", "Makola", "Ridge Hospital", "Osu"],
+  },
+  {
+    id: "EN-04",
+    name: "Legon Solar Microgrid Park",
+    type: "solar_farm",
+    lat: 5.6500,
+    lng: -0.1850,
+    capacityMw: 65,
+    currentLoadMw: 58,
+    status: "NOMINAL",
+    dumsorRisk: 4,
+    solarInputMw: 58,
+    batteryReservePct: 92,
+    connectedDistricts: ["Univ of Ghana", "Legon Campus", "Haatso"],
+  },
+  {
+    id: "EN-05",
+    name: "Tema Free Zone Industrial Microgrid",
+    type: "battery_hub",
+    lat: 5.6680,
+    lng: 0.0080,
+    capacityMw: 150,
+    currentLoadMw: 132,
+    status: "NOMINAL",
+    dumsorRisk: 34,
+    solarInputMw: 32,
+    batteryReservePct: 88,
+    connectedDistricts: ["Tema Harbor", "Industrial Free Zone", "Kpone"],
+  }
+];
+
+export const ECO_NODES = [
+  {
+    id: "ECO-01",
+    name: "Agbogbloshie Environmental Station",
+    type: "industrial_zone",
+    lat: 5.5490,
+    lng: -0.2280,
+    aqi: 168,
+    pm25: 84.5,
+    no2: 48.2,
+    wasteLevelPct: 84,
+    status: "CRITICAL",
+    recommendation: "Deploy air scrubber drone + AMA waste evacuation truck",
+  },
+  {
+    id: "ECO-02",
+    name: "Korle Lagoon Water & Odor Monitor",
+    type: "lagoon_wetland",
+    lat: 5.5380,
+    lng: -0.2180,
+    aqi: 112,
+    pm25: 42.1,
+    no2: 26.5,
+    wasteLevelPct: 76,
+    status: "WARNING",
+    recommendation: "Canal dredging silt barrier activation required",
+  },
+  {
+    id: "ECO-03",
+    name: "Makola Central Market Waste Hub",
+    type: "market_hub",
+    lat: 5.5440,
+    lng: -0.2070,
+    aqi: 94,
+    pm25: 33.8,
+    no2: 31.0,
+    wasteLevelPct: 92,
+    status: "CRITICAL",
+    recommendation: "Compactor truck #08 dispatched. Estimated arrival: 14 mins",
+  },
+  {
+    id: "ECO-04",
+    name: "Airport Residential Green Canopy",
+    type: "green_canopy",
+    lat: 5.6020,
+    lng: -0.1740,
+    aqi: 38,
+    pm25: 9.2,
+    no2: 12.1,
+    wasteLevelPct: 15,
+    status: "GOOD",
+    recommendation: "Canopy microclimate baseline stable",
+  },
+  {
+    id: "ECO-05",
+    name: "Jamestown Coastal CleanAir Station",
+    type: "coastal_station",
+    lat: 5.5320,
+    lng: -0.2060,
+    aqi: 54,
+    pm25: 14.6,
+    no2: 15.4,
+    wasteLevelPct: 45,
+    status: "MODERATE",
+    recommendation: "Sea breeze natural ventilation active",
+  }
+];
+
+
+// Archived non-traffic crisis presets
+export const ARCHIVED_CRISES = [
+  {
+    id: "crisis-achimota-dumsor",
+    title: "⚡ Imminent Blackout (Dumsor) Surge at Achimota BSP",
+    track: "Electricity Efficiency",
+    description: "Transformer T-3 temperature reached 88°C, load spiked to 96.4%. Grid collapse imminent without fast load shedding.",
+    targetNodeId: "EN-01",
+    actions: [
+      "GridGuard executes priority knapsack: draws 35 MW from Legon Solar storage in 80ms",
+      "Sheds Tier 4 non-essential commercial neon billboards (15 MW)",
+      "Preserves residential circuits in Dome and Taifa, preventing 48,000 homes from darkness"
+    ]
+  },
+  {
+    id: "crisis-makola-waste-flood",
+    title: "🍃 Flash Storm & Waste Canal Choke at Circle / Makola",
+    track: "Pollution Control",
+    description: "Heavy rain causing floating plastic waste to choke drain grates at Odaw river basin, rapid flooding threat.",
+    targetNodeId: "ECO-03",
+    actions: [
+      "Emergency sluice gates automated opening triggered",
+      "AMA Rapid Waste Response Unit dispatched with real-time GPS clear path",
+      "Citizen SMS broadcast issued for flood avoidance in Circle basin"
+    ]
+  }
+];
