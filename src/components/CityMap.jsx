@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { findOptimalEmergencyRoute, ACCRA_ROAD_GRAPH } from '../utils/roadGraphRouting';
 import { playEmergencySirenSound } from '../utils/soundEffects';
-import circleCctvImg from '../assets/cctv_circle_interchange.jpg';
+import circleCctvImg from '../assets/kwame_nkrumah_circle.jpg';
 
 export default function CityMap({
   activeLayer, // 'all' | 'traffic'

@@ -206,3 +206,11 @@ Visit `http://localhost:5174/` to view the Accra Digital Twin.
 - [x] **Hardware Blueprint:** Complete C++ ESP32 firmware & Python RPi code with $13.05 BOM.
 - [x] **Citizen Inclusivity:** Dual English / Akan Twi GSM USSD portal (`*920*26#`).
 - [x] **Test Coverage:** 11 passing Vitest unit tests.
+
+## Roadmap
+- Sensor node: roadmap (firmware sketches in `hardware/`, not part of the current demo).
+
+## Image credits
+- `src/assets/kwame_nkrumah_circle.jpg` — "Kwame Nkrumah Circle, Accra, Ghana 2" by Oluniyi Ajao,
+  [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kwame_Nkrumah_Circle,_Accra,_Ghana_2.jpg),
+  licensed [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/). Unmodified; a still photo, not a live feed.

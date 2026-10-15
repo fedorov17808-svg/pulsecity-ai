@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Activity, Car, Cpu, Bot, Shield, 
-  Sparkles, Layers, Clock, Terminal,
-  Phone, BarChart3, FileText, Volume2, VolumeX, AlertTriangle,
-  Copy, Play, Siren
+import {
+  Activity, Car, Bot, Shield, Sparkles, Clock, Terminal, BarChart3, Volume2, VolumeX, AlertTriangle, Siren
 } from 'lucide-react';
 import { TRAFFIC_NODES, PRESET_CRISES } from './data/mockCityData';
 import CityMap from './components/CityMap';
 import TrafficVisionModal from './components/TrafficVisionModal';
 import SensorIngestGateway from './components/SensorIngestGateway';
-import HardwareHubModal from './components/HardwareHubModal';
 import FieldOfficerHUD from './components/FieldOfficerHUD';
 import GeminiConfigModal from './components/GeminiConfigModal';
 import CyberGridBackdrop from './components/CyberGridBackdrop';
@@ -54,10 +50,8 @@ export default function App() {
   // Modals
   const [visionModalOpen, setVisionModalOpen] = useState(false);
   const [visionModalNode, setVisionModalNode] = useState(null);
-  const [hardwareModalOpen, setHardwareModalOpen] = useState(false);
   const [fieldHudOpen, setFieldHudOpen] = useState(false);
   const [geminiModalOpen, setGeminiModalOpen] = useState(false);
-  const [opsMenuOpen, setOpsMenuOpen] = useState(false);
   const [quickIngestModalOpen, setQuickIngestModalOpen] = useState(false);
   const [sfxMuted, setSfxMuted] = useState(() => sfx.muted);
 
@@ -244,27 +238,10 @@ export default function App() {
     } catch (e) { console.error('Failed to sync trafficNodes to localStorage', e); }
   }, [trafficNodes]);
 
-  // Ops Menu ref for click-outside dismissal
-  const opsMenuRef = useRef(null);
-
-  // Close Ops Menu on click outside
-  useEffect(() => {
-    if (!opsMenuOpen) return;
-    const handleClickOutside = (e) => {
-      if (opsMenuRef.current && !opsMenuRef.current.contains(e.target)) {
-        setOpsMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [opsMenuOpen]);
-
   // Global ESC key listener to close modals & menus
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        setOpsMenuOpen(false);
-        setHardwareModalOpen(false);
         setFieldHudOpen(false);
         setQuickIngestModalOpen(false);
         setGeminiModalOpen(false);
@@ -550,57 +527,6 @@ export default function App() {
               Assistant
             </button>
 
-            {/* Municipal Expansion Modules Dropdown */}
-            <div ref={opsMenuRef} style={{ position: 'relative' }}>
-              <button
-                onClick={() => { sfx.click(); setOpsMenuOpen(!opsMenuOpen); }}
-                onMouseEnter={() => sfx.hover()}
-                className="pill-tab"
-                style={{
-                  background: opsMenuOpen ? 'rgba(0, 242, 254, 0.15)' : 'transparent',
-                  borderColor: opsMenuOpen ? 'var(--accent-cyan)' : 'transparent',
-                  color: opsMenuOpen ? '#fff' : 'var(--text-secondary)'
-                }}
-              >
-                <Layers size={14} />
-                <span>City Modules ▾</span>
-              </button>
-
-              {opsMenuOpen && (
-                <div 
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 8px)',
-                    left: 0,
-                    width: '280px',
-                    background: '#090e18',
-                    border: '1px solid rgba(0, 242, 254, 0.35)',
-                    borderRadius: '14px',
-                    boxShadow: '0 20px 50px rgba(0,0,0,0.85), 0 0 25px rgba(0, 242, 254, 0.15)',
-                    padding: '8px',
-                    zIndex: 2500,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px'
-                  }}
-                >
-                  <div style={{ padding: '4px 8px', fontSize: '0.66rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Municipal Expansion Tracks
-                  </div>
-                  <button
-                    onClick={() => { sfx.click(); setHardwareModalOpen(true); setOpsMenuOpen(false); }}
-                    className="btn-secondary"
-                    style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.76rem', background: 'transparent', border: 'none', color: '#e2e8f0', textAlign: 'left' }}
-                  >
-                    <Cpu size={14} color="#38bdf8" />
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#fff' }}>Physical Hardware & Wiring</div>
-                      <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>ESP32 firmware, wiring & bill of materials</div>
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Tactical Action Bar */}
@@ -883,7 +809,6 @@ export default function App() {
                 onOpenVisionModal={openVisionForNode}
                 onApplyOptimization={handleApplyTrafficOptimization}
                 onLaunchGreenWave={handleLaunchGreenWave}
-                onOpenHardwareHub={() => setHardwareModalOpen(true)}
                 onOpenGateway={() => setActiveTab('gateway')}
               />
             </div>
@@ -1001,11 +926,6 @@ export default function App() {
         />
       )}
 
-      {/* IoT Hardware & Firmware Suite Modal */}
-      <HardwareHubModal
-        isOpen={hardwareModalOpen}
-        onClose={() => setHardwareModalOpen(false)}
-      />
 
       {/* Mobile Field Officer Tactical HUD */}
       <FieldOfficerHUD

@@ -10,7 +10,7 @@ import { analyzeTrafficVision } from '../services/geminiService';
 import { detectObjectsLocally } from '../services/localVisionService';
 import CctvTrafficCanvas from './CctvTrafficCanvas';
 import DelayComparison from './DelayComparison';
-import circleCctvImg from '../assets/cctv_circle_interchange.jpg';
+import circleCctvImg from '../assets/kwame_nkrumah_circle.jpg';
 import motorwayCctvImg from '../assets/cctv_tema_motorway.jpg';
 
 const SAMPLE_PREVIEWS = {
@@ -583,7 +583,7 @@ export default function TrafficVisionModal({
                 cursor: 'pointer'
               }}
             >
-              Accra CCTV Feeds
+              Sample junction photos
             </button>
 
             <button
@@ -695,7 +695,7 @@ export default function TrafficVisionModal({
                 }}
               >
                 <Eye size={12} />
-                <span>📷 Real Accra 4K CCTV (Photorealistic)</span>
+                <span>Sample photos (not live)</span>
               </button>
 
               <button
@@ -780,7 +780,7 @@ export default function TrafficVisionModal({
                     ref={presetImgRef}
                     crossOrigin="anonymous"
                     src={activeCameraNode.id === 'TR-02' ? motorwayCctvImg : circleCctvImg}
-                    alt={`Accra CCTV ${activeCameraNode.name}`}
+                    alt={`Sample photo: ${activeCameraNode.name}`}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -806,7 +806,7 @@ export default function TrafficVisionModal({
                     zIndex: 5
                   }}>
                     <span className="pulse-indicator" style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px #ef4444' }} />
-                    <span style={{ fontWeight: '700' }}>CCTV: {activeCameraNode.id}</span>
+                    <span style={{ fontWeight: '700' }}>SAMPLE: {activeCameraNode.id}</span>
                     <span style={{ color: '#94a3b8' }}>• {activeCameraNode.name.toUpperCase()}</span>
                     <span style={{ color: '#10b981' }}>• 30 FPS YOLOv8 INT8</span>
                   </div>
@@ -876,7 +876,7 @@ export default function TrafficVisionModal({
               gap: '6px'
             }}>
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f43f5e' }} className="pulse-indicator" />
-              LIVE // {streamMode === 'webcam' ? 'LAPTOP WEBCAM STREAM' : streamMode === 'uploaded_media' ? 'USER UPLOAD STREAM' : activeCameraNode.cameraFeed}
+              {streamMode === 'webcam' ? 'LIVE // LAPTOP WEBCAM' : streamMode === 'uploaded_media' ? 'USER UPLOAD' : `SAMPLE PHOTO // ${activeCameraNode.name}`}
             </div>
 
             <div style={{

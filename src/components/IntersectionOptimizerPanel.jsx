@@ -16,7 +16,6 @@ export default function IntersectionOptimizerPanel({
   onOpenVisionModal,
   onApplyOptimization,
   onLaunchGreenWave,
-  onOpenHardwareHub,
   onOpenGateway
 }) {
   const [optimizing, setOptimizing] = useState(false);
@@ -416,62 +415,6 @@ export default function IntersectionOptimizerPanel({
         </button>
       </div>
 
-      {/* 6. Hardware summary */}
-      <div style={{
-        background: 'rgba(0, 0, 0, 0.35)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '10px',
-        padding: '8px 10px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Cpu size={14} color="#38bdf8" />
-          <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#fff' }}>
-              ESP32 cabinet retrofit (design)
-            </div>
-            <div style={{ fontSize: '0.62rem', color: '#64748b' }}>
-              Firmware, wiring and parts list
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <button
-            onClick={() => { sfx.click(); if (onOpenHardwareHub) onOpenHardwareHub(); }}
-            style={{
-              background: 'rgba(56, 189, 248, 0.12)',
-              border: '1px solid rgba(56, 189, 248, 0.35)',
-              color: '#38bdf8',
-              padding: '4px 8px',
-              borderRadius: '6px',
-              fontSize: '0.66rem',
-              fontWeight: '700',
-              cursor: 'pointer'
-            }}
-          >
-            Bench
-          </button>
-          <button
-            onClick={() => { sfx.click(); if (onOpenGateway) onOpenGateway(); }}
-            style={{
-              background: 'rgba(16, 185, 129, 0.12)',
-              border: '1px solid rgba(16, 185, 129, 0.35)',
-              color: '#34d399',
-              padding: '4px 8px',
-              borderRadius: '6px',
-              fontSize: '0.66rem',
-              fontWeight: '700',
-              cursor: 'pointer'
-            }}
-          >
-            CSV
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

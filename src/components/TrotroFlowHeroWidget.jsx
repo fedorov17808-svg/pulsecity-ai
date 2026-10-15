@@ -4,7 +4,7 @@ import {
   RotateCcw, Sliders, ExternalLink, Video, Camera, Clock,
   Cpu, ArrowRight, ShieldCheck, Play
 } from 'lucide-react';
-import circleCctvImg from '../assets/cctv_circle_interchange.jpg';
+import circleCctvImg from '../assets/kwame_nkrumah_circle.jpg';
 import { detectObjectsLocally } from '../services/localVisionService';
 import { sfx } from '../utils/soundEffects';
 
@@ -167,7 +167,7 @@ export default function TrotroFlowHeroWidget({
         videoRef.current.play();
       }
     } catch (err) {
-      setWebcamError('Webcam permission denied. Defaulting to Kwame Nkrumah CCTV feed.');
+      setWebcamError('Webcam permission denied. Showing the Kwame Nkrumah Circle sample photo.');
       setStreamSource('cctv');
     }
   };
@@ -294,7 +294,7 @@ export default function TrotroFlowHeroWidget({
                 TrotroFlow // Kwame Nkrumah Slipway Sentinel
               </h3>
               <span className="badge badge-cyan" style={{ fontSize: '0.65rem' }}>
-                LIVE END-TO-END PIPELINE
+                END-TO-END PIPELINE
               </span>
             </div>
             <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0 0' }}>
@@ -309,10 +309,10 @@ export default function TrotroFlowHeroWidget({
             onClick={toggleWebcam}
             className="btn-secondary"
             style={{ fontSize: '0.72rem', padding: '5px 12px' }}
-            title="Toggle between Kwame Nkrumah CCTV image and live user WebCam"
+            title="Toggle between the Kwame Nkrumah Circle sample photo and your webcam"
           >
             <Camera size={13} color="var(--accent-cyan)" />
-            <span>{streamSource === 'webcam' ? 'Switch to CCTV' : 'Live WebCam'}</span>
+            <span>{streamSource === 'webcam' ? 'Switch to sample photo' : 'Use webcam'}</span>
           </button>
 
           <button

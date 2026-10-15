@@ -28,3 +28,7 @@ dist-ssr
 .claude/
 .serena/
 CLAUDE_TASK.md
+
+# Local task notes
+CLAUDE.md
+tasks/
