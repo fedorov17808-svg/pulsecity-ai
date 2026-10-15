@@ -1,51 +1,15 @@
-# PulseCity AI — 2-Minute DoraHacks Hackathon Video Pitch Script
+# Demo video script (2:00)
 
-**Duration:** Exactly 120 Seconds (0:00 – 2:00)  
-**Tone:** Authoritative, high-tempo, engineering-driven, visionary  
-**Presenter:** Founder / Lead Architect  
-**Live Target:** [https://pulsecity-ai.vercel.app](https://pulsecity-ai.vercel.app)
+Record at 1080p with the live app (https://pulsecity-ai.vercel.app) or `npm run dev`.
+Before recording, start the node simulator in a terminal that is ready to show
+(see README, "Run locally"), and paste the sensor token in the IoT Gateway tab.
 
----
-
-### [0:00 - 0:18] Scene 1: The Urgent Crisis of Emerging Megacities
-* **Visual:** Screen opens on `pulsecity-ai.vercel.app` Dark Matter CartoDB GIS map of Greater Accra. Ticker shows 1,420 IoT nodes online, traffic bottlenecks at Kwame Nkrumah Circle, and the Odaw River basin.
-* **Narration:**  
-  *"Every single day in Accra, Lagos, and Nairobi, millions of citizens lose 3 hours in catastrophic gridlock, businesses suffer rolling power blackouts known as Dumsor, and seasonal rainfall turns the Odaw River into deadly flash floods.*  
-  *Traditional Western smart city systems cost millions of dollars and collapse when power and internet fail.  
-  **Meet PulseCity AI — the first autonomous urban nervous system engineered specifically for developing megacities.**"*
-
----
-
-### [0:19 - 0:42] Scene 2: Track 1 — Traffic Computer Vision & Webster Adaptive Optimization
-* **Visual:** Presenter clicks **"Traffic Sentinel"** -> selects **"Kwame Nkrumah Circle (TR-01)"** -> clicks **"Inspect Gemini Vision Feed"**. Opens webcam / drag-and-drop video. Bounding boxes highlight vehicles. Clicks **"Apply Webster Signal Timing"**. Cycle updates from 120s to optimum 68s; congestion metric drops from 94% to 42%. Then triggers **"Emergency Ambulance Priority"**; A* green wave highlights the live Leaflet corridor from Ridge Hospital.
-* **Narration:**  
-  *"We don't use fake mockups. Under the hood, PulseCity AI implements F.V. Webster’s classic traffic equation, computing optimum cycle lengths ($C_0 = (1.5L + 5) / (1 - Y)$) from live computer vision feeds. When an emergency ambulance departs Ridge Hospital, our A-star graph engine instantly locks an uninterrupted green corridor through Accra’s most congested arterial arteries."*
-
----
-
-### [0:43 - 1:04] Scene 3: Track 2 — GridGuard Anti-Dumsor Priority Knapsack Engine
-* **Visual:** Presenter clicks **"GridGuard (Knapsack)"**. Displays Achimota Bulk Supply Point at 49.88 Hz with a 14.0 MW deficit. Presenter clicks **"Calculate Linear Program Allocation"**. The engine runs real-time priority knapsack: class A life support (Ridge Hospital, Weija Waterworks) is guaranteed 100% power, while Tier 3 non-essential circuits are shedded. Interactive circuit breakers click open on the SCADA panel.
-* **Narration:**  
-  *"Track Two: Electricity Efficiency. When solar drops or transmission fails, Dumsor blackouts threaten intensive care units. GridGuard formulates grid balancing as a constrained Priority Knapsack Linear Program. It mathematically guarantees uninterrupted power to hospitals and water pumping stations while shedding non-essential residential feeders through remote SCADA circuit breakers."*
-
----
-
-### [1:05 - 1:22] Scene 4: Track 3 — EcoSense Flood Mitigation & Waste Dispatch
-* **Visual:** Presenter clicks **"EcoSense"**. Adjusts rainfall slider to 65 mm/h. Odaw River elevation rises into the red danger zone (3.8m). Sluice gate servo automatically triggers to 100% open. Presenter clicks **"Dispatch Municipal Waste Compactor"** for Makola Market; AQI and drainage choke indicators clear.
-* **Narration:**  
-  *"Track Three: Pollution and Flood Defense. Our ultrasonic river sentinels monitor the Odaw basin in real time. As rainfall spikes, PulseCity automatically trips emergency sluice gates before the Korle Lagoon overflows, while dispatching compactor trucks to unblock storm drains choked with municipal solid waste."*
-
----
-
-### [1:23 - 1:44] Scene 5: Real IoT Hardware Under $15 & Field Officer HUD
-* **Visual:** Presenter clicks **"Hardware & Edge"** in header. Shows production ESP32 C++ firmware with TLS 1.3 and ultrasonic water sonar, Raspberry Pi Zero 2W OpenCV script, and the $13.05 Bill of Materials table. Then clicks **"Field Officer HUD"** to show the mobile tactical terminal for Ghana Police MTTD officers.
-* **Narration:**  
-  *"Unlike competitor hackathon projects that are just frontends, PulseCity is grounded in real embedded hardware. Our sensor nodes use ESP32 microcontrollers and waterproof sonar costing under fifteen dollars per unit—solar-powered with thirty-six hours of battery backup. Field officers from the Ghana Police MTTD can override signals with a single tap on ruggedized mobile handsets."*
-
----
-
-### [1:45 - 2:00] Scene 6: Live Production Cloud API & Conclusion
-* **Visual:** Presenter navigates to **"Sensor Ingest API"** tab. Copies the live cURL command, runs it in terminal against `https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest` with bearer token. The UI updates instantly with the new packet.
-* **Narration:**  
-  *"PulseCity AI is live right now on Vercel with strict cryptographic token authentication, full IEC and ECG Grid Code compliance, and zero placeholders.  
-  Autonomous, resilient, and life-saving. PulseCity AI is ready to scale across the African continent. Thank you."*
+| Time | On screen | Say |
+|---|---|---|
+| 0:00–0:15 | Kwame Nkrumah Circle photo in the TrotroFlow panel; map of Accra behind it. | "Most junctions in Accra run fixed-time signals. They give the same green whether the queue is two cars or twenty trotros. PulseCity AI times the lights from what a camera actually sees." |
+| 0:15–0:30 | Open the vision panel. Upload a short junction video (or use the sample photo). Bounding boxes appear. | "This is COCO-SSD running in the browser with TensorFlow.js. No video leaves the device, so it works on a cheap laptop or phone at the roadside." |
+| 0:30–0:45 | Point at the box labels (each shows its PCU weight) and the recommendation line with the PCU load. | "Each vehicle gets a passenger-car-unit weight. A trotro counts as 2.2 cars, a truck as 3. COCO-SSD has no trotro class, so we count buses. That's honest, and it's on our roadmap to fix." |
+| 0:45–1:10 | Webster box: cycle C0, green split. Hover "how we calculate" to show the formula and the fixed-vs-Webster delay. | "From the PCU load we compute Webster's optimum cycle: 1.5 L plus 5, over 1 minus Y. Green is split by each phase's flow ratio. We compare it with a fixed 120-second plan on the same flows using Webster's delay formula. If the fixed plan can't cope, the app says 'oversaturated' instead of inventing a number." |
+| 1:10–1:35 | Map: pick Circle to 37 Military Hospital, click "Dispatch Green Wave". The route turns green and the ambulance moves. | "For emergencies we route the ambulance with Dijkstra over Accra's main junctions and turn every light on the path green. The time saved is the expected wait at each fixed signal, about 17 seconds per junction. The signals here are simulated: we don't have access to Accra's controllers." |
+| 1:35–1:50 | Terminal: run `simulate_esp32_node.py --node TR-01 --once`, see `201`. Switch to the app: the packet counter goes up and TR-01's input changes from "Simulated" to "Telemetry". | "Edge nodes post counts to our API. Here the included simulator plays the node. The event is stored in Supabase, and the dashboard picks it up within three seconds." |
+| 1:50–2:00 | README "What is real vs simulated" table, then the GitHub URL. | "Next: calibrate the weights with real counts at one junction, train a trotro detector, and pilot read-only on a real controller. Everything is open source. Thanks for watching." |

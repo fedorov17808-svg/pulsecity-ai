@@ -1,219 +1,127 @@
-# 🏆 PulseCity AI — Autonomous Urban Nervous System
-> **Production Live URL:** 🌐 [https://pulsecity-ai.vercel.app](https://pulsecity-ai.vercel.app)  
-> **Live IoT Ingest Gateway (cURL Bridge):** 📡 [https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest](https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest)  
-> **Target Region:** Greater Accra Metropolitan Area (Ghana) & Global South Megacities  
-> **Core Pillars:** 🚦 **Traffic Sentinel (Adaptive Webster)** | ⚡ **GridGuard (Anti-Dumsor BESS)** | 🍃 **EcoSense (Odaw Sluice Gates)** | 📱 **Bilingual USSD (\*920\*26#)**
+# PulseCity AI
 
----
+Adaptive traffic-signal timing for Accra, Ghana, driven by in-browser computer vision.
+Track: **Traffic Mitigation**.
 
-## 🌟 Executive Summary & Hackathon Thesis
-Conventional Western smart-city software suites (e.g., Siemens Sitraffic, SCATS, SCOOT) cost **$45,000–$60,000 per intersection**, require underground optical fiber backhauls, and collapse completely during **Dumsor** (rolling power blackouts) and informal traffic surges (unregistered minibus *trotros*).
+## Problem
 
-**PulseCity AI** re-engineers municipal intelligence from first principles for emerging megacities:
-1. **$13.05 Edge IoT Sensor BOM:** Solar-powered ESP32-S3 + LoRaWAN 868MHz + Micro-YOLOv8 Edge AI with 36-hour LiFePO4 battery autonomy.
-2. **Highway Capacity Manual (HCM 2020) & Webster Minimum Delay Engine:** Replaces static 90s fixed light cycles with dynamic sub-150ms mathematical phase optimization calibrated to heterogeneous *trotro* Passenger Car Units (PCU = 2.5).
-3. **Autonomous Agentic Actuators:** Multi-modal LLM reasoning with real hardware actuator tool calling (`DISPATCH_GREEN_WAVE`, `BALANCE_GRID_SHED`, `DRAIN_SLUICE_GATES`).
-4. **Live External Telemetry Ingestion:** Open REST API / Webhook bridge allowing physical field devices or judge terminals to inject telemetry in real time.
-5. **Universal Citizen Inclusion:** Dual English & Akan Twi USSD portal (`*920*26#`) and zero-rated SMS reporting for non-smartphone users.
+Accra's signalised junctions, such as Kwame Nkrumah Circle, mostly run fixed-time plans.
+A fixed plan gives each approach the same green time whatever traffic is actually waiting,
+so green is wasted on short queues while long ones grow.
 
----
+The traffic mix makes this worse. Much of the city's public transport is *trotro* minibuses,
+which stop, load and pull out close to intersections. A trotro takes up more road than a car,
+so counting vehicles without weighting them understates the load on an approach.
 
-## 📸 Physical Prototype Bench & Live Field Execution Proof
+Emergency vehicles wait in the same queues because there is no signal priority.
 
-> **Zero Simulation Theater:** PulseCity AI is backed by real physical edge microcontrollers, optocoupled mechanical fail-safe relays, and a live production web application deployed on Vercel Edge.
+## Solution
 
-| 🔬 Laboratory ESP32 Edge Test Bench | 💻 Live Production Field Run |
-|:---:|:---:|
-| ![ESP32 Hardware Bench Setup](public/esp32_hardware_bench.jpg) | ![Live Production Deployment](public/hardware_prototype.jpg) |
-| **ESP32-S3 Dual-Core + LoRa SX1262 + Relays**<br>Physical breadboard test rig validating 3.32V regulated rail power, optocoupled fail-safe interlock, and ultrasonic depth telemetry. | **Safari on Apple Silicon • Vercel Edge Live**<br>Field workstation running `https://pulsecity-ai.vercel.app/` with live WMO station #65472 weather stream and sub-15ms edge ingest. |
+PulseCity AI turns a camera frame into a signal plan:
 
----
+1. **Detect** vehicles with COCO-SSD (TensorFlow.js) running in the browser. No frames leave the device.
+2. **Weight** detections in Passenger Car Units (PCU), so a trotro counts for more than a car.
+3. **Time** the junction with F.V. Webster's method: optimum cycle `C0 = (1.5L + 5) / (1 - Y)`,
+   green split in proportion to each phase's flow ratio, and Webster's average-delay formula.
+4. **Compare** that plan with a fixed 120 s cycle on the same flows and show the delay difference.
+   When the fixed plan is oversaturated, the app says so instead of reporting a number.
+5. **Clear a corridor** for an ambulance: Dijkstra over a small Accra road graph, with every
+   junction on the route set to green.
+6. **Log** telemetry from edge nodes (or the included simulator) to Supabase. The dashboard polls it every 3 s.
 
-## Live verification (from your terminal)
+```mermaid
+flowchart LR
+  A[Camera / video / photo] --> B[COCO-SSD in browser]
+  B --> C[PCU count]
+  C --> D[Webster cycle + green split]
+  D --> E[Signal plan]
+  D --> F[Emergency green wave]
+  G[Edge node / simulator] --> H[/api/telemetry/ingest/]
+  H --> I[(Supabase telemetry_events)]
+  I --> J[Dashboard, 3 s polling]
+```
 
-Any hackathon judge or engineer can inject real-time telemetry straight from their terminal into the live digital twin:
+## What is real vs simulated
+
+| Part | Status | Notes |
+|---|---|---|
+| Vehicle detection | Real | COCO-SSD `lite_mobilenet_v2` on the sample photos, an uploaded video/image or your webcam. If the model cannot load, placeholder boxes are shown with a **Simulated** badge. |
+| Trotro detection | Approximation | COCO-SSD has no "trotro" class; detected `bus` objects are counted as trotros. |
+| PCU weights | Assumed | trotro/bus 2.2, truck 3.0, car 1.0, motorcycle 0.5 (typical values, not calibrated for Accra). |
+| Flow from one frame | Assumed | Approach flow is estimated as PCU × 120 veh/h; the cross street as 42 % of it. |
+| Webster cycle, green split, delay | Real calculation | `src/utils/websterAlgorithm.js`, covered by tests with hand-worked numbers. |
+| Fixed-time baseline | Assumed | 120 s cycle, equal split. No published Accra signal plans were available to us. |
+| Intersection data on the map | Simulated until telemetry arrives | Starting values are illustrative and labelled; a node switches to "Telemetry" once a packet for it is stored. |
+| Traffic signal controllers | Simulated | We have no access to Accra's signal hardware; plans change the on-screen signals only. |
+| Green-wave routing | Real calculation | Dijkstra on a hand-built 8-junction graph with approximate distances. Time saved = expected wait at each fixed-time signal (about 17 s). |
+| Telemetry storage | Real | Supabase Postgres via the REST API, row-level security, writes only from the server. |
+| Node simulator | Simulated data | `hardware/simulate_esp32_node.py` generates synthetic traffic packets and POSTs them like a real node. |
+| Assistant chat | AI or rule-based | Gemini through a server proxy when `GEMINI_API_KEY` is set. Otherwise each reply is labelled "Rule-based mode (AI offline)". |
+| Junction photos | Real photos, not live feeds | See Image credits. |
+| Physical sensor node | Roadmap | Firmware sketches in `hardware/` are not part of the demo. |
+
+## Demo
+
+- Live app: https://pulsecity-ai.vercel.app
+- Video (2 min): VIDEO_URL_HERE
+
+## Run locally
+
+Requires Node.js 20.19+ (or 22.12+) and Python 3 (for the simulator only).
 
 ```bash
-# 1. Trigger an emergency clearance at Kwame Nkrumah Circle
-curl -X POST "https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest" \
-  -H "Content-Type: application/json" \
-  -H "X-Sensor-Token: $PULSECITY_SENSOR_TOKEN" \
-  -d '{
-    "nodeId": "TR-01",
-    "flowRateVehiclesPerHour": 4850,
-    "congestionPercentage": 92,
-    "incidentDetected": true,
-    "incidentDetails": "Trotro breakdown blocking circle flyover slip-road",
-    "protocol": "MQTT_V5_EDGE"
-  }'
-
-# 2. Trigger an Achimota Substation Grid SCADA Load Warning
-curl -X POST "https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest" \
-  -H "Content-Type: application/json" \
-  -H "X-Sensor-Token: $PULSECITY_SENSOR_TOKEN" \
-  -d '{
-    "nodeId": "EN-01",
-    "protocol": "IEC_60870_5_104",
-    "asduType": 30,
-    "currentLoadMw": 248,
-    "gridFrequencyHz": 49.82,
-    "transformerTemperatureCelsius": 91.2,
-    "dumsorRiskScore": 96
-  }'
-```
-
-*Expected response:* `HTTP 201 CREATED` in under **15ms**. The live web UI immediately flashes an `EXTERNAL INGEST VERIFIED` alert toast and updates map nodes dynamically!
-
----
-
-## 🏛️ System Architecture
-
-```
-                  ┌────────────────────────────────────────────────────────┐
-                  │           EXTERNAL FIELD TELEMETRY INGESTION           │
-                  │   ESP32 Edge Microcontroller / LoRaWAN / Judge cURL    │
-                  └──────────────────────────┬─────────────────────────────┘
-                                             │ HTTP POST / WebSocket
-                                             ▼
-                  ┌────────────────────────────────────────────────────────┐
-                  │         PULSECITY SERVERLESS INGESTION GATEWAY         │
-                  │  Token Auth (X-Sensor-Token) • Sliding Window Limiter  │
-                  └──────────────────────────┬─────────────────────────────┘
-                                             │ Delta Poll (Every 3.5s)
-                                             ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                           PULSECITY ACCRA DIGITAL TWIN CORE                             │
-│                                                                                         │
-│  ┌───────────────────────┐  ┌───────────────────────┐  ┌─────────────────────────────┐  │
-│  │   TRAFFIC SENTINEL    │  │       GRIDGUARD       │  │      ECOSENSE DRAINAGE      │  │
-│  │  • Webster 1958 Math  │  │  • SCADA IEC-104      │  │  • LoRaWAN Water Gauge      │  │
-│  │  • HCM 2020 Delay Eq. │  │  • BESS Battery Mgmt  │  │  • Odaw Sluice Gate Winch   │  │
-│  │  • Trotro PCU = 2.5   │  │  • Knapsack Load-Shed │  │  • AMA Waste Truck Reroute  │  │
-│  └───────────┬───────────┘  └───────────┬───────────┘  └──────────────┬──────────────┘  │
-│              │                          │                             │                 │
-│              └──────────────────────────┼─────────────────────────────┘                 │
-│                                         ▼                                               │
-│                 ┌──────────────────────────────────────────────┐                        │
-│                 │      AUTONOMOUS INCIDENT COMMANDER KOFI      │                        │
-│                 │   Gemini Multi-Modal Vision + Tool Actuators │                        │
-│                 └───────────────────────┬──────────────────────┘                        │
-└─────────────────────────────────────────┼───────────────────────────────────────────────┘
-                                          │
-                 ┌────────────────────────┴────────────────────────┐
-                 │          AUTONOMOUS ACTUATOR DISPATCH           │
-                 │  • DISPATCH_GREEN_WAVE (Ambulance corridor)     │
-                 │  • BALANCE_GRID_SHED (35MW Solar BESS)          │
-                 │  • DRAIN_SLUICE_GATES (Motorized sluice winch)  │
-                 └─────────────────────────────────────────────────┘
-```
-
----
-
-## 🔬 Mathematical & Engineering Rigor
-
-### 1. Adaptive Webster Signal Optimization (1958)
-Instead of arbitrary heuristics, cycle lengths are dynamically computed via Webster's minimum delay theorem:
-
-$$C_0 = \frac{1.5L + 5}{1 - Y}$$
-
-- **$L$ (Total Lost Time):** $12.0\text{ s}$ per cycle (inter-green transitions).
-- **$Y$ (Critical Flow Ratio):** $\sum (q_i / s_i)$, where $s_i = 1,800\text{ veh/hr/lane}$.
-- **Green Split Allocation:** $g_i = \frac{y_i}{Y} (C_0 - L)$.
-- **Trotro Heterogeneous Weighting:** Effective demand $q_{\text{eff}} = N_{\text{car}} \cdot 1.0 + N_{\text{trotro}} \cdot 2.5 + N_{\text{moto}} \cdot 0.5$.
-
-### 2. Highway Capacity Manual (HCM 2020) Uniform Delay
-$$\bar{d}_1 = \frac{C (1 - g/C)^2}{2 [1 - \min(1, X)(g/C)]}$$
-
-Comparing Legacy SCATS (fixed $C = 120\text{s}$) with PulseCity Adaptive Webster at $3,800\text{ veh/hr}$:
-- **Legacy Delay:** $29.4\text{ mins/commute}$ $\rightarrow$ **PulseCity:** $8.8\text{ mins/commute}$ (**-70% reduction**).
-- **Ambulance Transit (Circle $\rightarrow$ 37 Military):** $28.5\text{ mins}$ $\rightarrow$ **$7.4\text{ mins}$** with Green Wave laser preemption.
-
-### 3. GridGuard Anti-Dumsor Priority Knapsack
-Power grid load-shedding is modeled as a bounded 0/1 knapsack optimization over essential feeder lines ($T_1$: Hospitals, $T_2$: Water Pumping, $T_3$: Residential, $T_4$: Heavy Industrial):
-
-$$\max \sum_{i=1}^{n} w_i \cdot x_i \quad \text{subject to} \quad \sum_{i=1}^{n} P_i \cdot x_i \le P_{\text{capacity}} + P_{\text{solar\_bess}}$$
-
----
-
-## 📊 Hardware & Economic Comparison (TCO)
-
-| Metric | PulseCity AI (Ghana) | Siemens Sitraffic / SCOOT | Tyco SCATS (Australia) |
-| :--- | :---: | :---: | :---: |
-| **Unit Sensor CapEx** | **$13.05 USD** | $45,000+ USD | $60,000+ USD |
-| **Dumsor Blackout Autonomy** | **36-hour LiFePO4 + Solar** | ✕ Fails instantly | ✕ Requires AC Grid |
-| **Telemetry Backhaul** | **LoRaWAN 868MHz Mesh** | Dedicated Trench Fiber | High-Cost Cellular APN |
-| **Informal Transit Model** | **Trotro PCU 2.5 Calibrated** | Assumes lane discipline | Rigid passenger car models |
-| **Citizen Access** | **Free USSD (\*920\*26#)** | None (Internal Room) | None |
-| **Multi-Pillar Synergy** | **Traffic + Grid + Hydro** | Traffic Signals Only | Traffic Signals Only |
-
----
-
-## 🧪 Automated Unit Test Suite
-
-The core algorithms are covered by 11 comprehensive Vitest automated tests passing in under 180ms:
-
-```bash
-$ npm test
-
- ✓ src/__tests__/websterAlgorithm.test.js (4 tests)
-   - should calculate optimal cycle length C0 using Webster formula
-   - should cap cycle length to maximum ceiling under heavy congestion
-   - should allocate green splits proportionally to approach flow
-   - should apply trotro PCU weighting factor of 2.5
- ✓ src/__tests__/gridOptimization.test.js (4 tests)
-   - should prevent blackout by shedding lowest priority tier first
-   - should inject solar BESS before executing manual shedding
-   - should maintain frequency within safe 49.5-50.5 Hz bounds
-   - should protect hospital Tier 1 feeder from disconnection
- ✓ src/__tests__/roadGraphRouting.test.js (3 tests)
-   - should find shortest emergency ambulance corridor
-   - should calculate preemption green window arrival times
-   - should re-route around flooded road segments
-
-Test Files  3 passed (3)
-Tests       11 passed (11)
-Duration    168ms
-```
-
----
-
-## 🚀 Quick Start & Local Run
-
-```bash
-# 1. Clone repository
-git clone https://github.com/stepchik/pulsecity-ai.git
-cd pulsecity-ai
-
-# 2. Install dependencies
 npm install
-
-# 3. Run automated tests
-npm test
-
-# 4. Start local development server
-npm run dev
+cp .env.example .env    # fill in the values below
+npm run dev             # http://localhost:5173 (serves the api/ handlers too)
 ```
 
-Visit `http://localhost:5174/` to view the Accra Digital Twin.
+| Variable | Used for |
+|---|---|
+| `PULSECITY_SENSOR_TOKEN` | Shared secret that nodes send in `X-Sensor-Token` |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Telemetry storage (server only) |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional AI mode of the assistant |
 
----
+Create the table by running `supabase/migrations/001_telemetry.sql` in the Supabase SQL editor
+(or with `supabase db push`).
 
-## 🏆 DoraHacks Hackathon Submission Checklist
-- [x] **Live Working Demo:** Deployed at [https://pulsecity-ai.vercel.app](https://pulsecity-ai.vercel.app)
-- [x] **Agentic Actuators:** Real tool execution in Commander Kofi chat.
-- [x] **External Telemetry Ingestion:** Live cURL / REST API endpoint (`/api/v1/telemetry/ingest`).
-- [x] **Scientific Proof:** Interactive A/B Highway Capacity Manual simulation tab.
-- [x] **Hardware Blueprint:** Complete C++ ESP32 firmware & Python RPi code with $13.05 BOM.
-- [x] **Citizen Inclusivity:** Dual English / Akan Twi GSM USSD portal (`*920*26#`).
-- [x] **Test Coverage:** 11 passing Vitest unit tests.
+Send telemetry with the node simulator. No physical hardware is required.
+
+```bash
+export PULSECITY_SENSOR_TOKEN=<same value as in .env>
+python3 hardware/simulate_esp32_node.py --node TR-01 --interval 3
+# against the deployed app:
+python3 hardware/simulate_esp32_node.py --node TR-01 --once \
+  --gateway https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest
+```
+
+The ingest API answers 201 when the event is stored and 401 for a wrong token.
+It answers 400 for an invalid payload and 503 if the server is missing its token or Supabase settings.
+
+## Tests
+
+```bash
+npm test
+```
+
+| File | Covers |
+|---|---|
+| `tests/webster.test.js` | Optimum cycle, green split and Webster delay against hand-worked examples; fixed-vs-Webster comparison including the oversaturated case; PCU weighting |
+| `tests/ingest.test.js` | Ingest API: 503 / 401 / 400 / 201 / 502, with Supabase mocked |
+| `src/__tests__/` | Emergency routing, vision fallback labelling, telemetry export, rule-based assistant |
 
 ## Roadmap
-- Sensor node: roadmap (firmware sketches in `hardware/`, not part of the current demo).
+
+1. Calibrate PCU weights and saturation flows with manual counts at one Accra junction.
+2. Fine-tune a detector on local footage so trotros are a class of their own, not `bus`.
+3. Count per approach (lane polygons) instead of estimating cross-street flow.
+4. Pilot read-only on one junction controller with the relevant authority before any actuation.
+5. Sensor node: roadmap (firmware sketches in `hardware/`, not part of the current demo).
 
 ## Image credits
-- `src/assets/kwame_nkrumah_circle.jpg` — "Kwame Nkrumah Circle, Accra, Ghana 2" by Oluniyi Ajao,
+
+- `src/assets/kwame_nkrumah_circle.jpg`: "Kwame Nkrumah Circle, Accra, Ghana 2" by Oluniyi Ajao,
   [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kwame_Nkrumah_Circle,_Accra,_Ghana_2.jpg),
   licensed [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/). Unmodified; a still photo, not a live feed.
-- `src/assets/tema_motorway_toll.jpg` — "Tema - Accra Motorway toolbooth" by Enock4seth,
+- `src/assets/tema_motorway_toll.jpg`: "Tema - Accra Motorway toolbooth" by Enock4seth,
   [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Tema_-_Accra_Motorway_toolbooth.jpeg),
   licensed [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Unmodified (resized to 1280 px); a still photo, not a live feed.
