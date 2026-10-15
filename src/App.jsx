@@ -16,14 +16,29 @@ import CyberGridBackdrop from './components/CyberGridBackdrop';
 import QuickIngestModal from './components/QuickIngestModal';
 import IntersectionOptimizerPanel from './components/IntersectionOptimizerPanel';
 import TrotroFlowHeroWidget from './components/TrotroFlowHeroWidget';
-import { calculateWebsterSignalTiming } from './utils/websterAlgorithm';
+import AssistantChat from './components/AssistantChat';
+import { calculateWebsterSignalTiming, compareFixedVsWebster } from './utils/websterAlgorithm';
+
+// Two-phase model of an intersection: the measured approach plus a cross street.
+// The cross-street share (42 %) is an assumption until per-approach counts exist.
+const CROSS_FLOW_SHARE = 0.42;
+function signalPhasesFor(node) {
+  const flow = node.flowRate || 0;
+  const sat = node.saturationFlow || 1800;
+  return [
+    { name: `${node.name} main approach`, flowRate: flow, saturationFlow: sat },
+    { name: `${node.name} cross street`, flowRate: Math.round(flow * CROSS_FLOW_SHARE), saturationFlow: sat }
+  ];
+}
+
+const formatDelay = (sec) => (sec === null ? 'oversaturated' : `${sec.toFixed(1)} s/veh`);
 import { recordTelemetryPacket } from './services/telemetryStore';
 import { sfx } from './utils/soundEffects';
 import gsap from 'gsap';
 
 export default function App() {
   // Navigation & View State
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'traffic' | 'gateway'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'traffic' | 'gateway' | 'assistant'
   const [mapLayer, setMapLayer] = useState('traffic'); // 'traffic' | 'all'
   
   // Real-time Interactive Node States with LocalStorage Persistence
@@ -283,14 +298,8 @@ export default function App() {
           let websterMeta = node.websterTiming;
 
           if (nextRem <= 0) {
-            // Compute real F.V. Webster optimal split based on current node saturation and flow
-            const flow = node.flowRate || Math.max(800, node.congestion * 45);
-            const sat = node.saturationFlow || 3800;
             const webster = calculateWebsterSignalTiming({
-              phases: [
-                { name: `${node.name} Primary Approach`, flowRate: flow, saturationFlow: sat, minGreen: 20 },
-                { name: `${node.name} Cross-Turn Approach`, flowRate: Math.round(flow * 0.42), saturationFlow: sat, minGreen: 12 }
-              ],
+              phases: signalPhasesFor(node),
               lostTimePerPhase: 4,
               maxCycleLength: 120,
               minCycleLength: 40
@@ -298,9 +307,9 @@ export default function App() {
 
             websterMeta = {
               optimalCycle: webster.optimumCycleLengthSeconds,
-              effectiveGreen: webster.phases[0]?.effectiveGreenSeconds || 45,
+              effectiveGreen: webster.phases[0].effectiveGreenSeconds,
               totalFlowRatioY: webster.totalFlowRatio_Y,
-              estimatedDelaySec: webster.phases[0]?.estimatedDelaySecPerVehicle || 15
+              estimatedDelaySec: webster.phases[0].estimatedDelaySecPerVehicle
             };
 
             const greenSec = websterMeta.effectiveGreen;
@@ -347,7 +356,8 @@ export default function App() {
               congestion: payload.congestionPercentage ?? n.congestion,
               incidentActive: payload.incidentDetected ?? n.incidentActive,
               alert: payload.incidentDetails || n.alert,
-              ambulancePriority: payload.emergencyTransitActive ?? n.ambulancePriority
+              ambulancePriority: payload.emergencyTransitActive ?? n.ambulancePriority,
+              simulated: false
             };
           }
           return n;
@@ -357,19 +367,18 @@ export default function App() {
   };
 
   // Actions
+  // Applies a signal plan to the simulated controller. It does not invent an effect
+  // on congestion or speed; the expected benefit is the computed delay comparison.
   const handleApplyTrafficOptimization = (nodeId, newGreenDuration) => {
     sfx.success();
     setTrafficNodes((prev) =>
       prev.map((n) => {
         if (n.id === nodeId) {
-          const reducedCongestion = Math.max(25, n.congestion - 28);
           return {
             ...n,
-            congestion: reducedCongestion,
-            speedKmh: Math.round(n.speedKmh * 1.45),
             lightState: 'GREEN',
             cycleRemainingSec: newGreenDuration || 45,
-            alert: 'Webster Signal Timing Active: Optimum phase split applied'
+            alert: 'Webster plan applied (simulated controller)'
           };
         }
         return n;
@@ -441,6 +450,9 @@ export default function App() {
     setVisionModalOpen(true);
   };
 
+  const ribbonNode = trafficNodes[0];
+  const ribbonComparison = compareFixedVsWebster({ phases: signalPhasesFor(ribbonNode) });
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       {/* Sci-Fi Global Interactive Grid Backdrop */}
@@ -495,7 +507,7 @@ export default function App() {
                 </span>
               </div>
               <div style={{ fontSize: '0.68rem', color: '#64748b', letterSpacing: '0.04em', fontFamily: 'var(--font-mono)' }}>
-                GREATER ACCRA ARTERIAL NETWORK // 12 INTERSECTIONS ARMED
+                GREATER ACCRA // {trafficNodes.length} INTERSECTIONS // SIGNAL CONTROLLERS SIMULATED
               </div>
             </div>
           </div>
@@ -529,7 +541,14 @@ export default function App() {
               <Terminal size={14} />
               IoT Gateway & Bench
             </button>
-
+            <button
+              onClick={() => { sfx.click(); setActiveTab('assistant'); }}
+              onMouseEnter={() => sfx.hover()}
+              className={`pill-tab ${activeTab === 'assistant' ? 'active' : ''}`}
+            >
+              <Bot size={14} />
+              Assistant
+            </button>
 
             {/* Municipal Expansion Modules Dropdown */}
             <div ref={opsMenuRef} style={{ position: 'relative' }}>
@@ -576,7 +595,7 @@ export default function App() {
                     <Cpu size={14} color="#38bdf8" />
                     <div>
                       <div style={{ fontWeight: '600', color: '#fff' }}>Physical Hardware & Wiring</div>
-                      <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>ESP32 C++ firmware, DHT22 & $13.05 BOM</div>
+                      <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>ESP32 firmware, wiring & bill of materials</div>
                     </div>
                   </button>
                 </div>
@@ -653,38 +672,33 @@ export default function App() {
           flexWrap: 'wrap',
           gap: '12px'
         }}>
-          {/* Live Edge Telemetry Node Info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} className="pulse-indicator" />
-            <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>CORRIDOR CONTROLLER:</span>
+            <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>TELEMETRY:</span>
             <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-              ESP32-NODE-TR01 • 14ms Latency • HTTP 201 Active • NEMA TS2 Armed
+              {ingestPacketCount} packets received this session
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Car size={13} color="#38bdf8" />
-              <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Avg Delay Saved:</span>
-              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#fff' }}>-18.5 min/trip (-78.3%)</span>
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{ribbonNode.id} Webster cycle:</span>
+              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#fff' }}>{ribbonComparison.webster.cycleSec}s</span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }} title="Webster average delay per vehicle, fixed 120 s equal-split cycle vs Webster optimum, same flows. See the vision panel for the full formula.">
               <BarChart3 size={13} color="#34d399" />
-              <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Corridor Throughput:</span>
-              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#34d399' }}>+34.2% PCU Flow</span>
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Avg delay (fixed 120s → Webster):</span>
+              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#34d399' }}>
+                {formatDelay(ribbonComparison.fixed.avgDelaySec)} → {formatDelay(ribbonComparison.webster.avgDelaySec)}
+              </span>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Shield size={13} color="#fbbf24" />
-              <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Fail-Safe Interlock:</span>
-              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#fbbf24' }}>CMU-16LE Mechanical (0 Conflict)</span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Activity size={13} color="var(--accent-cyan)" />
-              <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Retrofit Unit BOM:</span>
-              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--accent-cyan)' }}>$13.05 / Intersection</span>
+              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#fbbf24' }}>
+                {ribbonNode.simulated ? 'Simulated input data' : 'Input from telemetry'}
+              </span>
             </div>
           </div>
         </div>
@@ -941,6 +955,17 @@ export default function App() {
           </div>
         )}
 
+        {activeTab === 'assistant' && (
+          <div style={{ height: '640px' }}>
+            <AssistantChat
+              apiKey={apiKey}
+              trafficNodes={trafficNodes}
+              activeCrisis={activeCrisis}
+              onExecuteAgentTool={handleExecuteAgentTool}
+            />
+          </div>
+        )}
+
         {/* Tab 5: Sensor Ingestion API Gateway */}
         {activeTab === 'gateway' && (
           <SensorIngestGateway
@@ -960,26 +985,7 @@ export default function App() {
         color: 'var(--text-muted)'
       }}>
         <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
-              <strong style={{ color: '#fff' }}>MUTCD & NEMA TS2:</strong> Actuated Signal Specification Compliant
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38bdf8', display: 'inline-block' }}></span>
-              <strong style={{ color: '#fff' }}>CMU-16LE:</strong> Mechanical Conflict Monitor Fail-Safe Interlock
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fbbf24', display: 'inline-block' }}></span>
-              <strong style={{ color: '#fff' }}>MTTD Act 683:</strong> Emergency Medical Vehicle Priority Protocol
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'var(--font-mono)' }}>
-            <span style={{ color: 'var(--accent-cyan)' }}>Vercel Edge API: 200 OK</span>
-            <span>•</span>
-            <span>Greater Accra Urban Mobility Department (DoraHacks 2026)</span>
-          </div>
+          <span>Prototype. Signal controllers are simulated; vehicle detection (COCO-SSD) runs in your browser.</span>
         </div>
       </footer>
 

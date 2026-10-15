@@ -199,25 +199,22 @@ export function calculateWebsterSignalTiming(options = {}) {
     const minG = Math.max(CABINET_SAFETY_STANDARDS.MUTCD_MIN_GREEN_SEC, p.minGreen || 12);
     const effectiveGreen = Math.min(totalAvailableGreen - 5, Math.max(minG, proportionalGreen));
 
-    // Webster's Delay Formula per vehicle:
-    // d = [C * (1 - lambda)^2] / [2 * (1 - lambda * x)] + [x^2] / [2 * q * (1 - x)]
-    const lambda = Math.min(0.95, Math.max(0.05, effectiveGreen / optimumCycleLength_C0));
-    const capacity = lambda * p.saturationFlow;
-    const degreeOfSaturation_x = Math.min(0.95, Math.max(0.05, p.flowRate / Math.max(1, capacity)));
-    
-    // Robust delay estimation (guarded against division by zero if flowRate is 0)
-    const term1 = (optimumCycleLength_C0 * Math.pow(1 - lambda, 2)) / Math.max(0.01, 2 * (1 - lambda * degreeOfSaturation_x));
-    const safeQPerSec = Math.max(0.01, p.flowRate / 3600);
-    const term2 = Math.pow(degreeOfSaturation_x, 2) / (2 * safeQPerSec * Math.max(0.05, 1 - degreeOfSaturation_x));
-    const avgDelaySec = Math.round(term1 + Math.min(60, term2));
+    const delay = websterDelay({
+      cycleSec: optimumCycleLength_C0,
+      effectiveGreenSec: effectiveGreen,
+      flowVph: p.flowRate,
+      saturationFlowVph: p.saturationFlow
+    });
 
     return {
       name: p.name,
       flowRate: p.flowRate,
+      saturationFlow: p.saturationFlow,
       flowRatio: Number(p.flowRatio_y.toFixed(3)),
       effectiveGreenSeconds: effectiveGreen,
-      degreeOfSaturation: Number(degreeOfSaturation_x.toFixed(2)),
-      estimatedDelaySecPerVehicle: isNaN(avgDelaySec) ? 15 : avgDelaySec
+      degreeOfSaturation: Number(delay.degreeOfSaturation.toFixed(2)),
+      // null when the approach is oversaturated (x >= 1): Webster's formula does not apply
+      estimatedDelaySecPerVehicle: delay.delaySec === null ? null : Math.round(delay.delaySec)
     };
   });
 
@@ -236,6 +233,92 @@ export function calculateWebsterSignalTiming(options = {}) {
       formulaValues: `(${1.5} * ${totalLostTime_L} + 5) / (1 - ${totalFlowRatio_Y.toFixed(3)}) = ${optimumCycleLength_C0}s`,
       totalGreenBudget: `${totalAvailableGreen}s across ${numPhases} phases`,
       cmuStandard: "NEMA TS2-2016 Port 1 SDLC (12s Min Green Enforced)"
+    }
+  };
+}
+
+/**
+ * Webster (1958) average delay per vehicle on one signalised approach.
+ *
+ *   d = C(1 - λ)² / [2(1 - λx)] + x² / [2q(1 - x)] - 0.65 (C / q²)^(1/3) · x^(2 + 5λ)
+ *
+ *   C = cycle length (s), λ = g / C (effective green ratio),
+ *   q = arrival flow (veh/s), s = saturation flow (veh/s), x = q / (λ·s).
+ *
+ * The formula is only valid for undersaturated approaches. When x >= 1 the queue
+ * grows every cycle, so `delaySec` is null instead of a made-up number.
+ */
+export function websterDelay({ cycleSec, effectiveGreenSec, flowVph, saturationFlowVph }) {
+  const C = cycleSec;
+  const lambda = effectiveGreenSec / C;
+  const q = Math.max(0, flowVph) / 3600;
+  const s = saturationFlowVph / 3600;
+  const x = q / (lambda * s);
+
+  if (!(C > 0) || !(lambda > 0) || !(s > 0)) {
+    throw new Error('websterDelay: cycle, green and saturation flow must be positive');
+  }
+  if (x >= 1) {
+    return { delaySec: null, degreeOfSaturation: x, oversaturated: true };
+  }
+
+  const uniform = (C * (1 - lambda) ** 2) / (2 * (1 - lambda * x));
+  const random = q > 0 ? (x ** 2) / (2 * q * (1 - x)) : 0;
+  const correction = q > 0 ? 0.65 * Math.cbrt(C / (q * q)) * x ** (2 + 5 * lambda) : 0;
+
+  return {
+    delaySec: Math.max(0, uniform + random - correction),
+    degreeOfSaturation: x,
+    oversaturated: false
+  };
+}
+
+/**
+ * Compares a fixed-time plan (equal green split) with the Webster plan for the
+ * same approach flows, using Webster's delay formula for both.
+ *
+ * The fixed-time baseline is an assumption (no published signal plans for Accra
+ * junctions are available to us); it is returned in `assumptions` so the UI can
+ * show it next to the result.
+ */
+export function compareFixedVsWebster({ phases, fixedCycleSec = 120, lostTimePerPhase = 4, maxCycleLength = 120, minCycleLength = 40 }) {
+  const webster = calculateWebsterSignalTiming({ phases, lostTimePerPhase, maxCycleLength, minCycleLength });
+  const totalLost = phases.length * lostTimePerPhase;
+  const fixedGreen = (fixedCycleSec - totalLost) / phases.length;
+
+  const evaluate = (cycleSec, greens) => {
+    const perPhase = phases.map((p, i) => ({
+      name: p.name,
+      flowVph: p.flowRate,
+      greenSec: greens[i],
+      ...websterDelay({ cycleSec, effectiveGreenSec: greens[i], flowVph: p.flowRate, saturationFlowVph: p.saturationFlow })
+    }));
+    const totalFlow = perPhase.reduce((sum, p) => sum + p.flowVph, 0);
+    const anyOversaturated = perPhase.some((p) => p.delaySec === null);
+    const avgDelaySec = anyOversaturated || totalFlow === 0
+      ? null
+      : perPhase.reduce((sum, p) => sum + p.flowVph * p.delaySec, 0) / totalFlow;
+    return { cycleSec, perPhase, avgDelaySec, oversaturated: anyOversaturated };
+  };
+
+  const fixed = evaluate(fixedCycleSec, phases.map(() => fixedGreen));
+  const adaptive = evaluate(webster.optimumCycleLengthSeconds, webster.phases.map((p) => p.effectiveGreenSeconds));
+  const totalFlowVph = phases.reduce((sum, p) => sum + p.flowRate, 0);
+
+  const delaySavedSecPerVeh = fixed.avgDelaySec !== null && adaptive.avgDelaySec !== null
+    ? fixed.avgDelaySec - adaptive.avgDelaySec
+    : null;
+
+  return {
+    fixed,
+    webster: adaptive,
+    delaySavedSecPerVeh,
+    // vehicle-hours of delay saved per hour of operation at these flows
+    vehicleHoursSavedPerHour: delaySavedSecPerVeh === null ? null : (totalFlowVph * delaySavedSecPerVeh) / 3600,
+    assumptions: {
+      fixedCycleSec,
+      fixedSplit: 'equal green for every phase',
+      lostTimePerPhase
     }
   };
 }

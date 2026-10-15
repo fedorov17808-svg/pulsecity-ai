@@ -8,7 +8,7 @@ import {
   computePacketChecksum,
   getTelemetryMetrics 
 } from '../services/telemetryStore';
-import { queryIncidentCommander } from '../services/geminiService';
+import { queryIncidentCommander, parseActionLine, RULE_BASED_LABEL } from '../services/geminiService';
 
 describe('Local Edge Vision & PCU Engine', () => {
   it('correctly calculates African transit PCU factors for Trotro, Trucks, Cabs and Motorbikes', () => {
@@ -44,7 +44,8 @@ describe('Local Edge Vision & PCU Engine', () => {
     };
 
     const result = detectObjectsOfflineEdge(mockMedia);
-    expect(result.simulated).toBe(false);
+    // fallback boxes are placeholders, so the result must be labelled simulated
+    expect(result.simulated).toBe(true);
     expect(result.backend).toBe('EDGE_CANVAS_PIXEL_CONTOUR');
     expect(result.detectedObjects.length).toBeGreaterThan(0);
     expect(result.websterOptimization).toBeDefined();
@@ -99,37 +100,26 @@ describe('Telemetry Store & Persistent Audit Trail', () => {
   });
 });
 
-describe('Incident Commander & SCADA Actuator Dispatcher', () => {
-  it('dispatches emergency green wave with safety validation and receipt', async () => {
-    const cityState = {
-      trafficBottlenecks: 'Kwame Nkrumah Circle',
-      gridReserve: '72%',
-      avgAqi: '68'
-    };
-
-    const res = await queryIncidentCommander(null, 'Preempt green wave for ambulance at Circle', cityState);
-    expect(res).toBeDefined();
-    expect(res.toolCall).toBeDefined();
+describe('Traffic assistant without AI (rule-based mode)', () => {
+  it('labels every reply as rule-based and dispatches a green wave for emergencies', async () => {
+    const res = await queryIncidentCommander(null, 'Preempt green wave for ambulance at Circle', {});
+    expect(res.mode).toBe('rule-based');
+    expect(res.text.startsWith(RULE_BASED_LABEL)).toBe(true);
     expect(res.toolCall.name).toBe('DISPATCH_GREEN_WAVE');
-    expect(res.toolCall.status).toBe('EXECUTED');
-    expect(res.toolCall.safetyValidated).toBe(true);
-    expect(res.toolCall.dispatchReceipt).toMatch(/^0x[0-9A-F]{8}$/);
-    expect(res.toolCall.cmuInterlocks).toBe('ARMED_MONITORING_NOMINAL');
   });
 
-  it('dispatches grid knapsack load shedding with solid-state relay timing', async () => {
-    const cityState = {
-      trafficBottlenecks: 'Tema Motorway',
-      gridReserve: '62%',
-      avgAqi: '74'
-    };
+  it('maps signal requests to the named intersection and returns no action otherwise', async () => {
+    const signal = await queryIncidentCommander(null, 'recompute signal cycle at TR-02', {});
+    expect(signal.toolCall).toEqual({ name: 'OVERRIDE_TRAFFIC_LIGHT', params: { nodeId: 'TR-02' } });
 
-    const res = await queryIncidentCommander(null, 'Emergency blackout warning at Achimota substation, shed non-essential load', cityState);
-    expect(res).toBeDefined();
-    expect(res.toolCall).toBeDefined();
-    expect(res.toolCall.name).toBe('BALANCE_GRID_SHED');
-    expect(res.toolCall.status).toBe('EXECUTED');
-    expect(res.toolCall.latencyMs).toBeLessThanOrEqual(100);
-    expect(res.toolCall.dispatchReceipt).toBeDefined();
+    const unknown = await queryIncidentCommander(null, 'hello', {});
+    expect(unknown.mode).toBe('rule-based');
+    expect(unknown.toolCall).toBeNull();
+  });
+
+  it('parses the ACTION line chosen by the model in AI mode', () => {
+    expect(parseActionLine('Clear the corridor.\nACTION: DISPATCH_GREEN_WAVE').name).toBe('DISPATCH_GREEN_WAVE');
+    expect(parseActionLine('ACTION: OVERRIDE_TRAFFIC_LIGHT TR-04').params.nodeId).toBe('TR-04');
+    expect(parseActionLine('ACTION: NONE')).toBeNull();
   });
 });

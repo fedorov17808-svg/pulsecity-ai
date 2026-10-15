@@ -29,29 +29,6 @@ export default function QuickIngestModal({
         emergencyTransitActive: false,
         protocol: 'MQTT_V5_EDGE'
       }
-    },
-    'EN-01': {
-      title: 'Power Grid SCADA (Achimota Substation)',
-      payload: {
-        nodeId: 'EN-01',
-        protocol: 'IEC_60870_5_104',
-        asduType: 30,
-        currentLoadMw: 248,
-        gridFrequencyHz: 49.82,
-        transformerTemperatureCelsius: 91.2,
-        dumsorRiskScore: 96
-      }
-    },
-    'ECO-01': {
-      title: 'Drainage Flood Basin (Odaw Basin)',
-      payload: {
-        nodeId: 'ECO-01',
-        protocol: 'LORAWAN_868MHZ',
-        waterLevelMeters: 3.92,
-        aqiScore: 182,
-        drainageChokeDetected: true,
-        wasteFillPercentage: 98
-      }
     }
   };
 

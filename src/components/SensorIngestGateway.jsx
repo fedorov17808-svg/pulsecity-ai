@@ -18,10 +18,7 @@ export default function SensorIngestGateway({
   "incidentDetails": "Overturned trotro blocking left slip-road",
   "emergencyTransitActive": false
 }`);
-  const [ingestLogs, setIngestLogs] = useState([
-    { id: 1, time: '01:14:02', status: '200 OK', msg: 'ESP32 MQTT Gateway Handshake: 1,420 sensors synced' },
-    { id: 2, time: '01:18:45', status: '200 OK', msg: 'Achimota Substation SCADA stream: 232 MW verified' }
-  ]);
+  const [ingestLogs, setIngestLogs] = useState([]);
   const [copiedCurl, setCopiedCurl] = useState(false);
 
   const hostUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pulsecity-ai.vercel.app';
@@ -34,7 +31,8 @@ export default function SensorIngestGateway({
     try {
       const parsed = JSON.parse(payloadJson);
 
-      // 1. Real HTTP POST to the backend API endpoint
+      // 1. Real HTTP POST to the backend API endpoint (round-trip time measured here)
+      const startedAt = performance.now();
       const response = await fetch('/api/v1/telemetry/ingest', {
         method: 'POST',
         headers: {
@@ -45,6 +43,7 @@ export default function SensorIngestGateway({
       });
 
       const responseData = await response.json();
+      const roundTripMs = Math.round(performance.now() - startedAt);
 
       if (!response.ok) {
         throw new Error(responseData.message || `HTTP ${response.status}`);
@@ -57,7 +56,7 @@ export default function SensorIngestGateway({
         id: Date.now(),
         time: new Date().toLocaleTimeString(),
         status: `${response.status} CREATED`,
-        msg: `HTTP POST /api/v1/telemetry/ingest [${parsed.nodeId}] Verified (Latency: ${responseData.serverAudit?.latencyMs || 8}ms)`
+        msg: `HTTP POST /api/v1/telemetry/ingest [${parsed.nodeId}] accepted (round trip ${roundTripMs} ms)`
       };
 
       setIngestLogs((prev) => [newLog, ...prev.slice(0, 8)]);
@@ -114,10 +113,6 @@ export default function SensorIngestGateway({
                 setSelectedTarget(val);
                 if (val.startsWith('TR')) {
                   setPayloadJson(`{\n  "nodeId": "${val}",\n  "flowRateVehiclesPerHour": 4450,\n  "congestionPercentage": 89,\n  "incidentDetected": true,\n  "incidentDetails": "Overturned trotro blocking left slip-road",\n  "emergencyTransitActive": false,\n  "protocol": "MQTT_V5_EDGE"\n}`);
-                } else if (val.startsWith('EN')) {
-                  setPayloadJson(`{\n  "nodeId": "${val}",\n  "currentLoadMw": 242,\n  "transformerTemperatureCelsius": 89.4,\n  "dumsorRiskScore": 94,\n  "solarInputMw": 18,\n  "protocol": "IEC_60870_5_104",\n  "asduType": 30\n}`);
-                } else {
-                  setPayloadJson(`{\n  "nodeId": "${val}",\n  "waterLevelMeters": 3.85,\n  "aqiScore": 178,\n  "drainageChokeDetected": true,\n  "wasteFillPercentage": 96,\n  "protocol": "LORAWAN_868MHZ"\n}`);
                 }
               }}
               style={{

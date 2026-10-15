@@ -248,7 +248,7 @@ export default function HardwareSchematicViewer() {
           <g>
             <rect x="345" y="30" width="220" height="390" rx="10" fill="url(#espGrad)" stroke="#00f2fe" strokeWidth="1.5" />
             <text x="360" y="55" fill="#fff" fontSize="11" fontWeight="900" fontFamily="monospace">2. PULSECITY RETROFIT NODE</text>
-            <text x="360" y="70" fill="#bae6fd" fontSize="8.5">ESP32-S3 Dual-Core 240MHz ($340 BOM)</text>
+            <text x="360" y="70" fill="#bae6fd" fontSize="8.5">ESP32-S3 Dual-Core 240MHz</text>
 
             {/* On-Chip Webster Calculation Core */}
             <rect x="360" y="90" width="190" height="90" rx="8" fill="rgba(0, 0, 0, 0.45)" stroke="rgba(0, 242, 254, 0.4)" />

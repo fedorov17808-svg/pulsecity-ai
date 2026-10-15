@@ -28,7 +28,7 @@ export default function GeminiConfigModal({ isOpen, onClose, apiKey, setApiKey }
 
     setTestResult({
       success: true,
-      message: trimmed ? "Gemini Neural API Key securely cached in browser session." : "Reset to Autonomous Local Heuristics Engine."
+      message: trimmed ? "Gemini API key saved in this browser (localStorage)." : "Key removed. Assistant will use rule-based mode (AI offline)."
     });
   };
 
@@ -161,7 +161,7 @@ export default function GeminiConfigModal({ isOpen, onClose, apiKey, setApiKey }
                 <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                   {apiKey 
                     ? 'Real-time multi-modal traffic frame inference and AI commander live.' 
-                    : 'System is running on local Accra Webster formula & physical SCADA simulation.'}
+                    : 'No key: Webster maths and COCO-SSD run locally; the assistant uses rule-based mode.'}
                 </div>
               </div>
             </div>
@@ -316,7 +316,7 @@ export default function GeminiConfigModal({ isOpen, onClose, apiKey, setApiKey }
               Offline Autonomy by Design:
             </div>
             <p style={{ fontSize: '0.74rem', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
-              PulseCity AI uses a dual-engine architecture: all physical optimization (Webster traffic signal cycle calculations, SCADA under-frequency priority knapsack, and Odaw basin hydrological models) execute entirely client-side without external dependencies. Supplying an API key enables Gemini 1.5 Flash multi-modal frame vision and dynamic conversational agent dispatch.
+              Webster signal timing and COCO-SSD vehicle detection run in your browser without any key. A Gemini API key only enables the optional Gemini image analysis and the AI mode of the assistant; without it the assistant runs in a clearly labelled rule-based mode.
             </p>
           </div>
         </div>

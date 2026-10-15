@@ -81,8 +81,7 @@ export default function CctvTrafficCanvas({
 
         // Loop vehicles across screen
         if (v.x > w + 100) {
-          v.x = -150;
-          v.speed = 1.6 + Math.random() * 1.8;
+          v.x = -150; // re-enter with the same deterministic speed
         }
 
         // Vehicle Body
@@ -122,7 +121,7 @@ export default function CctvTrafficCanvas({
 
         ctx.fillStyle = '#04131f';
         ctx.font = 'bold 9px monospace';
-        ctx.fillText(`${v.type.slice(0, 10)} ${(v.conf * 100).toFixed(0)}%`, bx + 4, by - 4);
+        ctx.fillText(v.type.slice(0, 10), bx + 4, by - 4);
       });
 
       // 3. Traffic Light Indicator in Top Right
@@ -153,9 +152,9 @@ export default function CctvTrafficCanvas({
       // Camera Watermark / Timestamp
       ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
       ctx.font = '11px monospace';
-      ctx.fillText(`CCTV: ${cameraName.toUpperCase()} [FPS: 30]`, 18, 28);
+      ctx.fillText(`SIMULATED ANIMATION: ${cameraName.toUpperCase()}`, 18, 28);
       ctx.fillStyle = 'var(--accent-cyan, #00f2fe)';
-      ctx.fillText(`REAL-TIME MOG2 EDGE SENTINEL • ACTIVE VEHICLES: ${vehicles.length}`, 18, 44);
+      ctx.fillText(`NOT CAMERA DATA • ${vehicles.length} SYNTHETIC VEHICLES`, 18, 44);
 
       animId = requestAnimationFrame(render);
     };

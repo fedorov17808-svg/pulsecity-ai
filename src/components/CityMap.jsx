@@ -504,14 +504,6 @@ export default function CityMap({
           <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00f2fe' }}></span>
           Traffic Node (Circle)
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ width: '8px', height: '8px', background: '#a855f7', transform: 'rotate(45deg)' }}></span>
-          Substation (Diamond)
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span>
-          EcoSense Hub
-        </div>
       </div>
 
       {/* Selected Node Quick HUD Drawer (Bottom Right) */}
@@ -581,7 +573,7 @@ export default function CityMap({
                 onClick={() => onOpenVisionModal(selectedNode)}
               >
                 <Eye size={15} />
-                Open Gemini CCTV Vision Feed
+                Open vision panel
               </button>
             </div>
           )}
@@ -589,7 +581,7 @@ export default function CityMap({
         </div>
       )}
 
-      {/* Live 4K Circle Interchange CCTV Picture-in-Picture Tile */}
+      {/* Sample still image of Circle (not a live feed) */}
       <div 
         onClick={() => onOpenVisionModal && onOpenVisionModal(trafficNodes ? trafficNodes[0] : null)}
         style={{
@@ -608,12 +600,12 @@ export default function CityMap({
           transition: 'all 0.2s ease'
         }}
         className="cctv-pip-widget notranslate"
-        title="Click to launch 4K YOLOv8 Computer Vision Feed & Webster Controls"
+        title="Open the vision panel (COCO-SSD runs in your browser)"
       >
         <div style={{ position: 'relative', height: '115px', overflow: 'hidden' }}>
           <img 
             src={circleCctvImg} 
-            alt="Kwame Nkrumah Circle 4K CCTV" 
+            alt="Sample still image of Kwame Nkrumah Circle" 
             style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
           />
           {/* Scanline overlay */}
@@ -639,7 +631,7 @@ export default function CityMap({
             gap: '5px'
           }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f43f5e' }} className="pulse-indicator" />
-            <span>● 4K CCTV // CIRCLE</span>
+            <span>SAMPLE IMAGE // CIRCLE</span>
           </div>
           <div style={{
             position: 'absolute',
@@ -652,7 +644,7 @@ export default function CityMap({
             fontFamily: 'var(--font-mono)',
             color: '#34d399'
           }}>
-            YOLOv8 INT8 • 4,450 PCU
+            COCO-SSD • not a live feed
           </div>
         </div>
         <div style={{

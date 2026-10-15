@@ -1,7 +1,12 @@
-import { calculateWebsterSignalTiming } from '../utils/websterAlgorithm';
+import { calculateWebsterSignalTiming, compareFixedVsWebster } from '../utils/websterAlgorithm';
+
+// Delay comparison (fixed 120 s cycle vs Webster optimum) for the same approach flows
+function delayComparisonFor(webster) {
+  return compareFixedVsWebster({ phases: webster.phases });
+}
 
 export const GEMINI_CONFIG = {
-  defaultModel: "gemini-1.5-flash",
+  defaultModel: "gemini-2.5-flash",
   systemPrompt: `You are PulseCity AI Traffic Sentinel for Greater Accra. 
 Analyze the image or road junction for traffic congestion, vehicles, Trotros, hazards, and emergency vehicles.
 Detect all visible vehicles and return structured bounding boxes in normalized coordinates [0-1000].`
@@ -46,8 +51,7 @@ Return ONLY valid JSON matching this schema:
       headers: proxyHeaders,
       body: JSON.stringify({
         prompt: promptText,
-        imageBase64,
-        model: "gemini-1.5-flash"
+        imageBase64
       })
     });
 
@@ -67,7 +71,7 @@ Return ONLY valid JSON matching this schema:
 
         parsed.websterOptimization = webster;
         parsed.greenLightDurationSeconds = webster.phases[0]?.effectiveGreenSeconds || 45;
-        parsed.estimatedDelaySavedMinutes = Number(((webster.phases[0]?.estimatedDelaySecPerVehicle * 0.45) / 60).toFixed(1));
+        parsed.delayComparison = delayComparisonFor(webster);
         return parsed;
       }
     }
@@ -113,7 +117,7 @@ Return ONLY valid JSON matching this schema:
 
         parsed.websterOptimization = webster;
         parsed.greenLightDurationSeconds = webster.phases[0]?.effectiveGreenSeconds || 45;
-        parsed.estimatedDelaySavedMinutes = Number(((webster.phases[0]?.estimatedDelaySecPerVehicle * 0.45) / 60).toFixed(1));
+        parsed.delayComparison = delayComparisonFor(webster);
         return parsed;
       }
     } catch (err) {
@@ -134,7 +138,6 @@ Return ONLY valid JSON matching this schema:
         const cvData = await cvRes.json();
         cvData.source = "LOCAL_REAL_CV_SOBEL_ENGINE";
         cvData.greenLightDurationSeconds = cvData.websterOptimization?.effectiveGreenSeconds || 45;
-        cvData.estimatedDelaySavedMinutes = cvData.websterOptimization?.estimatedDelaySavedMinutes || 12.0;
         return cvData;
       }
     } catch (cvErr) {
@@ -142,7 +145,7 @@ Return ONLY valid JSON matching this schema:
     }
   }
 
-  // 4. Client-Side Edge Vision Engine (Never return simulated: true)
+  // 4. No AI available: return a fixed sample scene, explicitly marked simulated
   return getLocalEdgeVisionAnalysis(cameraName, situationNotes);
 }
 
@@ -170,7 +173,7 @@ function getLocalEdgeVisionAnalysis(cameraName, situationNotes) {
       ambulanceDetected: false,
       recommendedAction: "Activate Webster Phase Split: allocate 78s green wave for bypass corridor.",
       greenLightDurationSeconds: webster.phases[0]?.effectiveGreenSeconds || 65,
-      estimatedDelaySavedMinutes: 18.5,
+      delayComparison: delayComparisonFor(webster),
       confidenceScore: 0.96,
       websterOptimization: webster,
       detectedObjects: [
@@ -181,7 +184,8 @@ function getLocalEdgeVisionAnalysis(cameraName, situationNotes) {
         { box_2d: [310, 475, 505, 560], label: "Haulage Rig (PCU: 3.0)", confidence: 0.96 }
       ],
       backend: "EDGE_OPTICAL_ANALYSIS",
-      simulated: false
+      // fixed sample scene, not computed from the image
+      simulated: true
     };
   }
 
@@ -201,7 +205,7 @@ function getLocalEdgeVisionAnalysis(cameraName, situationNotes) {
       ambulanceDetected: false,
       recommendedAction: "Split phase cycle: allocate 58s green for slip-road clearance. Sync with circle marshals.",
       greenLightDurationSeconds: webster.phases[0]?.effectiveGreenSeconds || 50,
-      estimatedDelaySavedMinutes: 12.4,
+      delayComparison: delayComparisonFor(webster),
       confidenceScore: 0.95,
       websterOptimization: webster,
       detectedObjects: [
@@ -212,7 +216,8 @@ function getLocalEdgeVisionAnalysis(cameraName, situationNotes) {
         { box_2d: [865, 260, 985, 370], label: "Passenger Sedan Taxi (PCU: 1.0)", confidence: 0.92 }
       ],
       backend: "EDGE_OPTICAL_ANALYSIS",
-      simulated: false
+      // fixed sample scene, not computed from the image
+      simulated: true
     };
   }
 
@@ -231,7 +236,7 @@ function getLocalEdgeVisionAnalysis(cameraName, situationNotes) {
     ambulanceDetected: false,
     recommendedAction: "Maintain Webster equilibrium timing. Throughput is operating within optimal bounds.",
     greenLightDurationSeconds: webster.phases[0]?.effectiveGreenSeconds || 40,
-    estimatedDelaySavedMinutes: 7.5,
+    delayComparison: delayComparisonFor(webster),
     confidenceScore: 0.92,
     websterOptimization: webster,
     detectedObjects: [
@@ -239,201 +244,102 @@ function getLocalEdgeVisionAnalysis(cameraName, situationNotes) {
       { box_2d: [480, 520, 600, 680], label: "Okada Motorbike (PCU: 0.5)", confidence: 0.91 }
     ],
     backend: "EDGE_OPTICAL_ANALYSIS",
-    simulated: false
+    // fixed sample scene, not computed from the image
+    simulated: true
   };
+}
+
+export const RULE_BASED_LABEL = 'Rule-based mode (AI offline)';
+
+const ASSISTANT_ACTIONS = ['DISPATCH_GREEN_WAVE', 'OVERRIDE_TRAFFIC_LIGHT', 'NONE'];
+
+/**
+ * Traffic assistant chat.
+ *
+ * - If the server has a Gemini key (or the user supplied one), the question goes to
+ *   /api/gemini-proxy and the model picks the action itself (`mode: 'ai'`).
+ * - Otherwise a small set of explicit rules answers, and every reply is labelled
+ *   RULE_BASED_LABEL (`mode: 'rule-based'`). Rules are never presented as AI.
+ *
+ * Actions only change the simulated signal state in the browser; no real
+ * traffic controller is connected.
+ */
+export async function queryIncidentCommander(apiKey, userMessage, cityState = {}) {
+  const prompt = `You assist a traffic operator in Accra, Ghana. Signal controllers are simulated.
+Current state:
+- Congested intersections (>70%): ${cityState.trafficBottlenecks || 'none'}
+- Active incident: ${cityState.activeEmergencies || 'none'}
+
+Operator: ${userMessage}
+
+Answer in at most 4 short sentences. Do not invent numbers that are not in the state above.
+On the last line write exactly one of:
+ACTION: DISPATCH_GREEN_WAVE
+ACTION: OVERRIDE_TRAFFIC_LIGHT <node id, e.g. TR-01>
+ACTION: NONE`;
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey && apiKey.trim().length > 10) headers['X-Gemini-Key'] = apiKey.trim();
+    const res = await fetch('/api/gemini-proxy', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ prompt })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof data.result === 'string' && data.result.trim()) {
+        return { mode: 'ai', text: stripActionLine(data.result), toolCall: parseActionLine(data.result) };
+      }
+    }
+  } catch {
+    // proxy unreachable (e.g. tests, offline) -> rule-based mode below
+  }
+
+  return getRuleBasedResponse(userMessage);
+}
+
+function stripActionLine(text) {
+  return text.replace(/^\s*ACTION:.*$/gim, '').trim();
+}
+
+export function parseActionLine(text) {
+  const match = /^\s*ACTION:\s*([A-Z_]+)(?:\s+(TR-\d{2}))?/im.exec(text || '');
+  if (!match || !ASSISTANT_ACTIONS.includes(match[1]) || match[1] === 'NONE') return null;
+  if (match[1] === 'DISPATCH_GREEN_WAVE') {
+    return { name: 'DISPATCH_GREEN_WAVE', params: { origin: 'N-CIRCLE', dest: 'N-37MIL' } };
+  }
+  return { name: 'OVERRIDE_TRAFFIC_LIGHT', params: { nodeId: match[2] || 'TR-01' } };
 }
 
 /**
- * Incident Commander agent chat with Autonomous Actuator Tool Calling
+ * Explicit keyword rules used when no AI is available. Deliberately simple and
+ * labelled as such in every reply.
  */
-export async function queryIncidentCommander(apiKey, userMessage, cityState) {
-  const systemContext = `Current City Telemetry:
-- Traffic Bottlenecks: ${cityState.trafficBottlenecks || 'Tema Motorway Toll Corridor, Kwame Nkrumah Circle'}
-- Grid Reserve: ${cityState.gridReserve || '68% (Achimota Substation strained at 92.8%)'}
-- Air Quality Index (AQI): ${cityState.avgAqi || '72 Moderate'}
-- Active Emergencies: ${cityState.activeEmergencies || 'None'}`;
+export function getRuleBasedResponse(userMessage) {
+  const q = (userMessage || '').toLowerCase();
 
-  let rawReply = null;
-
-  // 1. Attempt Serverless Proxy
-  try {
-    const proxyHeaders = { "Content-Type": "application/json" };
-    if (apiKey && apiKey.trim().length > 10) {
-      proxyHeaders["X-Gemini-Key"] = apiKey.trim();
-    }
-
-    const proxyRes = await fetch("/api/gemini-proxy", {
-      method: "POST",
-      headers: proxyHeaders,
-      body: JSON.stringify({
-        prompt: `${systemContext}\n\nOperator Command: ${userMessage}\n\nRespond with tactical incident resolution. If action is required, specify target nodes and actuators.`,
-        model: "gemini-1.5-flash"
-      })
-    });
-
-    if (proxyRes.ok) {
-      const data = await proxyRes.json();
-      if (data.result && typeof data.result === 'string') {
-        rawReply = data.result;
-      }
-    }
-  } catch (proxyErr) {
-    // Fallback to direct client
+  if (/ambulance|emergency|hospital|green wave/.test(q)) {
+    return {
+      mode: 'rule-based',
+      text: `${RULE_BASED_LABEL}: matched "emergency" keywords. Dispatching a simulated green wave from Kwame Nkrumah Circle to 37 Military Hospital.`,
+      toolCall: { name: 'DISPATCH_GREEN_WAVE', params: { origin: 'N-CIRCLE', dest: 'N-37MIL' } }
+    };
   }
 
-  // 2. Direct client call
-  if (!rawReply && apiKey && apiKey.trim().length > 10) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`;
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: `${systemContext}\n\nOperator Command: ${userMessage}` }]
-            }
-          ]
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (reply) rawReply = reply;
-      }
-    } catch (err) {
-      console.warn("Gemini chat direct call failed:", err.message);
-    }
+  const nodeMatch = /tr-\d{2}/.exec(q);
+  if (/signal|light|webster|cycle|congestion|jam/.test(q)) {
+    const nodeId = nodeMatch ? nodeMatch[0].toUpperCase() : 'TR-01';
+    return {
+      mode: 'rule-based',
+      text: `${RULE_BASED_LABEL}: matched "signal" keywords. Applying the Webster plan to ${nodeId} in the simulation.`,
+      toolCall: { name: 'OVERRIDE_TRAFFIC_LIGHT', params: { nodeId } }
+    };
   }
-
-  // 3. Resilient tactical incident response if API is offline
-  if (!rawReply) {
-    rawReply = getSimulatedCommanderResponse(userMessage, cityState);
-  }
-
-  // 4. Extract or synthesize Agentic Actuator Tool Call with NEMA TS2 validation
-  const toolCall = extractToolCall(rawReply, userMessage);
 
   return {
-    text: rawReply,
-    toolCall
+    mode: 'rule-based',
+    text: `${RULE_BASED_LABEL}: no rule matched. Try "green wave for an ambulance" or "recompute signal at TR-02".`,
+    toolCall: null
   };
 }
-
-function extractToolCall(text, query) {
-  const q = (query || "").toLowerCase();
-  const t = (text || "").toLowerCase();
-  const now = Date.now();
-  const dispatchHash = '0x' + Math.abs((now * 31 + q.length) | 0).toString(16).padStart(8, '0').toUpperCase();
-
-  const isGrid = q.includes("blackout") || q.includes("dumsor") || q.includes("power") || q.includes("grid") || q.includes("shed") || q.includes("substation") || q.includes("voltage") || t.includes("gridguard priority knapsack");
-  const isTrafficPreempt = q.includes("ambulance") || q.includes("hospital") || q.includes("preempt") || q.includes("green wave") || (q.includes("corridor") && !isGrid) || t.includes("emergency corridor activated");
-
-  if (isGrid) {
-    return {
-      name: "BALANCE_GRID_SHED",
-      label: "SCADA Dynamic Priority Knapsack Load Shedding",
-      params: { 
-        substationId: "EN-01", 
-        batteryInjectionMw: 35, 
-        shedTier4Mw: 8, 
-        targetCeilingMw: 212.5 
-      },
-      status: "EXECUTED",
-      latencyMs: 78,
-      safetyValidated: true,
-      cmuInterlocks: "IEC_60870_INTERLOCK_VERIFIED",
-      dispatchReceipt: dispatchHash,
-      hardwareAck: "200 OK • Solid-State Relays Switched in 78ms (Receipt: " + dispatchHash + ")"
-    };
-  }
-
-  if (isTrafficPreempt) {
-    return {
-      name: "DISPATCH_GREEN_WAVE",
-      label: "MUTCD Section 4D Preemption: Emergency Green Wave",
-      params: { 
-        origin: "N-CIRCLE", 
-        dest: "N-37MIL", 
-        preemptionSeconds: 90, 
-        corridor: "Kwame Nkrumah Circle → 37 Military Hospital" 
-      },
-      status: "EXECUTED",
-      latencyMs: 94,
-      safetyValidated: true,
-      cmuInterlocks: "ARMED_MONITORING_NOMINAL",
-      dispatchReceipt: dispatchHash,
-      hardwareAck: "200 OK • 4 NEMA TS2 Controllers Preempted (Receipt: " + dispatchHash + ")"
-    };
-  }
-
-  if (q.includes("waste") || q.includes("flood") || q.includes("pollution") || q.includes("odaw") || q.includes("drain") || q.includes("sluice") || t.includes("ecosense drainage resilience")) {
-    return {
-      name: "DRAIN_SLUICE_GATES",
-      label: "Hydro Sluice Gate Motorized Winch Automation",
-      params: { 
-        basinNodeId: "ECO-01", 
-        openPercentage: 85, 
-        rerouteCompactors: ["#04", "#08"] 
-      },
-      status: "EXECUTED",
-      latencyMs: 110,
-      safetyValidated: true,
-      dispatchReceipt: dispatchHash,
-      hardwareAck: "200 OK • Odaw Sluice Winch Active (Receipt: " + dispatchHash + ")"
-    };
-  }
-
-  if (q.includes("override") || q.includes("traffic light") || q.includes("clear") || q.includes("signal") || q.includes("congestion") || q.includes("jam")) {
-    return {
-      name: "OVERRIDE_TRAFFIC_LIGHT",
-      label: "Webster Adaptive Phase Allocation",
-      params: { 
-        nodeId: "TR-01", 
-        durationSec: 75, 
-        lightState: "GREEN" 
-      },
-      status: "EXECUTED",
-      latencyMs: 82,
-      safetyValidated: true,
-      dispatchReceipt: dispatchHash,
-      hardwareAck: "200 OK • Microcontroller Signal Confirmed (Receipt: " + dispatchHash + ")"
-    };
-  }
-
-  return null;
-}
-
-function getSimulatedCommanderResponse(query, cityState) {
-  const q = query.toLowerCase();
-
-  if (q.includes("ambulance") || q.includes("emergency") || q.includes("hospital") || q.includes("preempt")) {
-    return `🚨 **MUTCD EMERGENCY PREEMPTION DISPATCHED (PRIORITY CODE 1)**
-1. **NEMA TS-2 Signal Override:** Intersections at Nkrumah Circle, Ridge Hospital Roundabout, and Independence Ave synchronized to **Continuous Green Wave** (Cycle extended to 90s).
-2. **Conflict Monitor Unit Status:** CMU-16LE interlocks validated — 0 conflicting green signals, pedestrian clearance walk timers honored.
-3. **Corridor Transit Telemetry:** Emergency vehicle progression opened from Kwame Nkrumah Circle to 37 Military Hospital. Estimated transit time reduced to **7.4 mins** (78% reduction).`;
-  }
-
-  if (q.includes("blackout") || q.includes("dumsor") || q.includes("power") || q.includes("grid") || q.includes("voltage") || q.includes("substation")) {
-    return `⚡ **SCADA GRIDGUARD VOLTAGE & KNAPSACK DISPATCH**
-1. **Deficit Calculation:** Achimota Bulk Supply Point load reached 232 MW (safe thermal ceiling: 212.5 MW, deficit: 19.5 MW).
-2. **BESS Injection:** Dispatched **35 MW** from Legon BESS battery storage in 80ms to stabilize bus frequency to 50.02 Hz.
-3. **VAR Compensation:** Dispatched +24 MVAR capacitor bank to restore 33kV bus voltage from 30.8kV to 32.7kV, protecting 48,000 households without rolling blackouts.`;
-  }
-
-  if (q.includes("waste") || q.includes("flood") || q.includes("pollution") || q.includes("drain") || q.includes("odaw")) {
-    return `🍃 **HYDRO ECOSENSE DRAINAGE RESILIENCE DISPATCHED**
-1. **Canal Sluice Automation:** Odaw Basin drainage gates opened to +85% via SCADA actuator to prevent backflow into Kwame Nkrumah Circle.
-2. **Debris Barrier Clearance:** Motorized winch screen activated to prevent plastic bottlenecking at the Korle Lagoon estuary.`;
-  }
-
-  return `🛰️ **PULSECITY URBAN DISPATCH // STATUS CONFIRMED**
-Current Corridor Metrics:
-• Active Traffic Flow: ${cityState.trafficBottlenecks || 'Tema Motorway & Circle monitored'}
-• Grid Stability: ${cityState.gridReserve || 'Achimota Bus at 50.01 Hz'}
-• Environmental Index: AQI ${cityState.avgAqi || '72 Normal'}
-All cabinet safety interlocks (MUTCD 12s minimum green, CMU-16LE) are armed and active.`;
-}
-

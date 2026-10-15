@@ -1,6 +1,8 @@
 // Vercel Serverless Function: POST /api/telemetry/ingest & GET /api/telemetry/ingest
 // Full Event-Driven Realtime Telemetry Broadcast with SSE (Server-Sent Events)
 
+import { randomUUID } from 'node:crypto';
+
 // In-memory store for recent telemetry events (persists across warm serverless invocations)
 const INGEST_CACHE = [];
 const SSE_CLIENTS = new Set();
@@ -144,7 +146,7 @@ export default function handler(req, res) {
   const now = Date.now();
   // Build validated telemetry record
   const validatedData = {
-    id: `pkt_${now}_${Math.random().toString(36).slice(2, 7)}`,
+    id: `pkt_${now}_${randomUUID().slice(0, 8)}`,
     nodeId: cleanNodeId,
     receivedAt: new Date(now).toISOString(),
     epochMs: now,
@@ -277,7 +279,6 @@ export default function handler(req, res) {
     data: validatedData,
     subscribersPushed: SSE_CLIENTS.size,
     serverAudit: {
-      latencyMs: 8,
       nodeCategory: isGlobalAction ? 'GLOBAL_DISPATCH' : cleanNodeId.startsWith('TR') ? 'TRAFFIC_MOBILITY' : cleanNodeId.startsWith('EN') ? 'ELECTRICITY_GRID' : 'ENVIRONMENTAL_ECO',
       verifiedBy: "PulseCity Edge Realtime Ingestion Engine v3.0 (SSE Activated)"
     }

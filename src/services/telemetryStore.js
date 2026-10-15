@@ -147,11 +147,8 @@ export function exportTelemetryAsCsv() {
     'type',
     'congestionPercentage',
     'flowRateVehiclesPerHour',
-    'currentLoadMw',
-    'dumsorRiskScore',
-    'waterLevelMeters',
-    'aqiScore',
-    'wasteFillPercentage',
+    'queueLength',
+    'avgSpeedKmh',
     'checksum'
   ];
 
@@ -162,11 +159,8 @@ export function exportTelemetryAsCsv() {
     p.type || '',
     p.congestionPercentage ?? '',
     p.flowRateVehiclesPerHour ?? '',
-    p.currentLoadMw ?? '',
-    p.dumsorRiskScore ?? '',
-    p.waterLevelMeters ?? '',
-    p.aqiScore ?? '',
-    p.wasteFillPercentage ?? '',
+    p.queueLength ?? '',
+    p.avgSpeedKmh ?? '',
     p.checksum || ''
   ]);
 

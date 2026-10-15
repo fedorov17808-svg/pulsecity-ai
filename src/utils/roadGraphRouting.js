@@ -27,6 +27,13 @@ export const ACCRA_ROAD_GRAPH = {
   ]
 };
 
+// Expected wait at a fixed-time signal for a vehicle arriving at a random moment:
+// r² / (2C), with an assumed 120 s cycle split equally between 2 phases
+// (4 s lost time each) -> red r = 120 - 56 = 64 s -> 64² / 240 ≈ 17 s.
+const ASSUMED_CYCLE_SEC = 120;
+const ASSUMED_RED_SEC = ASSUMED_CYCLE_SEC - (ASSUMED_CYCLE_SEC - 2 * 4) / 2;
+export const EXPECTED_SIGNAL_WAIT_SEC = (ASSUMED_RED_SEC ** 2) / (2 * ASSUMED_CYCLE_SEC);
+
 /**
  * Dijkstra / A* Routing Algorithm with Live Congestion Penalties
  */
@@ -110,8 +117,12 @@ export function findOptimalEmergencyRoute(startNodeId, targetNodeId, roadConditi
 
   // Coordinates array for Leaflet Polyline
   const gpsPath = path.map((nodeId) => [nodes[nodeId].lat, nodes[nodeId].lng]);
-  const estimatedTimeNormalMin = Number((distances[targetNodeId] || 15).toFixed(1));
-  const estimatedTimeGreenWaveMin = Number(((distances[targetNodeId] || 15) * 0.38).toFixed(1)); // 62% reduction via priority signal sync
+  // Without priority the vehicle meets a fixed-time signal at every junction after the
+  // origin; a green wave removes that waiting. Travel time on the links is unchanged.
+  const signalisedJunctions = path.length - 1;
+  const signalWaitMin = (signalisedJunctions * EXPECTED_SIGNAL_WAIT_SEC) / 60;
+  const estimatedTimeGreenWaveMin = Number(distances[targetNodeId].toFixed(1));
+  const estimatedTimeNormalMin = Number((distances[targetNodeId] + signalWaitMin).toFixed(1));
 
   return {
     success: true,

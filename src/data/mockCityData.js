@@ -1,17 +1,7 @@
-// Production-Ready Telemetry and Geospatial GPS Nodes for Greater Accra, Ghana
-
-export const CITY_METRICS = {
-  cityName: "Greater Accra Metropolitan Area",
-  country: "Ghana",
-  centerGps: [5.6037, -0.1870],
-  defaultZoom: 12,
-  population: "4.2M",
-  activeSensors: 1420,
-  aiUptime: "99.98%",
-  avgCommuteSavingsMin: 18.5,
-  blackoutsAverted7d: 19,
-  co2ReductionTons: 340.2,
-};
+// Intersections of Greater Accra used by the demo.
+// Names and coordinates are real places. Flow, congestion, speed and signal values
+// are illustrative starting values for the simulated controllers (simulated: true)
+// until a telemetry packet for that node arrives.
 
 export const TRAFFIC_NODES = [
   {
@@ -30,6 +20,7 @@ export const TRAFFIC_NODES = [
     alert: "Trotro minibus queue overflowing into inner turning circle",
     incidentActive: false,
     ambulancePriority: false,
+    simulated: true,
   },
   {
     id: "TR-02",
@@ -48,6 +39,7 @@ export const TRAFFIC_NODES = [
     incidentActive: true,
     incidentType: "Heavy Truck Breakdown",
     ambulancePriority: false,
+    simulated: true,
   },
   {
     id: "TR-03",
@@ -65,6 +57,7 @@ export const TRAFFIC_NODES = [
     alert: "Moderate evening peak flow across commercial strip",
     incidentActive: false,
     ambulancePriority: false,
+    simulated: true,
   },
   {
     id: "TR-04",
@@ -82,6 +75,7 @@ export const TRAFFIC_NODES = [
     alert: "Market bus queue extending onto outer lane",
     incidentActive: false,
     ambulancePriority: false,
+    simulated: true,
   },
   {
     id: "TR-05",
@@ -99,6 +93,7 @@ export const TRAFFIC_NODES = [
     alert: "Optimal transit corridor with smooth adaptive waves",
     incidentActive: false,
     ambulancePriority: false,
+    simulated: true,
   },
   {
     id: "TR-06",
@@ -116,20 +111,20 @@ export const TRAFFIC_NODES = [
     alert: "Smooth VIP corridor flow with green-wave sync",
     incidentActive: false,
     ambulancePriority: false,
+    simulated: true,
   }
 ];
 
 export const PRESET_CRISES = [
   {
     id: "crisis-motorway-pileup",
-    title: "🚨 Major Pileup on Tema Motorway Eastbound",
+    title: "Demo scenario: pileup on Tema Motorway eastbound",
     track: "Traffic Mitigation",
-    description: "3-vehicle collision blocking two lanes. Traffic backed up 4.2km. Ambulance en route from 37 Military Hospital.",
+    description: "Simulated incident: a collision blocks two lanes and an ambulance needs a clear corridor.",
     targetNodeId: "TR-02",
     actions: [
-      "AI recalculates Webster timing split: 85s green for bypass approach",
-      "Dynamic green-wave priority granted to Ambulance Unit AMB-04",
-      "Digital Variable Message Signs updated along Tetteh Quarshie Interchange"
+      "Recompute the Webster plan for TR-02 from current flows",
+      "Dispatch a simulated green wave for the ambulance corridor"
     ]
   }
 ];

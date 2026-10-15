@@ -5,7 +5,8 @@ import {
   Sliders, Layers, Play
 } from 'lucide-react';
 import CctvTrafficCanvas from './CctvTrafficCanvas';
-import { calculateWebsterSignalTiming } from '../utils/websterAlgorithm';
+import { calculateWebsterSignalTiming, compareFixedVsWebster } from '../utils/websterAlgorithm';
+import DelayComparison from './DelayComparison';
 import { sfx } from '../utils/soundEffects';
 
 export default function IntersectionOptimizerPanel({
@@ -37,8 +38,8 @@ export default function IntersectionOptimizerPanel({
       });
 
   // Calculate Webster optimum values dynamically for this node
-  const flow = node.flowRate || 3420;
-  const sat = node.saturationFlow || 4500;
+  const flow = node.flowRate || 0;
+  const sat = node.saturationFlow || 1800;
   const webster = calculateWebsterSignalTiming({
     phases: [
       { name: 'Primary Arterial Approach', flowRate: flow, saturationFlow: sat, minGreen: 20 },
@@ -49,11 +50,13 @@ export default function IntersectionOptimizerPanel({
     minCycleLength: 40
   });
 
-  const optimalCycle = webster.optimumCycleLengthSeconds || 78;
-  const phase1Green = webster.phases[0]?.effectiveGreenSeconds || 46;
-  const phase2Green = webster.phases[1]?.effectiveGreenSeconds || 24;
-  const flowRatioY = (webster.totalFlowRatio_Y || 0.64).toFixed(2);
-  const delaySec = (webster.phases[0]?.estimatedDelaySecPerVehicle || 9.2).toFixed(1);
+  const optimalCycle = webster.optimumCycleLengthSeconds;
+  const phase1Green = webster.phases[0].effectiveGreenSeconds;
+  const phase2Green = webster.phases[1].effectiveGreenSeconds;
+  const flowRatioY = webster.totalFlowRatio_Y.toFixed(2);
+  const mainDelay = webster.phases[0]?.estimatedDelaySecPerVehicle;
+  const delaySec = mainDelay === null || mainDelay === undefined ? null : mainDelay.toFixed(1);
+  const comparison = compareFixedVsWebster({ phases: webster.phases });
 
   const handleApplyWebster = () => {
     sfx.click();
@@ -237,9 +240,9 @@ export default function IntersectionOptimizerPanel({
           textAlign: 'center'
         }}>
           <div>
-            <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>TRO-TRO MINIBUSES</div>
+            <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>INPUT DATA</div>
             <div style={{ fontSize: '0.78rem', fontWeight: '800', color: '#fbbf24' }}>
-              4 units (1.5 PCU)
+              {node.simulated ? 'Simulated' : 'Telemetry'} • {flow} veh/h
             </div>
           </div>
           <div>
@@ -329,8 +332,12 @@ export default function IntersectionOptimizerPanel({
             Estimated delay per vehicle:
           </span>
           <span style={{ fontSize: '0.74rem', fontWeight: '800', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-            {delaySec}s / veh <span style={{ color: '#6ee7b7', fontSize: '0.66rem' }}>(-78.3% vs static 42.4s)</span>
+            {delaySec === null ? 'oversaturated' : `${delaySec}s / veh`}
           </span>
+        </div>
+
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+          <DelayComparison comparison={comparison} />
         </div>
 
         {/* Apply Button */}
@@ -409,7 +416,7 @@ export default function IntersectionOptimizerPanel({
         </button>
       </div>
 
-      {/* 6. Hardware Bench Summary ($13.05 Retrofit) */}
+      {/* 6. Hardware summary */}
       <div style={{
         background: 'rgba(0, 0, 0, 0.35)',
         border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -424,10 +431,10 @@ export default function IntersectionOptimizerPanel({
           <Cpu size={14} color="#38bdf8" />
           <div>
             <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#fff' }}>
-              ESP32 Cabinet Retrofit: $13.05 BOM
+              ESP32 cabinet retrofit (design)
             </div>
             <div style={{ fontSize: '0.62rem', color: '#64748b' }}>
-              JSN-SR04T Sensor + CMU Fail-Safe • Zero Wire-Cutting
+              Firmware, wiring and parts list
             </div>
           </div>
         </div>

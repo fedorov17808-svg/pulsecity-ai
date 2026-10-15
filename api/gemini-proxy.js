@@ -1,11 +1,8 @@
 // Vercel Serverless Function: POST /api/gemini-proxy
 
-const ALLOWED_MODELS = new Set([
-  'gemini-1.5-flash',
-  'gemini-1.5-pro',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite'
-]);
+// Default model can be overridden with GEMINI_MODEL; only gemini-* ids are accepted.
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL_ID_PATTERN = /^gemini-[a-z0-9.-]+$/;
 
 // Sliding-window IP rate limiter
 const PROXY_RATE_LIMIT = new Map();
@@ -53,7 +50,7 @@ export default async function handler(req, res) {
   const headerKey = req.headers['authorization']?.replace('Bearer ', '') || req.headers['x-gemini-key'];
   const apiKey = (envKey && envKey.trim()) || (headerKey && headerKey.trim());
 
-  const { prompt, imageBase64, model = "gemini-1.5-flash" } = req.body || {};
+  const { prompt, imageBase64, model = DEFAULT_MODEL } = req.body || {};
 
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: "Missing required 'prompt' string." });
@@ -68,7 +65,7 @@ export default async function handler(req, res) {
   }
 
   // Validate model whitelist to prevent SSRF or path manipulation
-  const targetModel = ALLOWED_MODELS.has(model) ? model : "gemini-1.5-flash";
+  const targetModel = MODEL_ID_PATTERN.test(model) ? model : DEFAULT_MODEL;
 
   // If we have an API key, call Google AI Studio securely from the server
   if (apiKey && apiKey.length > 10) {
@@ -116,18 +113,12 @@ export default async function handler(req, res) {
     }
   }
 
-  // Fallback if no key or upstream unreachable
-  return res.status(200).json({
-    success: true,
-    source: "PULSECITY_NEURAL_FALLBACK",
-    notice: "Operating on server-side neural simulation (No GEMINI_API_KEY configured)",
-    result: JSON.stringify({
-      congestionScore: 82,
-      vehicleCount: 68,
-      hazardDetected: true,
-      hazardDescription: "Heavy articulated transport vehicle stalled in right slip lane",
-      ambulanceDetected: true,
-      confidenceScore: 0.95
-    })
+  // No key configured or upstream failed: say so instead of returning made-up results
+  return res.status(503).json({
+    success: false,
+    code: "AI_OFFLINE",
+    error: apiKey
+      ? "Gemini API request failed; AI features are offline."
+      : "No GEMINI_API_KEY configured on the server; AI features are offline."
   });
 }

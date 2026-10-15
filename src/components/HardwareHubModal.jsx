@@ -186,6 +186,7 @@ export default function HardwareHubModal({ isOpen, onClose }) {
       };
     }
 
+    const startedAt = performance.now();
     try {
       const resp = await fetch('/api/v1/telemetry/ingest', {
         method: 'POST',
@@ -199,16 +200,16 @@ export default function HardwareHubModal({ isOpen, onClose }) {
       setInjectedResult({
         success: resp.ok,
         status: resp.status,
-        latencyMs: 11,
+        latencyMs: Math.round(performance.now() - startedAt),
         data: data.data || telemetryPayload
       });
-      if (resp.ok) {
-      }
-    } catch (e) {
+    } catch (err) {
+      // network failure: report it, never pretend the packet was accepted
       setInjectedResult({
-        success: true,
-        status: 201,
-        latencyMs: 9,
+        success: false,
+        status: 0,
+        latencyMs: Math.round(performance.now() - startedAt),
+        error: err.message,
         data: telemetryPayload
       });
     } finally {
@@ -280,7 +281,7 @@ export default function HardwareHubModal({ isOpen, onClose }) {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 id="hardware-modal-title" style={{ fontSize: '1.05rem', fontWeight: '700', color: '#fff' }}>IoT Hardware & Edge Firmware Suite</h3>
-                <span className="badge badge-emerald" style={{ fontSize: '0.68rem' }}>Sub-$20 Unit Cost</span>
+                <span className="badge badge-emerald" style={{ fontSize: '0.68rem' }}>Prototype design</span>
               </div>
               <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Production C++ and Python Edge implementations for Ghana municipal field nodes</p>
             </div>
@@ -305,13 +306,13 @@ export default function HardwareHubModal({ isOpen, onClose }) {
               }}
             >
               <Zap size={13} color="#fbbf24" />
-              ⚡ $340 Wiring & CMU Safety Interlock
+              Wiring & safety interlock
             </button>
             <button
               onClick={() => setActiveTab('bom')}
               className={`pill-tab ${activeTab === 'bom' ? 'active' : ''}`}
             >
-              $13.05 BOM & Pinout
+              BOM & pinout
             </button>
             <button
               onClick={() => setActiveTab('protocols')}
@@ -432,72 +433,11 @@ export default function HardwareHubModal({ isOpen, onClose }) {
 
           {activeTab === 'bom' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <h4 style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fff' }}>1. Municipal Environmental & Flood Gauge Field Node ($13.05 BOM)</h4>
-                  <span className="badge badge-emerald" style={{ fontSize: '0.62rem' }}>Odaw Basin & Korle Lagoon</span>
-                </div>
-                <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <table className="tech-table">
-                    <thead>
-                      <tr>
-                        <th>Module / Component</th>
-                        <th>Model & Specs</th>
-                        <th>Power Draw</th>
-                        <th>Quantity</th>
-                        <th>Total Cost</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td style={{ fontWeight: '600', color: '#fff' }}>MCU Core</td>
-                        <td>ESP32-S3 Dual-Core 240MHz</td>
-                        <td>80 mA (Active) / 10 µA (Sleep)</td>
-                        <td>1</td>
-                        <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$3.80</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: '600', color: '#fff' }}>LoRa Mesh Node</td>
-                        <td>Semtech SX1262 868MHz SPI</td>
-                        <td>22 mA TX @ +14dBm</td>
-                        <td>1</td>
-                        <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$2.95</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: '600', color: '#fff' }}>Hydrological Depth</td>
-                        <td>JSN-SR04T / HC-SR04 Waterproof Ultrasonic</td>
-                        <td>15 mA @ 5V (Calibrated 0.2m - 4.5m range)</td>
-                        <td>1</td>
-                        <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$2.10</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: '600', color: '#fff' }}>Gas & Smoke AQI</td>
-                        <td>MQ-135 Air Quality Sensor</td>
-                        <td>150 mA (Heater)</td>
-                        <td>1</td>
-                        <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$1.00</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: '600', color: '#fff' }}>Solar & Battery</td>
-                        <td>3.2V 32700 LiFePO4 + 5W Panel</td>
-                        <td>Unlimited autonomous solar</td>
-                        <td>1</td>
-                        <td style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>$3.20</td>
-                      </tr>
-                      <tr style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
-                        <td colSpan="4" style={{ fontWeight: '800', color: '#fff' }}>CERTIFIED MUNICIPAL BOM PER SENSOR NODE</td>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '800', color: '#34d399', fontSize: '0.95rem' }}>$13.05 USD</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
               {/* $45 Retrofit Controller for 1990s Analog Cabinets */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <div>
-                    <h4 style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fbbf24' }}>2. Plug-and-Play Retrofit Controller for Legacy 1990s Analog Junction Cabinets</h4>
+                    <h4 style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fbbf24' }}>Retrofit controller for legacy junction cabinets (estimated retail prices in USD, not supplier quotes)</h4>
                     <p style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Design concept: an optocoupled relay board placed alongside the existing signal contactors, so the legacy controller stays in place as the fail-safe. Not yet tested on a live cabinet.</p>
                   </div>
                   <span className="badge badge-amber" style={{ fontSize: '0.62rem' }}>Zero Infrastructure Replacement</span>
@@ -530,13 +470,13 @@ export default function HardwareHubModal({ isOpen, onClose }) {
                       </tr>
                       <tr>
                         <td style={{ fontWeight: '600', color: '#fff' }}>Dual 4G/LoRa Gateway</td>
-                        <td>Quectel EC25 + SX1262 LoRaWAN for resilient Dumsor mesh failover (AES-256 encrypted)</td>
+                        <td>Quectel EC25 + SX1262 LoRaWAN for backhaul failover during power cuts</td>
                         <td>PTCRB / GCF</td>
                         <td>1</td>
                         <td style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>$16.20</td>
                       </tr>
                       <tr>
-                        <td style={{ fontWeight: '600', color: '#fff' }}>Dumsor-Proof DIN PSU</td>
+                        <td style={{ fontWeight: '600', color: '#fff' }}>Wide-input DIN PSU</td>
                         <td>MEAN WELL HDR-30-12 (85-264V AC wide input, 10kV MOV surge arrestor, brownout ride-through)</td>
                         <td>EN 61558 / IEC 61000</td>
                         <td>1</td>
@@ -562,6 +502,9 @@ export default function HardwareHubModal({ isOpen, onClose }) {
 
           {activeTab === 'testbed' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="badge badge-amber" style={{ alignSelf: 'flex-start', fontSize: '0.66rem' }}>
+                Simulated: the flash log and serial output below are a scripted demo, not a connected board
+              </div>
               {/* Testbed Header Bar */}
               <div style={{
                 display: 'flex',

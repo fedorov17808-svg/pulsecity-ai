@@ -6,7 +6,7 @@
 
 import * as tf from '@tensorflow/tfjs';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
-import { calculateWebsterSignalTiming } from '../utils/websterAlgorithm';
+import { calculateWebsterSignalTiming, compareFixedVsWebster } from '../utils/websterAlgorithm';
 
 let modelPromise = null;
 let loadedModel = null;
@@ -38,7 +38,7 @@ export function calculatePcuAndFlow(counts = {}) {
   const motorbike = counts.motorbike || 0;
   const totalVehicles = trotro + truck + taxi + motorbike;
 
-  // African urban transit PCU factors (Ghana Highways Authority standard)
+  // Assumed PCU factors (typical literature values; trotro minibuses are counted as COCO-SSD 'bus')
   const effectivePcu = (trotro * 2.2) + (truck * 3.0) + (taxi * 1.0) + (motorbike * 0.5);
   const congestionScore = Math.min(98, Math.max(15, Math.round((effectivePcu / 25) * 100)));
 
@@ -51,9 +51,11 @@ export function calculatePcuAndFlow(counts = {}) {
       { name: "Approach Corridor", flowRate: mainFlowRate, saturationFlow: 2100 },
       { name: "Crossflow Slip Road", flowRate: crossFlowRate, saturationFlow: 1800 }
     ],
-    lostTimePerPhaseSec: 4,
-    minGreenSec: 12
+    lostTimePerPhase: 4
   });
+
+  // Average delay per vehicle: fixed 120 s cycle vs Webster optimum, same flows
+  const delayComparison = compareFixedVsWebster({ phases: webster.phases });
 
   return {
     effectivePcu,
@@ -61,7 +63,8 @@ export function calculatePcuAndFlow(counts = {}) {
     mainFlowRate,
     crossFlowRate,
     totalVehicles,
-    webster
+    webster,
+    delayComparison
   };
 }
 
@@ -157,14 +160,15 @@ export function detectObjectsOfflineEdge(mediaElement) {
     ambulanceDetected: false,
     recommendedAction: `Apply Webster split: ${pcuResult.webster.phases[0]?.effectiveGreenSeconds || 45}s green for ${pcuResult.effectivePcu.toFixed(1)} PCU approach`,
     detectedObjects: vehicleBlobs,
-    confidenceScore: 0.89,
+    confidenceScore: null,
     greenLightDurationSeconds: pcuResult.webster.phases[0]?.effectiveGreenSeconds || 45,
-    estimatedDelaySavedMinutes: Number(((pcuResult.webster.phases[0]?.estimatedDelaySecPerVehicle * 0.4) / 60).toFixed(1)),
+    delayComparison: pcuResult.delayComparison,
     websterOptimization: pcuResult.webster,
     backend: 'EDGE_CANVAS_PIXEL_CONTOUR',
     latencyMs,
     rawPredictionCount: vehicleBlobs.length,
-    simulated: false
+    // boxes are synthetic placeholders (model unavailable), not real detections
+    simulated: true
   };
 }
 
@@ -252,14 +256,14 @@ export async function detectObjectsLocally(mediaElement, situationNotes = '') {
 
     // Trotro Holding Bay Analytics (Kwame Nkrumah Slipway capacity: 12 minibuses)
     const BAY_CAPACITY = 12;
-    const effectiveTrotroCount = trotroCount > 0 ? trotroCount : Math.max(1, Math.round(vehicleCount * 0.4));
+    const effectiveTrotroCount = trotroCount;
     const baySaturationPct = Math.min(100, Math.round((effectiveTrotroCount / BAY_CAPACITY) * 100));
     const isSpillbackImminent = baySaturationPct >= 65;
     const flushGreenDurationSeconds = Math.max(16, Math.min(65, Math.round((effectiveTrotroCount * 2.6) + 8)));
 
     return {
       congestionScore: pcuResult.congestionScore,
-      vehicleCount: vehicleCount || rawPredictions.length,
+      vehicleCount,
       hazardDetected,
       hazardDescription: hazardDetected ? "Obstruction detected in active traffic corridor" : "Normal corridor vehicle progression",
       ambulanceDetected,
@@ -276,11 +280,14 @@ export async function detectObjectsLocally(mediaElement, situationNotes = '') {
           ? "MUTCD Emergency Preemption: grant 90s priority green corridor"
           : `Apply Webster split: ${pcuResult.webster.phases[0]?.effectiveGreenSeconds || 45}s green to clear ${pcuResult.effectivePcu.toFixed(1)} PCU load`,
       detectedObjects,
-      confidenceScore: rawPredictions.length > 0 ? 0.94 : 0.85,
+      // mean COCO-SSD score of the returned boxes (null if nothing was detected)
+      confidenceScore: rawPredictions.length > 0
+        ? Number((rawPredictions.reduce((sum, p) => sum + p.score, 0) / rawPredictions.length).toFixed(2))
+        : null,
       greenLightDurationSeconds: isSpillbackImminent ? flushGreenDurationSeconds : (pcuResult.webster.phases[0]?.effectiveGreenSeconds || 45),
-      estimatedDelaySavedMinutes: Number(((pcuResult.webster.phases[0]?.estimatedDelaySecPerVehicle * 0.4) / 60).toFixed(1)),
+      delayComparison: pcuResult.delayComparison,
       websterOptimization: pcuResult.webster,
-      backend: 'TENSORFLOW_WASM_EDGE',
+      backend: `COCO_SSD_TFJS_${tf.getBackend()?.toUpperCase() || 'UNKNOWN'}`,
       latencyMs,
       rawPredictionCount: rawPredictions.length,
       simulated: false

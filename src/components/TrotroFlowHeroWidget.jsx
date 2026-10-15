@@ -19,8 +19,8 @@ export default function TrotroFlowHeroWidget({
   const [webcamStream, setWebcamStream] = useState(null);
   const [webcamError, setWebcamError] = useState(null);
 
-  // Closed-Loop SCADA Queue State
-  const [queueCount, setQueueCount] = useState(10);
+  // Trotro bay queue (count comes from COCO-SSD 'bus' detections)
+  const [queueCount, setQueueCount] = useState(0);
   const BAY_CAPACITY = 12;
   const saturationPct = Math.min(100, Math.round((queueCount / BAY_CAPACITY) * 100));
   const isSpillbackImminent = saturationPct >= 65;
@@ -131,7 +131,7 @@ export default function TrotroFlowHeroWidget({
       const res = await detectObjectsLocally(mediaElem, 'Kwame Nkrumah slipway trotro queue');
       setDetectionResult(res);
       if (actuationState === 'IDLE') {
-        const initialCount = res.trotroBay?.count || 10;
+        const initialCount = res.trotroBay?.count ?? 0;
         setQueueCount(initialCount);
         drawCanvasOverlay(res.detectedObjects, initialCount, initialCount >= 8);
       } else {
@@ -172,12 +172,13 @@ export default function TrotroFlowHeroWidget({
     }
   };
 
-  // Closed-Loop SCADA Queue Flush Dispatch Actuation
+  // Queue flush: logs a telemetry event and applies a green phase to the simulated controller
   const handleDispatchQueueFlush = async () => {
     setActuationState('DISPATCHING');
     sfx.click();
     const duration = calculatedFlushDuration;
     const initialTrotros = queueCount;
+    const startedAt = performance.now();
 
     try {
       // 1. Send real HTTP telemetry packet to serverless endpoint
@@ -199,18 +200,19 @@ export default function TrotroFlowHeroWidget({
       const data = await res.json();
       setServerAudit({
         status: res.status,
-        latencyMs: data?.serverAudit?.latencyMs || 8,
+        latencyMs: Math.round(performance.now() - startedAt),
         timestamp: new Date().toLocaleTimeString()
       });
-    } catch (err) {
+    } catch {
+      // request failed: show it instead of a made-up 201
       setServerAudit({
-        status: 201,
-        latencyMs: 11,
+        status: 'network error',
+        latencyMs: Math.round(performance.now() - startedAt),
         timestamp: new Date().toLocaleTimeString()
       });
     }
 
-    // 2. Begin Active Closed-Loop Flush Phase
+    // 2. Start the (simulated) flush phase
     setActuationState('FLUSHING');
     setFlushSecondsLeft(duration);
 
@@ -218,7 +220,7 @@ export default function TrotroFlowHeroWidget({
       onApplyOptimization('TR-01', duration);
     }
 
-    // 3. Realistic Queue Clearance Animation over duration
+    // 3. Simulated queue clearance animation (not re-measured from the camera)
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     
     let currentSec = duration;
@@ -296,7 +298,7 @@ export default function TrotroFlowHeroWidget({
               </span>
             </div>
             <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0 0' }}>
-              Real In-Browser Edge ML (TFJS/WASM) • Optical Trotro Holding Bay Saturation • Closed-Loop Queue Flush
+              In-browser COCO-SSD detection • trotro bay count • queue flush on a simulated signal
             </p>
           </div>
         </div>
@@ -498,10 +500,10 @@ export default function TrotroFlowHeroWidget({
                 <span className="pulse-indicator" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
                 <div>
                   <div style={{ fontSize: '0.74rem', fontWeight: '800', color: '#34d399' }}>
-                    ⚡ ACTIVE FLUSH PHASE: {flushSecondsLeft}s GREEN REMAINING
+                    SIMULATED FLUSH PHASE: {flushSecondsLeft}s GREEN REMAINING
                   </div>
                   <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                    Slipway queue clearing into Ring Road West arterial corridor.
+                    Queue count below is animated, not re-measured from the camera.
                   </div>
                 </div>
               </div>
@@ -627,7 +629,7 @@ export default function TrotroFlowHeroWidget({
               <Zap size={16} />
               <span>
                 {actuationState === 'DISPATCHING'
-                  ? 'DISPATCHING SCADA PACKET...'
+                  ? 'SENDING TELEMETRY EVENT...'
                   : actuationState === 'FLUSHING'
                     ? `FLUSH PHASE RUNNING (${flushSecondsLeft}s)`
                     : `⚡ DISPATCH TROTRO QUEUE FLUSH (${calculatedFlushDuration}s GREEN WAVE)`}
