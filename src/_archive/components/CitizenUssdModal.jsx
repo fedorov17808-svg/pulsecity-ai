@@ -76,7 +76,7 @@ export default function CitizenUssdModal({ isOpen, onClose, trafficNodes, energy
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Sensor-Token': 'afri-pulse-live-2026'
+        'X-Sensor-Token': 'YOUR_SENSOR_TOKEN'
       },
       body: JSON.stringify(payload)
     }).catch(() => {});

@@ -26,7 +26,7 @@ export default function HackathonJuryProofBanner({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Sensor-Token': 'afri-pulse-live-2026'
+          'X-Sensor-Token': 'YOUR_SENSOR_TOKEN'
         },
         body: JSON.stringify({
           nodeId: 'TR-01',

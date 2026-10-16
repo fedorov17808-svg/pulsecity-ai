@@ -14,7 +14,7 @@ const ESP32_SNIPPET = `// PulseCity AI — ESP32 WROOM-32D Environmental & Flood
 const char* ssid = "MUNICIPAL_MESH_GAMA";
 const char* password = "SECRET_WIFI_PASS";
 const char* serverUrl = "https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest";
-const char* sensorAuthToken = "afri-pulse-live-2026";
+const char* sensorAuthToken = "YOUR_SENSOR_TOKEN";
 const char* nodeId = "ECO-01"; // Korle Lagoon / Odaw River Station
 
 #define PIN_MQ135_ANALOG 36
@@ -74,7 +74,7 @@ from ultralytics import YOLO
 
 NODE_ID = "TR-01"
 INGEST_ENDPOINT = "https://pulsecity-ai.vercel.app/api/v1/telemetry/ingest"
-AUTH_TOKEN = "afri-pulse-live-2026"
+AUTH_TOKEN = "YOUR_SENSOR_TOKEN"
 
 model = YOLO("yolov8n.pt")
 cap = cv2.VideoCapture(0) # USB Camera / RTSP stream
@@ -192,7 +192,7 @@ export default function HardwareHubModal({ isOpen, onClose }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Sensor-Token': 'afri-pulse-live-2026'
+          'X-Sensor-Token': 'YOUR_SENSOR_TOKEN'
         },
         body: JSON.stringify(telemetryPayload)
       });
