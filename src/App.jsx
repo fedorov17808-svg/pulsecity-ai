@@ -80,6 +80,9 @@ export default function App() {
   const [externalWaveTrigger, setExternalWaveTrigger] = useState(null);
   const [lastExternalIngestToast, setLastExternalIngestToast] = useState(null);
   const [ingestPacketCount, setIngestPacketCount] = useState(0);
+  // Latest node seen in the telemetry feed; no field hardware is deployed yet, so
+  // packets count as simulated unless they explicitly say source: 'hardware'
+  const [feedSource, setFeedSource] = useState(null);
 
   // Telemetry sync: process events stored by /api/telemetry/ingest
   useEffect(() => {
@@ -109,11 +112,13 @@ export default function App() {
       }
 
       handleIngestTelemetry(newest);
+      setFeedSource({ nodeId: newest.nodeId, simulated: newest.source !== 'hardware' });
       if (silent) return;
       setIngestPacketCount((c) => c + 1);
       sfx.alert();
       setLastExternalIngestToast({
         nodeId: newest.nodeId,
+        simulated: newest.source !== 'hardware',
         summary: newest.incidentDetails || `Live Ingest: ${newest.congestionPercentage !== undefined ? newest.congestionPercentage + '% Congestion' : 'Telemetry Packet Received'}`,
         receivedAt: newest.receivedAt || new Date().toISOString()
       });
@@ -544,6 +549,11 @@ export default function App() {
             <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
               {ingestPacketCount} packets received this session
             </span>
+            {feedSource?.simulated && (
+              <span className="badge badge-amber" style={{ fontSize: '0.62rem' }} title="Packets come from hardware/simulate_esp32_node.py, not a field sensor">
+                Simulated node {feedSource.nodeId}
+              </span>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -925,6 +935,11 @@ export default function App() {
               <span style={{ fontSize: '0.65rem', background: '#10b981', color: '#022c22', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
                 HTTP 201 CREATED
               </span>
+              {lastExternalIngestToast.simulated && (
+                <span className="badge badge-amber" style={{ fontSize: '0.62rem' }}>
+                  Simulated node {lastExternalIngestToast.nodeId}
+                </span>
+              )}
             </div>
             <div style={{ color: '#94a3b8', fontSize: '0.74rem', marginTop: '2px' }}>
               {lastExternalIngestToast.summary}
