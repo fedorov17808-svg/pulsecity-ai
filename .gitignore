@@ -41,3 +41,6 @@ tasks/
 # Firmware secrets
 hardware/secrets.h
 __pycache__/
+
+# Supabase CLI local state
+supabase/.temp/
